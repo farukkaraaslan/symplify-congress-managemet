@@ -1,0 +1,85 @@
+@model Symplify.BackOffice.Application.Features.Congresses.Commands.Update.UpdateCongressCommand
+
+@{
+    ViewData["Title"] = "Congresses Düzenle";
+    string? currentCulture = Context.Request.RouteValues["culture"]?.ToString();
+}
+
+<div class="dashboard-main-body">
+    <div class="card border shadow-none radius-12">
+        <div class="card-header border-bottom">
+            <h6 class="text-lg mb-0">Congresses Düzenle</h6>
+        </div>
+
+        <div class="card-body">
+            <form asp-action="Edit" asp-route-culture="@currentCulture" method="post" autocomplete="off">
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="row gy-4">
+            <input asp-for="Id" type="hidden" />
+            <div class="col-md-6">
+                <label class="form-label" asp-for="TenantId"></label>
+                <input class="form-control" asp-for="TenantId" />
+                <span asp-validation-for="TenantId" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="Code"></label>
+                <input class="form-control" asp-for="Code" />
+                <span asp-validation-for="Code" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="Name"></label>
+                <input class="form-control" asp-for="Name" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="Slug"></label>
+                <input class="form-control" asp-for="Slug" />
+                <span asp-validation-for="Slug" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="StartDate"></label>
+                <input class="form-control" asp-for="StartDate" type="datetime-local" />
+                <span asp-validation-for="StartDate" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="EndDate"></label>
+                <input class="form-control" asp-for="EndDate" type="datetime-local" />
+                <span asp-validation-for="EndDate" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="Status"></label>
+                <input class="form-control" asp-for="Status" />
+                <span asp-validation-for="Status" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label d-block" asp-for="IsActive"></label>
+                <input type="hidden" name="IsActive" value="false" />
+                <div class="form-check form-switch">
+                    <input class="form-check-input" asp-for="IsActive" value="true" />
+                    <label class="form-check-label" asp-for="IsActive"></label>
+                </div>
+                <span asp-validation-for="IsActive" class="text-danger"></span>
+            </div>
+            <div class="col-12">
+                <div class="alert alert-warning mb-0">
+                    Bu form iskeleti karmaşık alanları otomatik render etmez: <strong>Translations</strong>.
+                    Translation/child collection alanları için mevcut feature standardına göre özel partial eklenmelidir.
+                </div>
+            </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-24">
+                    <a asp-action="Index" asp-route-culture="@currentCulture" class="btn btn-outline-neutral-900 radius-8 px-20 py-11">Vazgeç</a>
+                    <button type="submit" class="btn btn-primary-600 radius-8 px-20 py-11">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -7,13 +7,22 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentValidation" Version="12.1.1" />
-    <PackageReference Include="MediatR" Version="14.1.0" />
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Core.CrossCuttingConcerns\Core.CrossCuttingConcerns.csproj" />
-    <ProjectReference Include="..\Core.Persistence\Core.Persistence.csproj" />
+    <ProjectReference Include="..\Core.CrossCuttingConcers\Core.CrossCuttingConcerns.csproj" />
+    <ProjectReference Include="..\Core.Security\Core.Security.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Responses\" />
+    <Folder Include="Pipelines\Caching\" />
+    <Folder Include="Pipelines\Authorization\" />
   </ItemGroup>
 
 </Project>

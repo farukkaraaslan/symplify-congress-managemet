@@ -1,0 +1,37 @@
+@{
+    string title = ViewData["Title"]?.ToString() ?? "Symplify";
+}
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@title - Symplify</title>
+    <link rel="icon" type="image/png" href="~/assets/images/favicon.png" sizes="16x16" />
+    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/lib/remixicon/fonts/remixicon.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="~/lib/datatables.net-dt/css/dataTables.dataTables.min.css" asp-append-version="true" />
+    <link href="~/lib/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <div class="body-overlay"></div>
+    @await Html.PartialAsync("_Sidebar")
+
+    <main class="dashboard-main">
+        @await Html.PartialAsync("_Navbar")
+        @RenderBody()
+    </main>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-ui/dist/jquery-ui.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/datatables.net/js/dataTables.min.js" asp-append-version="true"></script>
+    <script src="~/lib/sweetalert2/sweetalert2.all.min.js"></script>
+    <script src="~/lib/iconify-icon/dist/iconify-icon.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/app.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,15 @@
+@{
+    string culture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+}
+<div class="card border shadow-none radius-12">
+    <div class="card-body text-center py-64">
+        <div class="mb-20">
+            <i class="ri-shield-cross-line text-danger text-5xl"></i>
+        </div>
+        <h5 class="mb-8">Yetkisiz Erişim</h5>
+        <p class="text-neutral-500 mb-24">Bu işlemi yapmak için gerekli yetkiye sahip değilsiniz.</p>
+        <a asp-controller="Auth" asp-action="Login" asp-route-culture="@culture" class="btn btn-primary-600 radius-8 px-20 py-11">
+            Giriş sayfasına dön
+        </a>
+    </div>
+</div>

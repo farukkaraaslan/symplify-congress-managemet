@@ -1,0 +1,69 @@
+@model Symplify.BackOffice.Application.Features.Authors.Commands.Update.UpdateAuthorCommand
+
+@{
+    ViewData["Title"] = "Authors Düzenle";
+    string? currentCulture = Context.Request.RouteValues["culture"]?.ToString();
+}
+
+<div class="dashboard-main-body">
+    <div class="card border shadow-none radius-12">
+        <div class="card-header border-bottom">
+            <h6 class="text-lg mb-0">Authors Düzenle</h6>
+        </div>
+
+        <div class="card-body">
+            <form asp-action="Edit" asp-route-culture="@currentCulture" method="post" autocomplete="off">
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="row gy-4">
+            <input asp-for="Id" type="hidden" />
+            <div class="col-md-6">
+                <label class="form-label" asp-for="FirstName"></label>
+                <input class="form-control" asp-for="FirstName" />
+                <span asp-validation-for="FirstName" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="LastName"></label>
+                <input class="form-control" asp-for="LastName" />
+                <span asp-validation-for="LastName" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="Email"></label>
+                <input class="form-control" asp-for="Email" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="Institution"></label>
+                <input class="form-control" asp-for="Institution" />
+                <span asp-validation-for="Institution" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="Orcid"></label>
+                <input class="form-control" asp-for="Orcid" />
+                <span asp-validation-for="Orcid" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label d-block" asp-for="IsCorrespondingAuthor"></label>
+                <input type="hidden" name="IsCorrespondingAuthor" value="false" />
+                <div class="form-check form-switch">
+                    <input class="form-check-input" asp-for="IsCorrespondingAuthor" value="true" />
+                    <label class="form-check-label" asp-for="IsCorrespondingAuthor"></label>
+                </div>
+                <span asp-validation-for="IsCorrespondingAuthor" class="text-danger"></span>
+            </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-24">
+                    <a asp-action="Index" asp-route-culture="@currentCulture" class="btn btn-outline-neutral-900 radius-8 px-20 py-11">Vazgeç</a>
+                    <button type="submit" class="btn btn-primary-600 radius-8 px-20 py-11">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,49 @@
+@model Symplify.BackOffice.Application.Features.ResourceKeys.Commands.Create.CreateResourceKeyCommand
+
+@{
+    ViewData["Title"] = "Resource Keys Oluştur";
+    string? currentCulture = Context.Request.RouteValues["culture"]?.ToString();
+}
+
+<div class="dashboard-main-body">
+    <div class="card border shadow-none radius-12">
+        <div class="card-header border-bottom">
+            <h6 class="text-lg mb-0">Resource Keys Oluştur</h6>
+        </div>
+
+        <div class="card-body">
+            <form asp-action="Create" asp-route-culture="@currentCulture" method="post" autocomplete="off">
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="row gy-4">
+            <div class="col-md-6">
+                <label class="form-label" asp-for="KeyName"></label>
+                <input class="form-control" asp-for="KeyName" />
+                <span asp-validation-for="KeyName" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="AreaName"></label>
+                <input class="form-control" asp-for="AreaName" />
+                <span asp-validation-for="AreaName" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="Description"></label>
+                <input class="form-control" asp-for="Description" />
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-24">
+                    <a asp-action="Index" asp-route-culture="@currentCulture" class="btn btn-outline-neutral-900 radius-8 px-20 py-11">Vazgeç</a>
+                    <button type="submit" class="btn btn-primary-600 radius-8 px-20 py-11">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

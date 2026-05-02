@@ -1,0 +1,142 @@
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+@{
+    string T(string key, string fallback)
+    {
+        string value = L.GetStringValue(key);
+        return string.IsNullOrWhiteSpace(value) || string.Equals(value, key, StringComparison.OrdinalIgnoreCase)
+            ? fallback
+            : value;
+    }
+
+    string Js(string key, string fallback)
+    {
+        return System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(T(key, fallback));
+    }
+}
+<script>
+    window.Symplify = window.Symplify || {};
+
+    window.Symplify.resources = window.Symplify.resources || {};
+    Object.assign(window.Symplify.resources, {
+        "Common.Ok": "@Html.Raw(Js("Common.Ok", "Tamam"))",
+        "Common.Cancel": "@Html.Raw(Js("Common.Cancel", "Vazgeç"))",
+        "Common.Close": "@Html.Raw(Js("Common.Close", "Kapat"))",
+        "Common.Save": "@Html.Raw(Js("Common.Save", "Kaydet"))",
+        "Common.Active": "@Html.Raw(Js("Common.Active", "Aktif"))",
+        "Common.Passive": "@Html.Raw(Js("Common.Passive", "Pasif"))",
+        "Common.Edit": "@Html.Raw(Js("Common.Edit", "Düzenle"))",
+        "Common.Delete": "@Html.Raw(Js("Common.Delete", "Sil"))",
+        "Common.Error": "@Html.Raw(Js("Common.Error", "Hata"))",
+        "Common.Success": "@Html.Raw(Js("Common.Success", "Başarılı"))",
+        "Common.GenericError": "@Html.Raw(Js("Common.GenericError", "İşlem sırasında bir hata oluştu."))",
+        "Common.InvalidRequest": "@Html.Raw(Js("Common.InvalidRequest", "Geçersiz istek."))",
+        "Common.Created": "@Html.Raw(Js("Common.Created", "Kayıt oluşturuldu."))",
+        "Common.Updated": "@Html.Raw(Js("Common.Updated", "Kayıt güncellendi."))",
+        "Common.Deleted": "@Html.Raw(Js("Common.Deleted", "Kayıt silindi."))",
+        "Common.DeleteConfirmTitle": "@Html.Raw(Js("Common.DeleteConfirmTitle", "Silmek istediğinize emin misiniz?"))",
+        "Common.DeleteConfirmText": "@Html.Raw(Js("Common.DeleteConfirmText", "Bu kayıt silinecek. Silme sonrası aktif kayıtların sıra numarası otomatik düzenlenecek."))",
+        "Common.DeleteConfirmButton": "@Html.Raw(Js("Common.DeleteConfirmButton", "Sil"))",
+        "Common.Name": "@Html.Raw(Js("Common.Name", "Ad"))",
+        "Common.Description": "@Html.Raw(Js("Common.Description", "Açıklama"))",
+        "Common.Status": "@Html.Raw(Js("Common.Status", "Durum"))",
+        "Common.Actions": "@Html.Raw(Js("Common.Actions", "İşlemler"))",
+        "Common.Order": "@Html.Raw(Js("Common.Order", "Sıra"))",
+        "Common.Reorder": "@Html.Raw(Js("Common.Reorder", "Sırayı değiştir"))",
+        "Common.DragToReorder": "@Html.Raw(Js("Common.DragToReorder", "Sırayı değiştir"))",
+        "Common.ReorderSuccess": "@Html.Raw(Js("Common.ReorderSuccess", "Sıralama güncellendi."))",
+        "Common.ReorderNotAllowedShort": "@Html.Raw(Js("Common.ReorderNotAllowedShort", "Sıralama için arama boşken Sıra kolonunu artan kullanın."))",
+        "Common.ReorderNotAllowed": "@Html.Raw(Js("Common.ReorderNotAllowed", "Sıralama yapmak için arama boş olmalı ve tablo Sıra kolonuna göre artan sıralanmalıdır."))",
+        "Common.ReorderEndpointMissing": "@Html.Raw(Js("Common.ReorderEndpointMissing", "Sıralama endpoint adresi bulunamadı."))",
+
+        "Common.DataTable.Search": "@Html.Raw(Js("Common.DataTable.Search", "Ara:"))",
+        "Common.DataTable.LengthMenu": "@Html.Raw(Js("Common.DataTable.LengthMenu", "_MENU_ kayıt göster"))",
+        "Common.DataTable.Info": "@Html.Raw(Js("Common.DataTable.Info", "_TOTAL_ kayıttan _START_ - _END_ arası gösteriliyor"))",
+        "Common.DataTable.InfoEmpty": "@Html.Raw(Js("Common.DataTable.InfoEmpty", "Kayıt bulunamadı"))",
+        "Common.DataTable.InfoFiltered": "@Html.Raw(Js("Common.DataTable.InfoFiltered", "(_MAX_ kayıt içerisinden filtrelendi)"))",
+        "Common.DataTable.ZeroRecords": "@Html.Raw(Js("Common.DataTable.ZeroRecords", "Eşleşen kayıt bulunamadı"))",
+        "Common.DataTable.Processing": "@Html.Raw(Js("Common.DataTable.Processing", "Yükleniyor..."))",
+        "Common.DataTable.EmptyTable": "@Html.Raw(Js("Common.DataTable.EmptyTable", "Tabloda kayıt bulunamadı"))",
+        "Common.DataTable.LoadingRecords": "@Html.Raw(Js("Common.DataTable.LoadingRecords", "Kayıtlar yükleniyor..."))",
+        "Common.DataTable.First": "@Html.Raw(Js("Common.DataTable.First", "İlk"))",
+        "Common.DataTable.Last": "@Html.Raw(Js("Common.DataTable.Last", "Son"))",
+        "Common.DataTable.Next": "@Html.Raw(Js("Common.DataTable.Next", "Sonraki"))",
+        "Common.DataTable.Previous": "@Html.Raw(Js("Common.DataTable.Previous", "Önceki"))",
+        "Common.DataTable.SortAscending": "@Html.Raw(Js("Common.DataTable.SortAscending", ": artan sıralama için aktifleştir"))",
+        "Common.DataTable.SortDescending": "@Html.Raw(Js("Common.DataTable.SortDescending", ": azalan sıralama için aktifleştir"))"
+    });
+
+    window.Symplify.t = function (key, fallback) {
+        const resources = window.Symplify.resources || {};
+        const value = resources[key];
+
+        if (value && value !== key) {
+            return value;
+        }
+
+        return fallback || key;
+    };
+
+    window.Symplify.texts = Object.assign(window.Symplify.texts || {}, {
+        ok: window.Symplify.t("Common.Ok", "Tamam"),
+        cancel: window.Symplify.t("Common.Cancel", "Vazgeç"),
+        close: window.Symplify.t("Common.Close", "Kapat"),
+        save: window.Symplify.t("Common.Save", "Kaydet"),
+        active: window.Symplify.t("Common.Active", "Aktif"),
+        passive: window.Symplify.t("Common.Passive", "Pasif"),
+        edit: window.Symplify.t("Common.Edit", "Düzenle"),
+        delete: window.Symplify.t("Common.Delete", "Sil"),
+        errorTitle: window.Symplify.t("Common.Error", "Hata"),
+        successTitle: window.Symplify.t("Common.Success", "Başarılı"),
+        genericError: window.Symplify.t("Common.GenericError", "İşlem sırasında bir hata oluştu."),
+        invalidRequest: window.Symplify.t("Common.InvalidRequest", "Geçersiz istek."),
+        created: window.Symplify.t("Common.Created", "Kayıt oluşturuldu."),
+        updated: window.Symplify.t("Common.Updated", "Kayıt güncellendi."),
+        deleted: window.Symplify.t("Common.Deleted", "Kayıt silindi."),
+        deleteConfirmTitle: window.Symplify.t("Common.DeleteConfirmTitle", "Silmek istediğinize emin misiniz?"),
+        deleteConfirmText: window.Symplify.t("Common.DeleteConfirmText", "Bu kayıt silinecek. Silme sonrası aktif kayıtların sıra numarası otomatik düzenlenecek."),
+        deleteConfirmButton: window.Symplify.t("Common.DeleteConfirmButton", "Sil"),
+        order: window.Symplify.t("Common.Order", "Sıra"),
+        name: window.Symplify.t("Common.Name", "Ad"),
+        description: window.Symplify.t("Common.Description", "Açıklama"),
+        status: window.Symplify.t("Common.Status", "Durum"),
+        actions: window.Symplify.t("Common.Actions", "İşlemler"),
+        reorder: window.Symplify.t("Common.Reorder", "Sırayı değiştir"),
+        dragToReorder: window.Symplify.t("Common.DragToReorder", "Sırayı değiştir"),
+        reorderSuccess: window.Symplify.t("Common.ReorderSuccess", "Sıralama güncellendi."),
+        reorderNotAllowedShort: window.Symplify.t("Common.ReorderNotAllowedShort", "Sıralama için arama boşken Sıra kolonunu artan kullanın."),
+        reorderNotAllowed: window.Symplify.t("Common.ReorderNotAllowed", "Sıralama yapmak için arama boş olmalı ve tablo Sıra kolonuna göre artan sıralanmalıdır."),
+        reorderEndpointMissing: window.Symplify.t("Common.ReorderEndpointMissing", "Sıralama endpoint adresi bulunamadı.")
+    });
+
+    window.Symplify.Texts = window.Symplify.texts;
+
+    window.Symplify.dataTables = window.Symplify.dataTables || {};
+    window.Symplify.dataTables.language = {
+        search: window.Symplify.t("Common.DataTable.Search", "Ara:"),
+        lengthMenu: window.Symplify.t("Common.DataTable.LengthMenu", "_MENU_ kayıt göster"),
+        info: window.Symplify.t("Common.DataTable.Info", "_TOTAL_ kayıttan _START_ - _END_ arası gösteriliyor"),
+        infoEmpty: window.Symplify.t("Common.DataTable.InfoEmpty", "Kayıt bulunamadı"),
+        infoFiltered: window.Symplify.t("Common.DataTable.InfoFiltered", "(_MAX_ kayıt içerisinden filtrelendi)"),
+        zeroRecords: window.Symplify.t("Common.DataTable.ZeroRecords", "Eşleşen kayıt bulunamadı"),
+        processing: window.Symplify.t("Common.DataTable.Processing", "Yükleniyor..."),
+        emptyTable: window.Symplify.t("Common.DataTable.EmptyTable", "Tabloda kayıt bulunamadı"),
+        loadingRecords: window.Symplify.t("Common.DataTable.LoadingRecords", "Kayıtlar yükleniyor..."),
+        paginate: {
+            first: window.Symplify.t("Common.DataTable.First", "İlk"),
+            last: window.Symplify.t("Common.DataTable.Last", "Son"),
+            next: window.Symplify.t("Common.DataTable.Next", "Sonraki"),
+            previous: window.Symplify.t("Common.DataTable.Previous", "Önceki")
+        },
+        aria: {
+            sortAscending: window.Symplify.t("Common.DataTable.SortAscending", ": artan sıralama için aktifleştir"),
+            sortDescending: window.Symplify.t("Common.DataTable.SortDescending", ": azalan sıralama için aktifleştir")
+        }
+    };
+
+    window.Symplify.DataTables = window.Symplify.DataTables || {};
+    window.Symplify.DataTables.language = window.Symplify.dataTables.language;
+
+    window.Symplify.Lookup = window.Symplify.Lookup || {};
+    window.Symplify.Lookup.texts = window.Symplify.texts;
+    window.Symplify.Lookup.dataTableLanguage = window.Symplify.dataTables.language;
+</script>

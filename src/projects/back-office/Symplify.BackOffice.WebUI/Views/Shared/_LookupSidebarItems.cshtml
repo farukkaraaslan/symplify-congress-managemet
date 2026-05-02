@@ -1,0 +1,41 @@
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer Localizer
+@{
+    string? culture = Context.Request.RouteValues["culture"]?.ToString();
+}
+
+<li>
+    <a asp-controller="Topics" asp-action="Index" asp-route-culture="@culture">
+        <i class="ri-price-tag-3-line"></i>
+        <span>@Localizer["BackOffice.Sidebar.Topics"]</span>
+    </a>
+</li>
+<li>
+    <a asp-controller="Titles" asp-action="Index" asp-route-culture="@culture">
+        <i class="ri-user-star-line"></i>
+        <span>@Localizer["BackOffice.Sidebar.Titles"]</span>
+    </a>
+</li>
+<li>
+    <a asp-controller="DocumentTypes" asp-action="Index" asp-route-culture="@culture">
+        <i class="ri-file-list-3-line"></i>
+        <span>@Localizer["BackOffice.Sidebar.DocumentTypes"]</span>
+    </a>
+</li>
+<li>
+    <a asp-controller="SubmissionTypes" asp-action="Index" asp-route-culture="@culture">
+        <i class="ri-file-upload-line"></i>
+        <span>@Localizer["BackOffice.Sidebar.SubmissionTypes"]</span>
+    </a>
+</li>
+<li>
+    <a asp-controller="EventRooms" asp-action="Index" asp-route-culture="@culture">
+        <i class="ri-building-4-line"></i>
+        <span>@Localizer["BackOffice.Sidebar.EventRooms"]</span>
+    </a>
+</li>
+<li>
+    <a asp-controller="EvaluationCriteria" asp-action="Index" asp-route-culture="@culture">
+        <i class="ri-list-check-3"></i>
+        <span>@Localizer["BackOffice.Sidebar.EvaluationCriteria"]</span>
+    </a>
+</li>

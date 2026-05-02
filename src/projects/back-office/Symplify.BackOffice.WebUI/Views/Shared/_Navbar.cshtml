@@ -1,0 +1,40 @@
+<div class="navbar-header symplify-navbar">
+    <div class="navbar-responsive-row">
+        <div class="navbar-left-controls">
+            <button type="button" class="sidebar-toggle" aria-label="Sidebar aç/kapat">
+                <i class="ri-menu-line text-2xl"></i>
+            </button>
+            <button type="button" class="sidebar-mobile-toggle" aria-label="Mobil menüyü aç">
+                <i class="ri-menu-line text-2xl"></i>
+            </button>
+        </div>
+
+        <div class="navbar-workspace-group">
+            <div class="navbar-congress-label">
+                <i class="ri-dashboard-line"></i>
+                <span>KONGRELER</span>
+            </div>
+            <div class="navbar-congress-chip">
+                <select id="navbarCongressSelect" class="navbar-congress-select form-select" aria-label="Kongre seçiniz">
+                    <option value="">Kongre seçiniz</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="navbar-right-actions">
+            <button type="button" data-theme-toggle class="navbar-action-btn w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center" aria-label="Tema değiştir">
+                <i class="ri-sun-line text-xl"></i>
+            </button>
+
+            @await Component.InvokeAsync("LanguageSwitcher")
+
+            <button type="button" class="navbar-action-btn w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center" aria-label="Mesajlar">
+                <i class="ri-mail-line text-xl"></i>
+            </button>
+
+            <button type="button" class="navbar-action-btn w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center" aria-label="Bildirimler">
+                <i class="ri-notification-3-line text-xl"></i>
+            </button>
+        </div>
+    </div>
+</div>

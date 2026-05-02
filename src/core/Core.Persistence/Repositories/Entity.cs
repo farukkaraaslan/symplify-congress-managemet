@@ -3,6 +3,7 @@
 namespace Core.Persistence.Repositories;
 
 public class Entity<TId> : IAuditable, IEntityTimestamps
+    where TId : notnull
 {
     [Key]
     public TId Id { get; set; }
@@ -25,4 +26,3 @@ public class Entity<TId> : IAuditable, IEntityTimestamps
         Id = id;
     }
 }
-

@@ -2,14 +2,10 @@
 
 public class Sort
 {
-    public string Field { get; set; }
-    public string Dir { get; set; }
+    public required string Field { get; set; }
+    public required string Dir { get; set; }
 
-    public Sort()
-    {
-        Field = string.Empty;
-        Dir = string.Empty;
-    }
+    public Sort() { }
 
     public Sort(string field, string dir)
     {

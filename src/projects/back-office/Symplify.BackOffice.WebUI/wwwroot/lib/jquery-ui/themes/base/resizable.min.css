@@ -1,0 +1,16 @@
+/**
+ * Minified by jsDelivr using clean-css v5.3.3.
+ * Original file: /npm/jquery-ui@1.14.2/themes/base/resizable.css
+ *
+ * Do NOT use SRI with dynamically generated files! More information: https://www.jsdelivr.com/using-sri-with-dynamic-files
+ */
+/*!
+ * jQuery UI Resizable 1.14.2
+ * https://jqueryui.com
+ *
+ * Copyright OpenJS Foundation and other contributors
+ * Released under the MIT license.
+ * https://jquery.org/license
+ */
+.ui-resizable{position:relative}.ui-resizable-handle{position:absolute;font-size:.1px;display:block;touch-action:none}.ui-resizable-autohide .ui-resizable-handle,.ui-resizable-disabled .ui-resizable-handle{display:none}.ui-resizable-n{cursor:n-resize;height:7px;width:100%;top:-5px;left:0}.ui-resizable-s{cursor:s-resize;height:7px;width:100%;bottom:-5px;left:0}.ui-resizable-e{cursor:e-resize;width:7px;right:-5px;top:0;height:100%}.ui-resizable-w{cursor:w-resize;width:7px;left:-5px;top:0;height:100%}.ui-resizable-se{cursor:se-resize;width:12px;height:12px;right:1px;bottom:1px}.ui-resizable-sw{cursor:sw-resize;width:9px;height:9px;left:-5px;bottom:-5px}.ui-resizable-nw{cursor:nw-resize;width:9px;height:9px;left:-5px;top:-5px}.ui-resizable-ne{cursor:ne-resize;width:9px;height:9px;right:-5px;top:-5px}
+/*# sourceMappingURL=/sm/bee75558bce37664bb8de79457a702f8c3648647b563c846b03a9b2a4518ae6d.map */

@@ -1,0 +1,60 @@
+@model Symplify.BackOffice.Application.Features.SubmissionHistories.Commands.Update.UpdateSubmissionHistoryCommand
+
+@{
+    ViewData["Title"] = "Submission Histories Düzenle";
+    string? currentCulture = Context.Request.RouteValues["culture"]?.ToString();
+}
+
+<div class="dashboard-main-body">
+    <div class="card border shadow-none radius-12">
+        <div class="card-header border-bottom">
+            <h6 class="text-lg mb-0">Submission Histories Düzenle</h6>
+        </div>
+
+        <div class="card-body">
+            <form asp-action="Edit" asp-route-culture="@currentCulture" method="post" autocomplete="off">
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="row gy-4">
+            <input asp-for="Id" type="hidden" />
+            <div class="col-md-6">
+                <label class="form-label" asp-for="SubmissionId"></label>
+                <input class="form-control" asp-for="SubmissionId" />
+                <span asp-validation-for="SubmissionId" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="FromStatusId"></label>
+                <input class="form-control" asp-for="FromStatusId" type="number" />
+                <span asp-validation-for="FromStatusId" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="ToStatusId"></label>
+                <input class="form-control" asp-for="ToStatusId" type="number" />
+                <span asp-validation-for="ToStatusId" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="PerformedByUserId"></label>
+                <input class="form-control" asp-for="PerformedByUserId" />
+                <span asp-validation-for="PerformedByUserId" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="Note"></label>
+                <input class="form-control" asp-for="Note" />
+                <span asp-validation-for="Note" class="text-danger"></span>
+            </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-24">
+                    <a asp-action="Index" asp-route-culture="@currentCulture" class="btn btn-outline-neutral-900 radius-8 px-20 py-11">Vazgeç</a>
+                    <button type="submit" class="btn btn-primary-600 radius-8 px-20 py-11">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

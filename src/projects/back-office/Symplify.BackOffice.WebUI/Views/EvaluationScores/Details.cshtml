@@ -1,0 +1,27 @@
+@model Symplify.BackOffice.Application.Features.EvaluationScores.Queries.GetById.GetByIdEvaluationScoreResponse
+@using System.Reflection
+
+@{
+    ViewData["Title"] = "Evaluation Scores Detay";
+    string? currentCulture = Context.Request.RouteValues["culture"]?.ToString();
+    PropertyInfo[] properties = typeof(Symplify.BackOffice.Application.Features.EvaluationScores.Queries.GetById.GetByIdEvaluationScoreResponse).GetProperties();
+}
+
+<div class="dashboard-main-body">
+    <div class="card border shadow-none radius-12">
+        <div class="card-header border-bottom d-flex align-items-center justify-content-between">
+            <h6 class="text-lg mb-0">Evaluation Scores Detay</h6>
+            <a asp-action="Index" asp-route-culture="@currentCulture" class="btn btn-outline-neutral-900 radius-8 px-20 py-11">Listeye Dön</a>
+        </div>
+
+        <div class="card-body">
+            <dl class="row mb-0">
+                @foreach (PropertyInfo property in properties)
+                {
+                    <dt class="col-sm-3">@property.Name</dt>
+                    <dd class="col-sm-9">@(property.GetValue(Model) ?? "-")</dd>
+                }
+            </dl>
+        </div>
+    </div>
+</div>

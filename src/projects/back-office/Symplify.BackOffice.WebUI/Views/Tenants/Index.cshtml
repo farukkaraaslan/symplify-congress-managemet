@@ -1,0 +1,114 @@
+@model Core.Application.Responses.GetListResponse<Symplify.BackOffice.Application.Features.Tenants.Queries.GetList.GetListTenantListItemDto>
+@using System.Reflection
+
+@{
+    ViewData["Title"] = "Tenants";
+    string? currentCulture = Context.Request.RouteValues["culture"]?.ToString();
+    PropertyInfo[] displayProperties = typeof(Symplify.BackOffice.Application.Features.Tenants.Queries.GetList.GetListTenantListItemDto)
+        .GetProperties()
+        .Where(property => property.Name != "Id")
+        .ToArray();
+
+    PropertyInfo? idProperty = typeof(Symplify.BackOffice.Application.Features.Tenants.Queries.GetList.GetListTenantListItemDto).GetProperty("Id");
+    int rowNumber = 1;
+}
+
+<div class="dashboard-main-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-0">Tenants</h6>
+            <small class="text-neutral-500">Application feature üzerinden oluşturulan geçici yönetim ekranı.</small>
+        </div>
+
+        <a asp-action="Create" asp-route-culture="@currentCulture" class="btn btn-primary-600 radius-8 px-20 py-11 d-inline-flex align-items-center gap-2">
+            <i class="ri-add-line"></i>
+            Yeni Kayıt
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] is not null)
+    {
+        <div class="alert alert-success border-success-100 text-success-700 mb-24">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] is not null)
+    {
+        <div class="alert alert-danger border-danger-100 text-danger-700 mb-24">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <div class="card border shadow-none radius-12">
+        <div class="card-header border-bottom">
+            <h6 class="text-lg mb-0">Kayıtlar</h6>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table bordered-table mb-0">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        @foreach (PropertyInfo property in displayProperties)
+                        {
+                            <th>@property.Name</th>
+                        }
+                        <th class="text-end">İşlemler</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        object? id = idProperty?.GetValue(item);
+
+                        <tr>
+                            <td>@rowNumber</td>
+
+                            @foreach (PropertyInfo property in displayProperties)
+                            {
+                                object? value = property.GetValue(item);
+
+                                <td>@(value ?? "-")</td>
+                            }
+
+                            <td>
+                                <div class="d-flex align-items-center justify-content-end gap-2">
+                                    <a asp-action="Details"
+                                       asp-route-id="@id"
+                                       asp-route-culture="@currentCulture"
+                                       class="btn btn-info-100 text-info-600 radius-8 px-12 py-8">
+                                        Detay
+                                    </a>
+
+                                    <a asp-action="Edit"
+                                       asp-route-id="@id"
+                                       asp-route-culture="@currentCulture"
+                                       class="btn btn-warning-100 text-warning-600 radius-8 px-12 py-8">
+                                        Düzenle
+                                    </a>
+
+                                    <form asp-action="Delete"
+                                          asp-route-culture="@currentCulture"
+                                          method="post"
+                                          class="d-inline"
+                                          onsubmit="return confirm('Bu kaydı silmek istediğinize emin misiniz?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="Id" value="@id" />
+                                        <button type="submit" class="btn btn-danger-100 text-danger-600 radius-8 px-12 py-8">
+                                            Sil
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+
+                        rowNumber++;
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

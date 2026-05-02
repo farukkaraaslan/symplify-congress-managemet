@@ -1,0 +1,191 @@
+@model Symplify.BackOffice.WebUI.Models.SubmissionTypes.UpdateSubmissionTypeViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+}
+
+<div class="modal fade" id="updateSubmissionTypeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="updateSubmissionTypeForm"
+                  asp-controller="SubmissionTypes"
+                  asp-action="Update"
+                  asp-route-culture="@currentCulture"
+                  method="post"
+                  data-feature="submission-types">
+
+                @Html.AntiForgeryToken()
+                <input asp-for="Id" type="hidden" />
+                <input asp-for="Code" type="hidden" />
+
+                <div class="modal-header">
+                    <div>
+                        <h6 class="modal-title">@L["BackOffice.SubmissionTypes.UpdateModalTitle"]</h6>
+                        <small class="text-neutral-500 d-block mt-1">
+                            @L["BackOffice.SubmissionTypes.TranslationModalDescription"]
+                        </small>
+                    </div>
+
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="@L["Common.Close"]"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="card border shadow-none mb-4">
+                        <div class="card-header border-bottom">
+                            <h6 class="text-md mb-0">@L["Common.Translations"]</h6>
+                        </div>
+
+                        <div class="card-body">
+                            <ul class="nav nav-pills mb-3" role="tablist">
+                                @for (int i = 0; i < Model.Translations.Count; i++)
+                                {
+                                    string tabId = "updateSubmissionTypeTranslationTab-" + i;
+                                    string paneId = "updateSubmissionTypeTranslationPane-" + i;
+
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link @(i == 0 ? "active" : string.Empty)"
+                                                id="@tabId"
+                                                data-bs-toggle="pill"
+                                                data-bs-target="#@paneId"
+                                                type="button"
+                                                role="tab"
+                                                aria-controls="@paneId"
+                                                aria-selected="@(i == 0 ? "true" : "false")">
+                                            @Model.Translations[i].LanguageName
+                                        </button>
+                                    </li>
+                                }
+                            </ul>
+
+                            <div class="tab-content">
+                                @for (int i = 0; i < Model.Translations.Count; i++)
+                                {
+                                    string tabId = "updateSubmissionTypeTranslationTab-" + i;
+                                    string paneId = "updateSubmissionTypeTranslationPane-" + i;
+                                    bool isDefaultLanguage = Model.Translations[i].IsDefault;
+                                    string requiredMessage = L.GetStringValue("BackOffice.SubmissionTypes.Validation.NameRequired");
+                                    if (string.IsNullOrWhiteSpace(requiredMessage) || string.Equals(requiredMessage, "BackOffice.SubmissionTypes.Validation.NameRequired", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        requiredMessage = "Ad alanı zorunludur.";
+                                    }
+
+                                    <div class="tab-pane fade @(i == 0 ? "show active" : string.Empty)"
+                                         id="@paneId"
+                                         role="tabpanel"
+                                         aria-labelledby="@tabId"
+                                         tabindex="0">
+
+                                        <input asp-for="Translations[i].LanguageId" type="hidden" />
+                                        <input asp-for="Translations[i].Culture" type="hidden" />
+                                        <input asp-for="Translations[i].LanguageName" type="hidden" />
+                                        <input asp-for="Translations[i].IsDefault" type="hidden" />
+                                        <input asp-for="Translations[i].Exists" type="hidden" data-language-id="@Model.Translations[i].LanguageId.ToString().ToLowerInvariant()" />
+
+                                        <div class="row gy-4">
+                                            <div class="col-12">
+                                                <label asp-for="Translations[i].Name" class="form-label">
+                                                    @L["BackOffice.SubmissionTypes.Fields.Name"]
+                                                    @if (isDefaultLanguage)
+                                                    {
+                                                        <span class="text-danger">*</span>
+                                                    }
+                                                </label>
+
+                                                @if (isDefaultLanguage)
+                                                {
+                                                    <input asp-for="Translations[i].Name"
+                                                           type="text"
+                                                           class="form-control js-lookup-translation-name"
+                                                           data-language-id="@Model.Translations[i].LanguageId.ToString().ToLowerInvariant()"
+                                                           placeholder="@L["BackOffice.SubmissionTypes.Placeholders.Name"]"
+                                                           data-val="true"
+                                                           data-val-required="@requiredMessage" />
+                                                }
+                                                else
+                                                {
+                                                    <input asp-for="Translations[i].Name"
+                                                           type="text"
+                                                           class="form-control js-lookup-translation-name"
+                                                           data-language-id="@Model.Translations[i].LanguageId.ToString().ToLowerInvariant()"
+                                                           placeholder="@L["BackOffice.SubmissionTypes.Placeholders.Name"]" />
+                                                }
+
+                                                <span asp-validation-for="Translations[i].Name"
+                                                      class="text-danger small d-block mt-1"></span>
+                                            </div>
+
+                                            <div class="col-12">
+                                                <label asp-for="Translations[i].Description" class="form-label">
+                                                    @L["BackOffice.SubmissionTypes.Fields.Description"]
+                                                </label>
+
+                                                <textarea asp-for="Translations[i].Description"
+                                                          class="form-control js-lookup-translation-description"
+                                                          data-language-id="@Model.Translations[i].LanguageId.ToString().ToLowerInvariant()"
+                                                          rows="4"
+                                                          placeholder="@L["BackOffice.SubmissionTypes.Placeholders.Description"]"></textarea>
+
+                                                <span asp-validation-for="Translations[i].Description"
+                                                      class="text-danger small d-block mt-1"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border shadow-none">
+                        <div class="card-header border-bottom">
+                            <h6 class="text-md mb-0">@L["Common.BasicInformation"]</h6>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="row gy-4">
+                                <div class="col-12">
+                                    <label asp-for="IsActive" class="form-label d-block">
+                                        @L["Common.Status"] <span class="text-danger">*</span>
+                                    </label>
+
+                                    <div class="form-switch switch-primary d-flex align-items-center gap-3">
+                                        <input asp-for="IsActive"
+                                               id="updateSubmissionTypeIsActive"
+                                               class="form-check-input js-lookup-status-switch js-submission-type-status-switch"
+                                               type="checkbox"
+                                               role="switch" />
+
+                                        <label class="form-check-label js-lookup-status-label js-submission-type-status-label text-success-600 fw-medium"
+                                               for="updateSubmissionTypeIsActive">
+                                            @L["Common.Active"]
+                                        </label>
+                                    </div>
+
+                                    <span asp-validation-for="IsActive"
+                                          class="text-danger small d-block mt-1"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button"
+                            class="btn btn-outline-neutral-900 radius-8 px-20 py-11"
+                            data-bs-dismiss="modal">
+                        @L["Common.Close"]
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-primary-600 radius-8 px-20 py-11 d-inline-flex align-items-center gap-2">
+                        <i class="ri-save-line"></i>
+                        @L["Common.Save"]
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

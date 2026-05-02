@@ -1,11 +1,13 @@
 <Solution>
   <Folder Name="/src/" />
   <Folder Name="/src/core/">
-    <Project Path="src/core/Core.Application/Core.Application.csproj" Id="79c1bff9-4b43-403b-82ba-56228a8b7bc7" />
-    <Project Path="src/core/Core.CrossCuttingConcerns/Core.CrossCuttingConcerns.csproj" Id="a335073b-c829-41f3-b9d3-9929d9a4ad20" />
-    <Project Path="src/core/Core.Persistence/Core.Persistence.csproj" Id="abf01250-c3b3-498c-acd3-fe85ce4233c4" />
-    <Project Path="src/core/Core.Security/Core.Security.csproj" Id="920e39c9-1569-478d-83de-cb3d1d381331" />
-    <Project Path="src/core/Core.Utilities/Core.Utilities.csproj" Id="89ff34cf-9051-4952-8edd-58ce558d0f6e" />
+    <Project Path="src/core/Core.Application/Core.Application.csproj" />
+    <Project Path="src/core/Core.CrossCuttingConcers/Core.CrossCuttingConcerns.csproj" />
+    <Project Path="src/core/Core.ElasticSearch/Core.ElasticSearch.csproj" />
+    <Project Path="src/core/Core.Mailing/Core.Mailing.csproj" />
+    <Project Path="src/core/Core.Persistence/Core.Persistence.csproj" />
+    <Project Path="src/core/Core.Security/Core.Security.csproj" />
+    <Project Path="src/core/Core.Test/Core.Test.csproj" />
   </Folder>
   <Folder Name="/src/projects/" />
   <Folder Name="/src/projects/api/">
@@ -16,10 +18,11 @@
     <Project Path="src/projects/api/Symplify.Api.WebAPI/Symplify.Api.WebAPI.csproj" Id="20261d17-d2b1-456f-a427-12253a0907a1" />
   </Folder>
   <Folder Name="/src/projects/back-office/">
-    <Project Path="src/projects/back-office/Symplifiy.BackOffice.WebUI/Symplifiy.BackOffice.WebUI.csproj" Id="8a33b680-809f-421e-abbf-8fba21e4a7bd" />
-    <Project Path="src/projects/back-office/Symplify.BackOffice.Business/Symplify.BackOffice.Business.csproj" Id="5cbe2600-bbe7-4a0a-b9e9-eb50522f37f3" />
-    <Project Path="src/projects/back-office/Symplify.BackOffice.Dataacces/Symplify.BackOffice.Dataacces.csproj" Id="6615f870-e4a4-4bed-a93b-e2f871713566" />
-    <Project Path="src/projects/back-office/Syplify.BackOffice.Entity/Syplify.BackOffice.Entity.csproj" Id="3977e8a7-ffe8-43c3-800f-b620f988ec41" />
+    <Project Path="src/projects/back-office/Symplify.BackOffice.Application/Symplify.BackOffice.Application.csproj" />
+    <Project Path="src/projects/back-office/Symplify.BackOffice.Domain/Symplify.BackOffice.Domain.csproj" />
+    <Project Path="src/projects/back-office/Symplify.BackOffice.Infrastructure/Symplify.BackOffice.Infrastructure.csproj" />
+    <Project Path="src/projects/back-office/Symplify.BackOffice.Persistence/Symplify.BackOffice.Persistence.csproj" />
+    <Project Path="src/projects/back-office/Symplify.BackOffice.WebUI/Symplify.BackOffice.WebUI.csproj" Id="d81eab21-448e-450b-87d5-84d11ee10737" />
   </Folder>
   <Folder Name="/src/projects/portal/">
     <Project Path="src/projects/portal/Symplify.Portal/Symplify.Portal.WebUI/Symplify.Portal.WebUI.csproj" Id="d9f5e4aa-dde7-4f39-95b9-3352eb30ba61" />

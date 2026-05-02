@@ -1,27 +1,4 @@
-using System.Linq.Expressions;
-using System.Reflection;
-
-namespace Core.Persistence.Paging;
-
-internal static class PagingDeterministicOrder
-{
-    internal static IQueryable<T> EnsureOrderedIfPossible<T>(IQueryable<T> queryable)
-    {
-        if (queryable is IOrderedQueryable<T>)
-            return queryable;
-
-        var idProp = typeof(T).GetProperty("Id", BindingFlags.Instance | BindingFlags.Public);
-        if (idProp == null)
-            return queryable;
-
-        var param = Expression.Parameter(typeof(T), "x");
-        var body = Expression.Property(param, idProp);
-        var converted = Expression.Convert(body, typeof(object));
-        var keySelector = Expression.Lambda<Func<T, object>>(converted, param);
-
-        return queryable.OrderBy(keySelector);
-    }
-}
+﻿namespace Core.Persistence.Paging;
 
 public class Paginate<T> : IPaginate<T>
 {
@@ -37,7 +14,6 @@ public class Paginate<T> : IPaginate<T>
 
         if (source is IQueryable<T> queryable)
         {
-            queryable = PagingDeterministicOrder.EnsureOrderedIfPossible(queryable);
             Count = queryable.Count();
             Items = queryable.Skip((Index - From) * Size).Take(Size).ToList();
         }
@@ -66,13 +42,7 @@ public class Paginate<T> : IPaginate<T>
 
 public class Paginate<TSource, TResult> : IPaginate<TResult>
 {
-    public Paginate(
-        IEnumerable<TSource> source,
-        Func<IEnumerable<TSource>, IEnumerable<TResult>> converter,
-        int index,
-        int size,
-        int from
-    )
+    public Paginate(IEnumerable<TSource> source, Func<IEnumerable<TSource>, IEnumerable<TResult>> converter, int index, int size, int from)
     {
         if (from > index)
             throw new ArgumentException($"From: {from} > Index: {index}, must From <= Index");
@@ -84,7 +54,6 @@ public class Paginate<TSource, TResult> : IPaginate<TResult>
 
         if (source is IQueryable<TSource> queryable)
         {
-            queryable = PagingDeterministicOrder.EnsureOrderedIfPossible(queryable);
             Count = queryable.Count();
             TSource[] items = queryable.Skip((Index - From) * Size).Take(Size).ToArray();
             Items = new List<TResult>(converter(items));
@@ -128,16 +97,10 @@ public class Paginate<TSource, TResult> : IPaginate<TResult>
 
 public static class Paginate
 {
-    public static IPaginate<T> Empty<T>()
-    {
-        return new Paginate<T>();
-    }
+    public static IPaginate<T> Empty<T>() => new Paginate<T>();
 
     public static IPaginate<TResult> From<TResult, TSource>(
         IPaginate<TSource> source,
         Func<IEnumerable<TSource>, IEnumerable<TResult>> converter
-    )
-    {
-        return new Paginate<TSource, TResult>(source, converter);
-    }
+    ) => new Paginate<TSource, TResult>(source, converter);
 }

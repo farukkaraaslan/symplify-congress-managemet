@@ -1,0 +1,51 @@
+{
+  "version": "3.0",
+  "defaultProvider": "jsdelivr",
+  "libraries": [
+    {
+      "library": "jquery@3.7.1",
+      "destination": "wwwroot/lib/jquery/"
+    },
+    {
+      "library": "bootstrap@5.3.8",
+      "destination": "wwwroot/lib/bootstrap/"
+    },
+    {
+      "library": "jquery-validation@1.22.1",
+      "destination": "wwwroot/lib/jquery-validation/"
+    },
+    {
+      "library": "jquery-validation-unobtrusive@4.0.0",
+      "destination": "wwwroot/lib/jquery-validation-unobtrusive/"
+    },
+    {
+      "library": "datatables.net@2.3.8",
+      "destination": "wwwroot/lib/datatables.net/"
+    },
+    {
+      "library": "datatables.net-dt@2.3.8",
+      "destination": "wwwroot/lib/datatables.net-dt/"
+    },
+    {
+      "library": "datatables.net-plugins@2.3.6",
+      "destination": "wwwroot/lib/datatables.net-plugins/"
+    },
+    {
+      "library": "remixicon@4.9.1",
+      "destination": "wwwroot/lib/remixicon/"
+    },
+    {
+      "library": "iconify-icon@3.0.2",
+      "destination": "wwwroot/lib/iconify-icon/"
+    },
+    {
+      "provider": "cdnjs",
+      "library": "sweetalert2@11.23.0",
+      "destination": "wwwroot/lib/sweetalert2/"
+    },
+    {
+      "library": "jquery-ui@1.14.2",
+      "destination": "wwwroot/lib/jquery-ui/"
+    }
+  ]
+}
