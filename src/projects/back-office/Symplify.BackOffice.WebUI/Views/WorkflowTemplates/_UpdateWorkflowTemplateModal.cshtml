@@ -1,0 +1,91 @@
+@model Symplify.BackOffice.WebUI.Models.WorkflowTemplates.UpdateWorkflowTemplateViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+@using Symplify.BackOffice.WebUI.Models.WorkflowTemplates
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    var initialStatuses = ViewData["InitialStatuses"] as List<TransactionStatusSelectItemViewModel> ?? new();
+}
+
+<div class="modal fade" id="updateWorkflowTemplateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content radius-16">
+            <form id="updateWorkflowTemplateForm" asp-controller="WorkflowTemplates" asp-action="Update" asp-route-culture="@currentCulture" method="post">
+                @Html.AntiForgeryToken()
+                <input asp-for="Id" type="hidden" />
+                <div class="modal-header border-bottom">
+                    <h6 class="modal-title">@L["BackOffice.WorkflowTemplates.UpdateTitle"]</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Common.Close"]"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row gy-3">
+                        <div class="col-md-6">
+                            <label class="form-label">@L["Common.Code"] <span class="text-danger">*</span></label>
+                            <input asp-for="Code" class="form-control" autocomplete="off" />
+                            <span asp-validation-for="Code" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">@L["BackOffice.WorkflowTemplates.InitialTransactionStatus"]</label>
+                            <select asp-for="InitialTransactionStatusId" class="form-select">
+                                <option value="">@L["Common.SelectPlease"]</option>
+                                @foreach (TransactionStatusSelectItemViewModel item in initialStatuses)
+                                {
+                                    <option value="@item.Id">@item.DisplayText</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch d-flex align-items-center gap-2 mt-2">
+                                <input asp-for="IsDefault" class="form-check-input" type="checkbox" />
+                                <label asp-for="IsDefault" class="form-check-label">@L["BackOffice.WorkflowTemplates.IsDefault"]</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch d-flex align-items-center gap-2 mt-2">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                                <label asp-for="IsActive" class="form-check-label">@L["Common.Active"]</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <ul class="nav nav-tabs" role="tablist">
+                        @for (int i = 0; i < Model.Translations.Count; i++)
+                        {
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link @(i == 0 ? "active" : string.Empty)" data-bs-toggle="tab" data-bs-target="#update-wf-template-@i" type="button" role="tab">
+                                    @Model.Translations[i].LanguageName @(Model.Translations[i].IsDefault ? "*" : string.Empty)
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                    <div class="tab-content border border-top-0 p-3 rounded-bottom">
+                        @for (int i = 0; i < Model.Translations.Count; i++)
+                        {
+                            <div class="tab-pane fade @(i == 0 ? "show active" : string.Empty)" id="update-wf-template-@i" role="tabpanel">
+                                <input type="hidden" asp-for="Translations[i].LanguageId" />
+                                <input type="hidden" asp-for="Translations[i].Culture" />
+                                <input type="hidden" asp-for="Translations[i].LanguageName" />
+                                <input type="hidden" asp-for="Translations[i].IsDefault" />
+                                <input type="hidden" asp-for="Translations[i].Exists" />
+                                <div class="mb-3">
+                                    <label class="form-label">@L["Common.Name"] @(Model.Translations[i].IsDefault ? Html.Raw("<span class=\"text-danger\">*</span>") : null)</label>
+                                    <input asp-for="Translations[i].Name" class="form-control" autocomplete="off" />
+                                    <span asp-validation-for="Translations[i].Name" class="text-danger"></span>
+                                </div>
+                                <div>
+                                    <label class="form-label">@L["Common.Description"]</label>
+                                    <textarea asp-for="Translations[i].Description" class="form-control" rows="3"></textarea>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">@L["Common.Cancel"]</button>
+                    <button type="submit" class="btn btn-primary-600">@L["Common.Save"]</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

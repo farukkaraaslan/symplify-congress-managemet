@@ -12,4 +12,6 @@ public class TransactionStatusTranslation : Entity<Guid>, IEntityTimestamps, IAu
 
     public virtual TransactionStatus TransactionStatus { get; set; } = null!;
     public virtual Language Language { get; set; } = null!;
+    public virtual ICollection<WorkflowTemplateTransition> WorkflowTemplateTransitions { get; set; } =
+    new HashSet<WorkflowTemplateTransition>();
 }

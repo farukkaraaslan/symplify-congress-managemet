@@ -12,8 +12,20 @@ public sealed class TransactionStatusConfiguration : IEntityTypeConfiguration<En
 
         builder.HasKey(entity => entity.Id);
 
+        ConfigureProperties(builder);
+        ConfigureRelationships(builder);
+        ConfigureIndexes(builder);
+        ConfigureQueryFilters(builder);
+    }
+
+    private static void ConfigureProperties(EntityTypeBuilder<EntityType> builder)
+    {
         builder.Property(entity => entity.Id)
             .HasColumnName("Id")
+            .IsRequired();
+
+        builder.Property(entity => entity.TransactionStatusPhaseId)
+            .HasColumnName("TransactionStatusPhaseId")
             .IsRequired();
 
         builder.Property(entity => entity.Code)
@@ -25,9 +37,27 @@ public sealed class TransactionStatusConfiguration : IEntityTypeConfiguration<En
             .HasColumnName("Order")
             .IsRequired();
 
+        builder.Property(entity => entity.IsEditable)
+            .HasColumnName("IsEditable")
+            .IsRequired()
+            .HasDefaultValue(true);
+
+        builder.Property(entity => entity.IsFinal)
+            .HasColumnName("IsFinal")
+            .IsRequired()
+            .HasDefaultValue(false);
+
         builder.Property(entity => entity.IsActive)
             .HasColumnName("IsActive")
             .IsRequired();
+    }
+
+    private static void ConfigureRelationships(EntityTypeBuilder<EntityType> builder)
+    {
+        builder.HasOne(entity => entity.TransactionStatusPhase)
+            .WithMany(phase => phase.TransactionStatuses)
+            .HasForeignKey(entity => entity.TransactionStatusPhaseId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(entity => entity.Translations)
             .WithOne(translation => translation.TransactionStatus)
@@ -43,10 +73,26 @@ public sealed class TransactionStatusConfiguration : IEntityTypeConfiguration<En
             .WithOne(transition => transition.ToStatus)
             .HasForeignKey(transition => transition.ToStatusId)
             .OnDelete(DeleteBehavior.Restrict);
+    }
 
+    private static void ConfigureIndexes(EntityTypeBuilder<EntityType> builder)
+    {
         builder.HasIndex(entity => entity.Code)
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("\"DeletedDate\" IS NULL");
 
-        builder.HasIndex(entity => entity.Order);
+        builder.HasIndex(entity => new
+        {
+            entity.TransactionStatusPhaseId,
+            entity.Order
+        })
+            .HasFilter("\"DeletedDate\" IS NULL");
+    }
+
+    private static void ConfigureQueryFilters(EntityTypeBuilder<EntityType> builder)
+    {
+        builder.HasQueryFilter(entity =>
+            entity.DeletedDate == null &&
+            entity.TransactionStatusPhase.DeletedDate == null);
     }
 }

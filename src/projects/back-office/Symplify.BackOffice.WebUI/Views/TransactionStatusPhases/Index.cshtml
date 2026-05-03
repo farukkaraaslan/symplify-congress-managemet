@@ -1,0 +1,88 @@
+@model Symplify.BackOffice.WebUI.Models.TransactionStatusPhases.TransactionStatusPhasesIndexViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    ViewData["Title"] = L.GetStringValue("BackOffice.TransactionStatusPhases.PageTitle");
+    const string controllerName = "TransactionStatusPhases";
+    string homeUrl = Url.Action("Index", "Home", new { culture = currentCulture }) ?? $"/{currentCulture}/home/index";
+    string getListUrl = Url.Action("GetList", controllerName, new { culture = currentCulture }) ?? $"/{currentCulture}/transactionstatusphases/getlist";
+    string getForUpdateUrl = Url.Action("GetForUpdate", controllerName, new { culture = currentCulture }) ?? $"/{currentCulture}/transactionstatusphases/getforupdate";
+    string reorderUrl = Url.Action("Reorder", controllerName, new { culture = currentCulture }) ?? $"/{currentCulture}/transactionstatusphases/reorder";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="dashboard-main-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-0">@L["BackOffice.TransactionStatusPhases.PageTitle"]</h6>
+            <small class="text-neutral-500">@L["BackOffice.TransactionStatusPhases.PageDescription"]</small>
+        </div>
+        <ul class="d-flex align-items-center gap-2">
+            <li class="fw-medium"><a href="@homeUrl" class="d-flex align-items-center gap-1 hover-text-primary text-neutral-600"><iconify-icon icon="solar:home-smile-angle-outline" class="icon text-lg"></iconify-icon>@L["Common.Panel"]</a></li>
+            <li>-</li>
+            <li class="fw-medium">@L["BackOffice.TransactionStatusPhases.PageTitle"]</li>
+        </ul>
+    </div>
+
+    <div class="alert alert-info bg-primary-50 border-primary-100 text-primary-700 d-flex align-items-start gap-3 mb-24">
+        <i class="ri-information-line text-xl mt-1"></i>
+        <div>
+            <h6 class="text-md mb-1">@L["BackOffice.TransactionStatusPhases.ManagementTitle"]</h6>
+            <p class="mb-0">@L["BackOffice.TransactionStatusPhases.ManagementDescription"]</p>
+        </div>
+    </div>
+
+    <div class="card border shadow-none radius-12">
+        <div class="card-header border-bottom d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+                <h6 class="mb-1">@L["BackOffice.TransactionStatusPhases.ListTitle"]</h6>
+                <small class="text-neutral-500">@L["BackOffice.TransactionStatusPhases.ListDescription"]</small>
+            </div>
+            <button type="button" class="btn btn-primary-600 radius-8 px-20 py-11 d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#createTransactionStatusPhaseModal"><i class="ri-add-line"></i>@L["BackOffice.TransactionStatusPhases.CreateButton"]</button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table bordered-table mb-0" id="transactionStatusPhasesTable" data-source-url="@getListUrl" data-get-for-update-url="@getForUpdateUrl" data-reorder-url="@reorderUrl">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th></th>
+                            <th>@L["Common.Order"]</th>
+                            <th>@L["BackOffice.TransactionStatusPhases.Fields.Code"]</th>
+                            <th>@L["Common.Name"]</th>
+                            <th>@L["Common.Description"]</th>
+                            <th>@L["Common.Status"]</th>
+                            <th class="text-end">@L["Common.Actions"]</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_CreateTransactionStatusPhaseModal", Model.CreateTransactionStatusPhase)
+@await Html.PartialAsync("_UpdateTransactionStatusPhaseModal", Model.UpdateTransactionStatusPhase)
+
+<form id="deleteTransactionStatusPhaseForm" asp-controller="TransactionStatusPhases" asp-action="Delete" asp-route-culture="@currentCulture" method="post">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    @await Html.PartialAsync("_LocalizationScripts")
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>
+        window.Symplify = window.Symplify || {};
+        window.Symplify.TransactionStatusPhases = window.Symplify.TransactionStatusPhases || {};
+        window.Symplify.TransactionStatusPhases.urls = { getForUpdate: '@getForUpdateUrl' };
+    </script>
+    <script src="~/js/shared/ajax/symplify.ajax.js" asp-append-version="true"></script>
+    <script src="~/js/features/transaction-status-phases/transaction-status-phases.table.js" asp-append-version="true"></script>
+    <script src="~/js/features/transaction-status-phases/transaction-status-phases.create.js" asp-append-version="true"></script>
+    <script src="~/js/features/transaction-status-phases/transaction-status-phases.update.js" asp-append-version="true"></script>
+    <script src="~/js/features/transaction-status-phases/transaction-status-phases.delete.js" asp-append-version="true"></script>
+    <script src="~/js/features/transaction-status-phases/transaction-status-phases.index.js" asp-append-version="true"></script>
+}

@@ -964,6 +964,78 @@ namespace Symplify.BackOffice.Persistence.Migrations
                     b.ToTable("CongressTopics", (string)null);
                 });
 
+            modelBuilder.Entity("Symplify.BackOffice.Domain.Congress.CongressTransactionStatusTransition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("Id");
+
+                    b.Property<Guid>("CongressId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CongressId");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("CreatedBy");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("CreatedDate");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("DeletedBy");
+
+                    b.Property<DateTime?>("DeletedDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("DeletedDate");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("IsActive");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("integer")
+                        .HasColumnName("Order");
+
+                    b.Property<Guid?>("SourceWorkflowTemplateTransitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("SourceWorkflowTemplateTransitionId");
+
+                    b.Property<int>("TransactionStatusTransitionId")
+                        .HasColumnType("integer")
+                        .HasColumnName("TransactionStatusTransitionId");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("UpdatedBy");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("UpdatedDate");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceWorkflowTemplateTransitionId");
+
+                    b.HasIndex("TransactionStatusTransitionId");
+
+                    b.HasIndex("CongressId", "Order")
+                        .HasFilter("\"DeletedDate\" IS NULL");
+
+                    b.HasIndex("CongressId", "TransactionStatusTransitionId")
+                        .IsUnique()
+                        .HasFilter("\"DeletedDate\" IS NULL");
+
+                    b.ToTable("CongressTransactionStatusTransitions", (string)null);
+                });
+
             modelBuilder.Entity("Symplify.BackOffice.Domain.Congress.CongressTranslation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1015,6 +1087,71 @@ namespace Symplify.BackOffice.Persistence.Migrations
                     b.HasIndex("LanguageId");
 
                     b.ToTable("CongressTranslations", (string)null);
+                });
+
+            modelBuilder.Entity("Symplify.BackOffice.Domain.Congress.CongressWorkflowSetting", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("Id");
+
+                    b.Property<Guid>("CongressId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CongressId");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("CreatedBy");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("CreatedDate");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("DeletedBy");
+
+                    b.Property<DateTime?>("DeletedDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("DeletedDate");
+
+                    b.Property<int?>("InitialTransactionStatusId")
+                        .HasColumnType("integer")
+                        .HasColumnName("InitialTransactionStatusId");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("IsActive");
+
+                    b.Property<Guid?>("SourceWorkflowTemplateId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("SourceWorkflowTemplateId");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("UpdatedBy");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("UpdatedDate");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CongressId")
+                        .IsUnique()
+                        .HasFilter("\"DeletedDate\" IS NULL");
+
+                    b.HasIndex("InitialTransactionStatusId");
+
+                    b.HasIndex("SourceWorkflowTemplateId");
+
+                    b.ToTable("CongressWorkflowSettings", (string)null);
                 });
 
             modelBuilder.Entity("Symplify.BackOffice.Domain.Identity.AppRole", b =>
@@ -2972,9 +3109,25 @@ namespace Symplify.BackOffice.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("IsActive");
 
+                    b.Property<bool>("IsEditable")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("IsEditable");
+
+                    b.Property<bool>("IsFinal")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsFinal");
+
                     b.Property<int>("Order")
                         .HasColumnType("integer")
                         .HasColumnName("Order");
+
+                    b.Property<int>("TransactionStatusPhaseId")
+                        .HasColumnType("integer")
+                        .HasColumnName("TransactionStatusPhaseId");
 
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("text");
@@ -2985,11 +3138,120 @@ namespace Symplify.BackOffice.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("\"DeletedDate\" IS NULL");
 
-                    b.HasIndex("Order");
+                    b.HasIndex("TransactionStatusPhaseId", "Order")
+                        .HasFilter("\"DeletedDate\" IS NULL");
 
                     b.ToTable("TransactionStatuses", (string)null);
+                });
+
+            modelBuilder.Entity("Symplify.BackOffice.Domain.Workflow.TransactionStatusPhase", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("DeletedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<int>("Order")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("\"DeletedDate\" IS NULL");
+
+                    b.HasIndex("Order")
+                        .HasFilter("\"DeletedDate\" IS NULL");
+
+                    b.ToTable("TransactionStatusPhases", (string)null);
+                });
+
+            modelBuilder.Entity("Symplify.BackOffice.Domain.Workflow.TransactionStatusPhaseTranslation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("DeletedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid>("LanguageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("TransactionStatusPhaseId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LanguageId");
+
+                    b.HasIndex("TransactionStatusPhaseId", "LanguageId")
+                        .IsUnique()
+                        .HasFilter("\"DeletedDate\" IS NULL");
+
+                    b.ToTable("TransactionStatusPhaseTranslations", (string)null);
                 });
 
             modelBuilder.Entity("Symplify.BackOffice.Domain.Workflow.TransactionStatusTransition", b =>
@@ -3018,7 +3280,9 @@ namespace Symplify.BackOffice.Persistence.Migrations
                         .HasColumnName("FromStatusId");
 
                     b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
+                        .HasDefaultValue(true)
                         .HasColumnName("IsActive");
 
                     b.Property<int>("ToStatusId")
@@ -3036,7 +3300,8 @@ namespace Symplify.BackOffice.Persistence.Migrations
                     b.HasIndex("ToStatusId");
 
                     b.HasIndex("FromStatusId", "ToStatusId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("\"DeletedDate\" IS NULL");
 
                     b.ToTable("TransactionStatusTransitions", (string)null);
                 });
@@ -3061,17 +3326,23 @@ namespace Symplify.BackOffice.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
-                        .HasColumnType("text");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("Description");
 
                     b.Property<Guid>("LanguageId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("LanguageId");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("Name");
 
                     b.Property<int>("TransactionStatusTransitionId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("TransactionStatusTransitionId");
 
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("text");
@@ -3083,7 +3354,9 @@ namespace Symplify.BackOffice.Persistence.Migrations
 
                     b.HasIndex("LanguageId");
 
-                    b.HasIndex("TransactionStatusTransitionId");
+                    b.HasIndex("TransactionStatusTransitionId", "LanguageId")
+                        .IsUnique()
+                        .HasFilter("\"DeletedDate\" IS NULL");
 
                     b.ToTable("TransactionStatusTransitionTranslations", (string)null);
                 });
@@ -3108,17 +3381,23 @@ namespace Symplify.BackOffice.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
-                        .HasColumnType("text");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("Description");
 
                     b.Property<Guid>("LanguageId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("LanguageId");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("Name");
 
                     b.Property<int>("TransactionStatusId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("TransactionStatusId");
 
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("text");
@@ -3130,9 +3409,217 @@ namespace Symplify.BackOffice.Persistence.Migrations
 
                     b.HasIndex("LanguageId");
 
-                    b.HasIndex("TransactionStatusId");
+                    b.HasIndex("TransactionStatusId", "LanguageId")
+                        .IsUnique()
+                        .HasFilter("\"DeletedDate\" IS NULL");
 
                     b.ToTable("TransactionStatusTranslations", (string)null);
+                });
+
+            modelBuilder.Entity("Symplify.BackOffice.Domain.Workflow.WorkflowTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("Id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("Code");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("CreatedBy");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("CreatedDate");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("DeletedBy");
+
+                    b.Property<DateTime?>("DeletedDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("DeletedDate");
+
+                    b.Property<int?>("InitialTransactionStatusId")
+                        .HasColumnType("integer")
+                        .HasColumnName("InitialTransactionStatusId");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("IsActive");
+
+                    b.Property<bool>("IsDefault")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDefault");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("UpdatedBy");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("UpdatedDate");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("\"DeletedDate\" IS NULL");
+
+                    b.HasIndex("InitialTransactionStatusId");
+
+                    b.HasIndex("IsDefault")
+                        .IsUnique()
+                        .HasFilter("\"IsDefault\" = TRUE AND \"DeletedDate\" IS NULL");
+
+                    b.ToTable("WorkflowTemplates", (string)null);
+                });
+
+            modelBuilder.Entity("Symplify.BackOffice.Domain.Workflow.WorkflowTemplateTransition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("Id");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("CreatedBy");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("CreatedDate");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("DeletedBy");
+
+                    b.Property<DateTime?>("DeletedDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("DeletedDate");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("IsActive");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("integer")
+                        .HasColumnName("Order");
+
+                    b.Property<int>("TransactionStatusTransitionId")
+                        .HasColumnType("integer")
+                        .HasColumnName("TransactionStatusTransitionId");
+
+                    b.Property<Guid?>("TransactionStatusTranslationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("UpdatedBy");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("UpdatedDate");
+
+                    b.Property<Guid>("WorkflowTemplateId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("WorkflowTemplateId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TransactionStatusTransitionId");
+
+                    b.HasIndex("TransactionStatusTranslationId");
+
+                    b.HasIndex("WorkflowTemplateId", "Order")
+                        .HasFilter("\"DeletedDate\" IS NULL");
+
+                    b.HasIndex("WorkflowTemplateId", "TransactionStatusTransitionId")
+                        .IsUnique()
+                        .HasFilter("\"DeletedDate\" IS NULL");
+
+                    b.ToTable("WorkflowTemplateTransitions", (string)null);
+                });
+
+            modelBuilder.Entity("Symplify.BackOffice.Domain.Workflow.WorkflowTemplateTranslation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("Id");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("CreatedBy");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("CreatedDate");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("DeletedBy");
+
+                    b.Property<DateTime?>("DeletedDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("DeletedDate");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("Description");
+
+                    b.Property<Guid>("LanguageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LanguageId");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("Name");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("UpdatedBy");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("UpdatedDate");
+
+                    b.Property<Guid>("WorkflowTemplateId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("WorkflowTemplateId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LanguageId");
+
+                    b.HasIndex("WorkflowTemplateId", "LanguageId")
+                        .IsUnique()
+                        .HasFilter("\"DeletedDate\" IS NULL");
+
+                    b.ToTable("WorkflowTemplateTranslations", (string)null);
                 });
 
             modelBuilder.Entity("AuthorSubmission", b =>
@@ -3472,6 +3959,32 @@ namespace Symplify.BackOffice.Persistence.Migrations
                     b.Navigation("Topic");
                 });
 
+            modelBuilder.Entity("Symplify.BackOffice.Domain.Congress.CongressTransactionStatusTransition", b =>
+                {
+                    b.HasOne("Symplify.BackOffice.Domain.Congress.Congress", "Congress")
+                        .WithMany("TransactionStatusTransitions")
+                        .HasForeignKey("CongressId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Symplify.BackOffice.Domain.Workflow.WorkflowTemplateTransition", "SourceWorkflowTemplateTransition")
+                        .WithMany("CongressTransitions")
+                        .HasForeignKey("SourceWorkflowTemplateTransitionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Symplify.BackOffice.Domain.Workflow.TransactionStatusTransition", "TransactionStatusTransition")
+                        .WithMany("CongressTransitions")
+                        .HasForeignKey("TransactionStatusTransitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Congress");
+
+                    b.Navigation("SourceWorkflowTemplateTransition");
+
+                    b.Navigation("TransactionStatusTransition");
+                });
+
             modelBuilder.Entity("Symplify.BackOffice.Domain.Congress.CongressTranslation", b =>
                 {
                     b.HasOne("Symplify.BackOffice.Domain.Congress.Congress", "Congress")
@@ -3489,6 +4002,31 @@ namespace Symplify.BackOffice.Persistence.Migrations
                     b.Navigation("Congress");
 
                     b.Navigation("Language");
+                });
+
+            modelBuilder.Entity("Symplify.BackOffice.Domain.Congress.CongressWorkflowSetting", b =>
+                {
+                    b.HasOne("Symplify.BackOffice.Domain.Congress.Congress", "Congress")
+                        .WithOne("WorkflowSetting")
+                        .HasForeignKey("Symplify.BackOffice.Domain.Congress.CongressWorkflowSetting", "CongressId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Symplify.BackOffice.Domain.Workflow.TransactionStatus", "InitialTransactionStatus")
+                        .WithMany()
+                        .HasForeignKey("InitialTransactionStatusId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Symplify.BackOffice.Domain.Workflow.WorkflowTemplate", "SourceWorkflowTemplate")
+                        .WithMany("CongressWorkflowSettings")
+                        .HasForeignKey("SourceWorkflowTemplateId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Congress");
+
+                    b.Navigation("InitialTransactionStatus");
+
+                    b.Navigation("SourceWorkflowTemplate");
                 });
 
             modelBuilder.Entity("Symplify.BackOffice.Domain.Identity.AppRoleClaim", b =>
@@ -3938,6 +4476,36 @@ namespace Symplify.BackOffice.Persistence.Migrations
                     b.Navigation("PaymentStatus");
                 });
 
+            modelBuilder.Entity("Symplify.BackOffice.Domain.Workflow.TransactionStatus", b =>
+                {
+                    b.HasOne("Symplify.BackOffice.Domain.Workflow.TransactionStatusPhase", "TransactionStatusPhase")
+                        .WithMany("TransactionStatuses")
+                        .HasForeignKey("TransactionStatusPhaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("TransactionStatusPhase");
+                });
+
+            modelBuilder.Entity("Symplify.BackOffice.Domain.Workflow.TransactionStatusPhaseTranslation", b =>
+                {
+                    b.HasOne("Symplify.BackOffice.Domain.Localization.Language", "Language")
+                        .WithMany()
+                        .HasForeignKey("LanguageId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Symplify.BackOffice.Domain.Workflow.TransactionStatusPhase", "TransactionStatusPhase")
+                        .WithMany("Translations")
+                        .HasForeignKey("TransactionStatusPhaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Language");
+
+                    b.Navigation("TransactionStatusPhase");
+                });
+
             modelBuilder.Entity("Symplify.BackOffice.Domain.Workflow.TransactionStatusTransition", b =>
                 {
                     b.HasOne("Symplify.BackOffice.Domain.Workflow.TransactionStatus", "FromStatus")
@@ -3962,7 +4530,7 @@ namespace Symplify.BackOffice.Persistence.Migrations
                     b.HasOne("Symplify.BackOffice.Domain.Localization.Language", "Language")
                         .WithMany()
                         .HasForeignKey("LanguageId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Symplify.BackOffice.Domain.Workflow.TransactionStatusTransition", "TransactionStatusTransition")
@@ -3981,7 +4549,7 @@ namespace Symplify.BackOffice.Persistence.Migrations
                     b.HasOne("Symplify.BackOffice.Domain.Localization.Language", "Language")
                         .WithMany()
                         .HasForeignKey("LanguageId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Symplify.BackOffice.Domain.Workflow.TransactionStatus", "TransactionStatus")
@@ -3993,6 +4561,58 @@ namespace Symplify.BackOffice.Persistence.Migrations
                     b.Navigation("Language");
 
                     b.Navigation("TransactionStatus");
+                });
+
+            modelBuilder.Entity("Symplify.BackOffice.Domain.Workflow.WorkflowTemplate", b =>
+                {
+                    b.HasOne("Symplify.BackOffice.Domain.Workflow.TransactionStatus", "InitialTransactionStatus")
+                        .WithMany()
+                        .HasForeignKey("InitialTransactionStatusId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("InitialTransactionStatus");
+                });
+
+            modelBuilder.Entity("Symplify.BackOffice.Domain.Workflow.WorkflowTemplateTransition", b =>
+                {
+                    b.HasOne("Symplify.BackOffice.Domain.Workflow.TransactionStatusTransition", "TransactionStatusTransition")
+                        .WithMany("WorkflowTemplateTransitions")
+                        .HasForeignKey("TransactionStatusTransitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Symplify.BackOffice.Domain.Workflow.TransactionStatusTranslation", null)
+                        .WithMany("WorkflowTemplateTransitions")
+                        .HasForeignKey("TransactionStatusTranslationId");
+
+                    b.HasOne("Symplify.BackOffice.Domain.Workflow.WorkflowTemplate", "WorkflowTemplate")
+                        .WithMany("Transitions")
+                        .HasForeignKey("WorkflowTemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TransactionStatusTransition");
+
+                    b.Navigation("WorkflowTemplate");
+                });
+
+            modelBuilder.Entity("Symplify.BackOffice.Domain.Workflow.WorkflowTemplateTranslation", b =>
+                {
+                    b.HasOne("Symplify.BackOffice.Domain.Localization.Language", "Language")
+                        .WithMany()
+                        .HasForeignKey("LanguageId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Symplify.BackOffice.Domain.Workflow.WorkflowTemplate", "WorkflowTemplate")
+                        .WithMany("Translations")
+                        .HasForeignKey("WorkflowTemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Language");
+
+                    b.Navigation("WorkflowTemplate");
                 });
 
             modelBuilder.Entity("Symplify.BackOffice.Domain.Congress.Congress", b =>
@@ -4015,7 +4635,11 @@ namespace Symplify.BackOffice.Persistence.Migrations
 
                     b.Navigation("Topics");
 
+                    b.Navigation("TransactionStatusTransitions");
+
                     b.Navigation("Translations");
+
+                    b.Navigation("WorkflowSetting");
                 });
 
             modelBuilder.Entity("Symplify.BackOffice.Domain.Congress.CongressBoard", b =>
@@ -4173,9 +4797,39 @@ namespace Symplify.BackOffice.Persistence.Migrations
                     b.Navigation("Translations");
                 });
 
+            modelBuilder.Entity("Symplify.BackOffice.Domain.Workflow.TransactionStatusPhase", b =>
+                {
+                    b.Navigation("TransactionStatuses");
+
+                    b.Navigation("Translations");
+                });
+
             modelBuilder.Entity("Symplify.BackOffice.Domain.Workflow.TransactionStatusTransition", b =>
                 {
+                    b.Navigation("CongressTransitions");
+
                     b.Navigation("Translations");
+
+                    b.Navigation("WorkflowTemplateTransitions");
+                });
+
+            modelBuilder.Entity("Symplify.BackOffice.Domain.Workflow.TransactionStatusTranslation", b =>
+                {
+                    b.Navigation("WorkflowTemplateTransitions");
+                });
+
+            modelBuilder.Entity("Symplify.BackOffice.Domain.Workflow.WorkflowTemplate", b =>
+                {
+                    b.Navigation("CongressWorkflowSettings");
+
+                    b.Navigation("Transitions");
+
+                    b.Navigation("Translations");
+                });
+
+            modelBuilder.Entity("Symplify.BackOffice.Domain.Workflow.WorkflowTemplateTransition", b =>
+                {
+                    b.Navigation("CongressTransitions");
                 });
 #pragma warning restore 612, 618
         }

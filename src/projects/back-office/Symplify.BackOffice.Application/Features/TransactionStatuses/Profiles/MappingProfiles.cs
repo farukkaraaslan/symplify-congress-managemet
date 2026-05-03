@@ -3,7 +3,9 @@ using Symplify.BackOffice.Application.Features.TransactionStatuses.Commands.Crea
 using Symplify.BackOffice.Application.Features.TransactionStatuses.Commands.Delete;
 using Symplify.BackOffice.Application.Features.TransactionStatuses.Commands.Update;
 using Symplify.BackOffice.Domain.Workflow;
+
 namespace Symplify.BackOffice.Application.Features.TransactionStatuses.Profiles;
+
 public class MappingProfiles : Profile
 {
     public MappingProfiles()

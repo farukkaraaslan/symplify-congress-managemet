@@ -78,6 +78,8 @@ public sealed class LocalizationResourceSeeder
             .Concat(SidebarResourceSeedDefinitions.All)
             .Concat(BackOfficeLookupResourceSeedDefinitions.All)
             .Concat(BackOfficeTopicResourceSeedDefinitions.All)
+            .Concat(BackOfficeWorkflowResourceSeedDefinitions.All)
+            .Concat(ClientLocalizationResourceSeedDefinitions.All)
             .GroupBy(resource => resource.KeyName, StringComparer.OrdinalIgnoreCase)
             .Select(group => group.First())
             .ToList();

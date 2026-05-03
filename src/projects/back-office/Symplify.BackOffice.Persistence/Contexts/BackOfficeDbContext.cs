@@ -9,13 +9,14 @@ using Symplify.BackOffice.Domain.Reference;
 using Symplify.BackOffice.Domain.Reference.Translations;
 using Symplify.BackOffice.Domain.Submission;
 using Symplify.BackOffice.Domain.Tenant;
-using PaymentStatusEntity = Symplify.BackOffice.Domain.Workflow.PaymentStatus;
+using Symplify.BackOffice.Domain.Workflow;
 using PaymentDocumentEntity = Symplify.BackOffice.Domain.Workflow.PaymentDocument;
+using PaymentStatusEntity = Symplify.BackOffice.Domain.Workflow.PaymentStatus;
 using PaymentStatusTranslationEntity = Symplify.BackOffice.Domain.Workflow.PaymentStatusTranslation;
 using TransactionStatusEntity = Symplify.BackOffice.Domain.Workflow.TransactionStatus;
-using TransactionStatusTranslationEntity = Symplify.BackOffice.Domain.Workflow.TransactionStatusTranslation;
 using TransactionStatusTransitionEntity = Symplify.BackOffice.Domain.Workflow.TransactionStatusTransition;
 using TransactionStatusTransitionTranslationEntity = Symplify.BackOffice.Domain.Workflow.TransactionStatusTransitionTranslation;
+using TransactionStatusTranslationEntity = Symplify.BackOffice.Domain.Workflow.TransactionStatusTranslation;
 
 namespace Symplify.BackOffice.Persistence.Contexts;
 
@@ -81,6 +82,8 @@ public class BackOfficeDbContext : IdentityDbContext<
     public DbSet<CongressTopic> CongressTopics => Set<CongressTopic>();
     public DbSet<CongressSubmissionType> CongressSubmissionTypes => Set<CongressSubmissionType>();
     public DbSet<CongressEvaluationCriterion> CongressEvaluationCriteria => Set<CongressEvaluationCriterion>();
+    public DbSet<CongressWorkflowSetting> CongressWorkflowSettings => Set<CongressWorkflowSetting>();
+    public DbSet<CongressTransactionStatusTransition> CongressTransactionStatusTransitions => Set<CongressTransactionStatusTransition>();
 
     public DbSet<Author> Authors => Set<Author>();
     public DbSet<Reviewer> Reviewers => Set<Reviewer>();
@@ -96,7 +99,11 @@ public class BackOfficeDbContext : IdentityDbContext<
     public DbSet<TransactionStatusTranslationEntity> TransactionStatusTranslations => Set<TransactionStatusTranslationEntity>();
     public DbSet<TransactionStatusTransitionEntity> TransactionStatusTransitions => Set<TransactionStatusTransitionEntity>();
     public DbSet<TransactionStatusTransitionTranslationEntity> TransactionStatusTransitionTranslations => Set<TransactionStatusTransitionTranslationEntity>();
-
+    public DbSet<TransactionStatusPhase> TransactionStatusPhases => Set<TransactionStatusPhase>();
+    public DbSet<TransactionStatusPhaseTranslation> TransactionStatusPhaseTranslations => Set<TransactionStatusPhaseTranslation>();
+    public DbSet<WorkflowTemplate> WorkflowTemplates => Set<WorkflowTemplate>();
+    public DbSet<WorkflowTemplateTranslation> WorkflowTemplateTranslations => Set<WorkflowTemplateTranslation>();
+    public DbSet<WorkflowTemplateTransition> WorkflowTemplateTransitions => Set<WorkflowTemplateTransition>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

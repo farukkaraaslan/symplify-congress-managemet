@@ -8,6 +8,7 @@ using Core.Application.Rules;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Symplify.BackOffice.Application.Services.Localization;
+using Symplify.BackOffice.Application.Services.Workflow;
 
 namespace Symplify.BackOffice.Application;
 
@@ -24,6 +25,10 @@ public static class ApplicationServiceRegistration
 
         services.AddValidatorsFromAssembly(assembly);
 
+        services.AddSubClassesOfType(assembly, typeof(BaseBusinessRules));
+
+        RegisterApplicationServices(services);
+
         services.AddMediatR(configuration =>
         {
             configuration.RegisterServicesFromAssembly(assembly);
@@ -36,13 +41,16 @@ public static class ApplicationServiceRegistration
             configuration.AddOpenBehavior(typeof(TransactionScopeBehavior<,>));
         });
 
-        services.AddSubClassesOfType(assembly, typeof(BaseBusinessRules));
+        return services;
+    }
 
+    private static void RegisterApplicationServices(IServiceCollection services)
+    {
         services.AddScoped<IApplicationLanguageProvider, ApplicationLanguageProvider>();
         services.AddScoped<ICurrentLanguageProvider, CurrentLanguageProvider>();
         services.AddScoped<ITranslationFallbackResolver, TranslationFallbackResolver>();
 
-        return services;
+        services.AddScoped<IWorkflowTemplateCopyService, WorkflowTemplateCopyService>();
     }
 
     public static IServiceCollection AddSubClassesOfType(

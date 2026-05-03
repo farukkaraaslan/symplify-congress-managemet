@@ -1,6 +1,9 @@
 using Core.Persistence.Repositories;
 using Symplify.BackOffice.Domain.Workflow;
+
 namespace Symplify.BackOffice.Application.Services.Repositories;
-public interface ITransactionStatusTransitionRepository : IAsyncRepository<TransactionStatusTransition, int>, IRepository<TransactionStatusTransition, int>
+
+public interface ITransactionStatusTransitionRepository
+    : IAsyncRepository<TransactionStatusTransition, int>, IRepository<TransactionStatusTransition, int>
 {
 }

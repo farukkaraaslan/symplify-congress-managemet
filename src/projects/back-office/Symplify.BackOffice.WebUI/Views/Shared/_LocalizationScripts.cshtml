@@ -1,69 +1,74 @@
-@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+@inject Symplify.BackOffice.WebUI.Localization.IClientResourceService ClientResources
 @{
-    string T(string key, string fallback)
+    static IEnumerable<string> ResolvePrefixObject(object? value)
     {
-        string value = L.GetStringValue(key);
-        return string.IsNullOrWhiteSpace(value) || string.Equals(value, key, StringComparison.OrdinalIgnoreCase)
-            ? fallback
-            : value;
+        if (value is null)
+            return Enumerable.Empty<string>();
+
+        if (value is string singlePrefix)
+            return new[] { singlePrefix };
+
+        if (value is IEnumerable<string> stringPrefixes)
+            return stringPrefixes;
+
+        if (value is IEnumerable<object> objectPrefixes)
+            return objectPrefixes
+                .Select(item => item?.ToString())
+                .Where(item => !string.IsNullOrWhiteSpace(item))
+                .Select(item => item!);
+
+        return Enumerable.Empty<string>();
+    }
+    static string? NormalizePrefix(string? prefix)
+    {
+        if (string.IsNullOrWhiteSpace(prefix))
+            return null;
+
+        string normalizedPrefix = prefix.Trim();
+
+        return normalizedPrefix.EndsWith(".", StringComparison.Ordinal)
+            ? normalizedPrefix
+            : $"{normalizedPrefix}.";
     }
 
-    string Js(string key, string fallback)
-    {
-        return System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(T(key, fallback));
-    }
+    string? controllerName = ViewContext.RouteData.Values["controller"]?.ToString();
+
+    List<string> resourcePrefixes = new[]
+        {
+            "Common.",
+            "Common.DataTable.",
+            "BackOffice.Sidebar."
+        }
+        .Concat(ResolvePrefixObject(ViewData["ClientResourcePrefixes"]))
+        .ToList();
+
+    if (!string.IsNullOrWhiteSpace(controllerName))
+        resourcePrefixes.Add($"BackOffice.{controllerName}.");
+
+    resourcePrefixes = resourcePrefixes
+        .Select(NormalizePrefix)
+        .Where(prefix => !string.IsNullOrWhiteSpace(prefix))
+        .Select(prefix => prefix!)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(prefix => prefix, StringComparer.OrdinalIgnoreCase)
+        .ToList();
+
+    IReadOnlyDictionary<string, string> localizedResources = await ClientResources.GetResourcesAsync(
+        resourcePrefixes,
+        Context.RequestAborted);
+
+    string resourcesJson = System.Text.Json.JsonSerializer.Serialize(
+        localizedResources,
+        new System.Text.Json.JsonSerializerOptions
+        {
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.Default
+        });
 }
 <script>
     window.Symplify = window.Symplify || {};
 
     window.Symplify.resources = window.Symplify.resources || {};
-    Object.assign(window.Symplify.resources, {
-        "Common.Ok": "@Html.Raw(Js("Common.Ok", "Tamam"))",
-        "Common.Cancel": "@Html.Raw(Js("Common.Cancel", "Vazgeç"))",
-        "Common.Close": "@Html.Raw(Js("Common.Close", "Kapat"))",
-        "Common.Save": "@Html.Raw(Js("Common.Save", "Kaydet"))",
-        "Common.Active": "@Html.Raw(Js("Common.Active", "Aktif"))",
-        "Common.Passive": "@Html.Raw(Js("Common.Passive", "Pasif"))",
-        "Common.Edit": "@Html.Raw(Js("Common.Edit", "Düzenle"))",
-        "Common.Delete": "@Html.Raw(Js("Common.Delete", "Sil"))",
-        "Common.Error": "@Html.Raw(Js("Common.Error", "Hata"))",
-        "Common.Success": "@Html.Raw(Js("Common.Success", "Başarılı"))",
-        "Common.GenericError": "@Html.Raw(Js("Common.GenericError", "İşlem sırasında bir hata oluştu."))",
-        "Common.InvalidRequest": "@Html.Raw(Js("Common.InvalidRequest", "Geçersiz istek."))",
-        "Common.Created": "@Html.Raw(Js("Common.Created", "Kayıt oluşturuldu."))",
-        "Common.Updated": "@Html.Raw(Js("Common.Updated", "Kayıt güncellendi."))",
-        "Common.Deleted": "@Html.Raw(Js("Common.Deleted", "Kayıt silindi."))",
-        "Common.DeleteConfirmTitle": "@Html.Raw(Js("Common.DeleteConfirmTitle", "Silmek istediğinize emin misiniz?"))",
-        "Common.DeleteConfirmText": "@Html.Raw(Js("Common.DeleteConfirmText", "Bu kayıt silinecek. Silme sonrası aktif kayıtların sıra numarası otomatik düzenlenecek."))",
-        "Common.DeleteConfirmButton": "@Html.Raw(Js("Common.DeleteConfirmButton", "Sil"))",
-        "Common.Name": "@Html.Raw(Js("Common.Name", "Ad"))",
-        "Common.Description": "@Html.Raw(Js("Common.Description", "Açıklama"))",
-        "Common.Status": "@Html.Raw(Js("Common.Status", "Durum"))",
-        "Common.Actions": "@Html.Raw(Js("Common.Actions", "İşlemler"))",
-        "Common.Order": "@Html.Raw(Js("Common.Order", "Sıra"))",
-        "Common.Reorder": "@Html.Raw(Js("Common.Reorder", "Sırayı değiştir"))",
-        "Common.DragToReorder": "@Html.Raw(Js("Common.DragToReorder", "Sırayı değiştir"))",
-        "Common.ReorderSuccess": "@Html.Raw(Js("Common.ReorderSuccess", "Sıralama güncellendi."))",
-        "Common.ReorderNotAllowedShort": "@Html.Raw(Js("Common.ReorderNotAllowedShort", "Sıralama için arama boşken Sıra kolonunu artan kullanın."))",
-        "Common.ReorderNotAllowed": "@Html.Raw(Js("Common.ReorderNotAllowed", "Sıralama yapmak için arama boş olmalı ve tablo Sıra kolonuna göre artan sıralanmalıdır."))",
-        "Common.ReorderEndpointMissing": "@Html.Raw(Js("Common.ReorderEndpointMissing", "Sıralama endpoint adresi bulunamadı."))",
-
-        "Common.DataTable.Search": "@Html.Raw(Js("Common.DataTable.Search", "Ara:"))",
-        "Common.DataTable.LengthMenu": "@Html.Raw(Js("Common.DataTable.LengthMenu", "_MENU_ kayıt göster"))",
-        "Common.DataTable.Info": "@Html.Raw(Js("Common.DataTable.Info", "_TOTAL_ kayıttan _START_ - _END_ arası gösteriliyor"))",
-        "Common.DataTable.InfoEmpty": "@Html.Raw(Js("Common.DataTable.InfoEmpty", "Kayıt bulunamadı"))",
-        "Common.DataTable.InfoFiltered": "@Html.Raw(Js("Common.DataTable.InfoFiltered", "(_MAX_ kayıt içerisinden filtrelendi)"))",
-        "Common.DataTable.ZeroRecords": "@Html.Raw(Js("Common.DataTable.ZeroRecords", "Eşleşen kayıt bulunamadı"))",
-        "Common.DataTable.Processing": "@Html.Raw(Js("Common.DataTable.Processing", "Yükleniyor..."))",
-        "Common.DataTable.EmptyTable": "@Html.Raw(Js("Common.DataTable.EmptyTable", "Tabloda kayıt bulunamadı"))",
-        "Common.DataTable.LoadingRecords": "@Html.Raw(Js("Common.DataTable.LoadingRecords", "Kayıtlar yükleniyor..."))",
-        "Common.DataTable.First": "@Html.Raw(Js("Common.DataTable.First", "İlk"))",
-        "Common.DataTable.Last": "@Html.Raw(Js("Common.DataTable.Last", "Son"))",
-        "Common.DataTable.Next": "@Html.Raw(Js("Common.DataTable.Next", "Sonraki"))",
-        "Common.DataTable.Previous": "@Html.Raw(Js("Common.DataTable.Previous", "Önceki"))",
-        "Common.DataTable.SortAscending": "@Html.Raw(Js("Common.DataTable.SortAscending", ": artan sıralama için aktifleştir"))",
-        "Common.DataTable.SortDescending": "@Html.Raw(Js("Common.DataTable.SortDescending", ": azalan sıralama için aktifleştir"))"
-    });
+    Object.assign(window.Symplify.resources, @Html.Raw(resourcesJson));
 
     window.Symplify.t = function (key, fallback) {
         const resources = window.Symplify.resources || {};
@@ -100,6 +105,12 @@
         description: window.Symplify.t("Common.Description", "Açıklama"),
         status: window.Symplify.t("Common.Status", "Durum"),
         actions: window.Symplify.t("Common.Actions", "İşlemler"),
+        code: window.Symplify.t("Common.Code", "Kod"),
+        systemKey: window.Symplify.t("Common.SystemKey", "Sistem Anahtarı"),
+        yes: window.Symplify.t("Common.Yes", "Evet"),
+        no: window.Symplify.t("Common.No", "Hayır"),
+        select: window.Symplify.t("Common.Select", "Seçiniz"),
+        selectPlease: window.Symplify.t("Common.SelectPlease", "Lütfen seçiniz"),
         reorder: window.Symplify.t("Common.Reorder", "Sırayı değiştir"),
         dragToReorder: window.Symplify.t("Common.DragToReorder", "Sırayı değiştir"),
         reorderSuccess: window.Symplify.t("Common.ReorderSuccess", "Sıralama güncellendi."),

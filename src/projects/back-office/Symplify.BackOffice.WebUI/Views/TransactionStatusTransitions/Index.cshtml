@@ -1,114 +1,122 @@
-@model Core.Application.Responses.GetListResponse<Symplify.BackOffice.Application.Features.TransactionStatusTransitions.Queries.GetList.GetListTransactionStatusTransitionListItemDto>
-@using System.Reflection
+@model Symplify.BackOffice.WebUI.Models.TransactionStatusTransitions.TransactionStatusTransitionsIndexViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
 
 @{
-    ViewData["Title"] = "Transaction Status Transitions";
-    string? currentCulture = Context.Request.RouteValues["culture"]?.ToString();
-    PropertyInfo[] displayProperties = typeof(Symplify.BackOffice.Application.Features.TransactionStatusTransitions.Queries.GetList.GetListTransactionStatusTransitionListItemDto)
-        .GetProperties()
-        .Where(property => property.Name != "Id")
-        .ToArray();
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
 
-    PropertyInfo? idProperty = typeof(Symplify.BackOffice.Application.Features.TransactionStatusTransitions.Queries.GetList.GetListTransactionStatusTransitionListItemDto).GetProperty("Id");
-    int rowNumber = 1;
+    ViewData["Title"] = L.GetStringValue("BackOffice.TransactionStatusTransitions.PageTitle");
+
+    const string controllerName = "TransactionStatusTransitions";
+    const string featureName = "transaction-status-transitions";
+
+    string homeUrl = Url.Action("Index", "Home", new { culture = currentCulture })
+        ?? $"/{currentCulture}/home/index";
+
+    string getListUrl = Url.Action("GetList", controllerName, new { culture = currentCulture })
+        ?? $"/{currentCulture}/transactionstatustransitions/getlist";
+
+    string getForUpdateUrl = Url.Action("GetForUpdate", controllerName, new { culture = currentCulture })
+        ?? $"/{currentCulture}/transactionstatustransitions/getforupdate";
 }
+
+@Html.AntiForgeryToken()
 
 <div class="dashboard-main-body">
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
         <div>
-            <h6 class="fw-semibold mb-0">Transaction Status Transitions</h6>
-            <small class="text-neutral-500">Application feature üzerinden oluşturulan geçici yönetim ekranı.</small>
+            <h6 class="fw-semibold mb-0">@L["BackOffice.TransactionStatusTransitions.PageTitle"]</h6>
+            <small class="text-neutral-500">@L["BackOffice.TransactionStatusTransitions.PageDescription"]</small>
         </div>
 
-        <a asp-action="Create" asp-route-culture="@currentCulture" class="btn btn-primary-600 radius-8 px-20 py-11 d-inline-flex align-items-center gap-2">
-            <i class="ri-add-line"></i>
-            Yeni Kayıt
-        </a>
+        <ul class="d-flex align-items-center gap-2">
+            <li class="fw-medium">
+                <a href="@homeUrl"
+                   class="d-flex align-items-center gap-1 hover-text-primary text-neutral-600">
+                    <iconify-icon icon="solar:home-smile-angle-outline" class="icon text-lg"></iconify-icon>
+                    @L["Common.Panel"]
+                </a>
+            </li>
+            <li>-</li>
+            <li class="fw-medium">@L["BackOffice.TransactionStatusTransitions.PageTitle"]</li>
+        </ul>
     </div>
 
-    @if (TempData["SuccessMessage"] is not null)
-    {
-        <div class="alert alert-success border-success-100 text-success-700 mb-24">
-            @TempData["SuccessMessage"]
+    <div class="alert alert-info bg-primary-50 border-primary-100 text-primary-700 d-flex align-items-start gap-3 mb-24">
+        <i class="ri-information-line text-xl mt-1"></i>
+        <div>
+            <h6 class="text-md mb-1">@L["BackOffice.TransactionStatusTransitions.ManagementTitle"]</h6>
+            <p class="mb-0">@L["BackOffice.TransactionStatusTransitions.ManagementDescription"]</p>
         </div>
-    }
-
-    @if (TempData["ErrorMessage"] is not null)
-    {
-        <div class="alert alert-danger border-danger-100 text-danger-700 mb-24">
-            @TempData["ErrorMessage"]
-        </div>
-    }
+    </div>
 
     <div class="card border shadow-none radius-12">
-        <div class="card-header border-bottom">
-            <h6 class="text-lg mb-0">Kayıtlar</h6>
+        <div class="card-header border-bottom d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+                <h6 class="mb-1">@L["BackOffice.TransactionStatusTransitions.ListTitle"]</h6>
+                <small class="text-neutral-500">@L["BackOffice.TransactionStatusTransitions.ListDescription"]</small>
+            </div>
+
+            <button type="button"
+                    class="btn btn-primary-600 radius-8 px-20 py-11 d-flex align-items-center gap-2"
+                    data-bs-toggle="modal"
+                    data-bs-target="#createTransactionStatusTransitionModal">
+                <i class="ri-add-line"></i>
+                @L["BackOffice.TransactionStatusTransitions.CreateButton"]
+            </button>
         </div>
 
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table bordered-table mb-0">
+                <table class="table bordered-table mb-0"
+                       id="transactionStatusTransitionsTable"
+                       data-feature="@featureName"
+                       data-source-url="@getListUrl"
+                       data-get-for-update-url="@getForUpdateUrl">
                     <thead>
-                    <tr>
-                        <th>#</th>
-                        @foreach (PropertyInfo property in displayProperties)
-                        {
-                            <th>@property.Name</th>
-                        }
-                        <th class="text-end">İşlemler</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    @foreach (var item in Model.Items)
-                    {
-                        object? id = idProperty?.GetValue(item);
-
                         <tr>
-                            <td>@rowNumber</td>
-
-                            @foreach (PropertyInfo property in displayProperties)
-                            {
-                                object? value = property.GetValue(item);
-
-                                <td>@(value ?? "-")</td>
-                            }
-
-                            <td>
-                                <div class="d-flex align-items-center justify-content-end gap-2">
-                                    <a asp-action="Details"
-                                       asp-route-id="@id"
-                                       asp-route-culture="@currentCulture"
-                                       class="btn btn-info-100 text-info-600 radius-8 px-12 py-8">
-                                        Detay
-                                    </a>
-
-                                    <a asp-action="Edit"
-                                       asp-route-id="@id"
-                                       asp-route-culture="@currentCulture"
-                                       class="btn btn-warning-100 text-warning-600 radius-8 px-12 py-8">
-                                        Düzenle
-                                    </a>
-
-                                    <form asp-action="Delete"
-                                          asp-route-culture="@currentCulture"
-                                          method="post"
-                                          class="d-inline"
-                                          onsubmit="return confirm('Bu kaydı silmek istediğinize emin misiniz?');">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="Id" value="@id" />
-                                        <button type="submit" class="btn btn-danger-100 text-danger-600 radius-8 px-12 py-8">
-                                            Sil
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
+                            <th>#</th>
+                            <th>@L["BackOffice.TransactionStatusTransitions.Fields.FromStatus"]</th>
+                            <th>@L["BackOffice.TransactionStatusTransitions.Fields.ToStatus"]</th>
+                            <th>@L["Common.Name"]</th>
+                            <th>@L["Common.Description"]</th>
+                            <th>@L["Common.Status"]</th>
+                            <th class="text-end">@L["Common.Actions"]</th>
                         </tr>
-
-                        rowNumber++;
-                    }
-                    </tbody>
+                    </thead>
+                    <tbody></tbody>
                 </table>
             </div>
         </div>
     </div>
 </div>
+
+@await Html.PartialAsync("_CreateTransactionStatusTransitionModal", Model)
+@await Html.PartialAsync("_UpdateTransactionStatusTransitionModal", Model)
+
+<form id="deleteTransactionStatusTransitionForm"
+      asp-controller="TransactionStatusTransitions"
+      asp-action="Delete"
+      asp-route-culture="@currentCulture"
+      method="post">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    @await Html.PartialAsync("_LocalizationScripts")
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+
+    <script>
+        window.Symplify = window.Symplify || {};
+        window.Symplify.TransactionStatusTransitions = window.Symplify.TransactionStatusTransitions || {};
+        window.Symplify.TransactionStatusTransitions.urls = {
+            getForUpdate: '@getForUpdateUrl'
+        };
+    </script>
+
+    <script src="~/js/shared/ajax/symplify.ajax.js" asp-append-version="true"></script>
+    <script src="~/js/features/transaction-status-transitions/transaction-status-transitions.table.js" asp-append-version="true"></script>
+    <script src="~/js/features/transaction-status-transitions/transaction-status-transitions.create.js" asp-append-version="true"></script>
+    <script src="~/js/features/transaction-status-transitions/transaction-status-transitions.update.js" asp-append-version="true"></script>
+    <script src="~/js/features/transaction-status-transitions/transaction-status-transitions.delete.js" asp-append-version="true"></script>
+    <script src="~/js/features/transaction-status-transitions/transaction-status-transitions.index.js" asp-append-version="true"></script>
+}

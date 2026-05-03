@@ -1,0 +1,205 @@
+@model Symplify.BackOffice.WebUI.Models.TransactionStatusTransitions.TransactionStatusTransitionsIndexViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    var formModel = Model.UpdateTransactionStatusTransition;
+}
+
+<div class="modal fade" id="updateTransactionStatusTransitionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="updateTransactionStatusTransitionForm"
+                  asp-controller="TransactionStatusTransitions"
+                  asp-action="Update"
+                  asp-route-culture="@currentCulture"
+                  method="post"
+                  data-feature="transaction-status-transitions">
+
+                @Html.AntiForgeryToken()
+
+                <input name="Id" type="hidden" value="@formModel.Id" />
+
+                <div class="modal-header">
+                    <div>
+                        <h6 class="modal-title">@L["BackOffice.TransactionStatusTransitions.UpdateModalTitle"]</h6>
+                        <small class="text-neutral-500 d-block mt-1">
+                            @L["BackOffice.TransactionStatusTransitions.TranslationModalDescription"]
+                        </small>
+                    </div>
+
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="@L["Common.Close"]"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row gy-3 mb-4">
+                        <div class="col-md-6">
+                            <label asp-for="UpdateTransactionStatusTransition.FromStatusId" class="form-label">
+                                @L["BackOffice.TransactionStatusTransitions.Fields.FromStatus"]
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="UpdateTransactionStatusTransition.FromStatusId"
+                                    name="FromStatusId"
+                                    class="form-select radius-8 js-transition-from-status"
+                                    data-val="true"
+                                    data-val-required="@L["BackOffice.TransactionStatusTransitions.Validation.FromStatusRequired"]">
+                                <option value="">@L["BackOffice.TransactionStatusTransitions.Placeholders.FromStatus"]</option>
+                                @foreach (var item in Model.StatusOptions)
+                                {
+                                    <option value="@item.Id">@item.DisplayText</option>
+                                }
+                            </select>
+                            <span data-valmsg-for="FromStatusId" data-valmsg-replace="true" class="text-danger field-validation-valid"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="UpdateTransactionStatusTransition.ToStatusId" class="form-label">
+                                @L["BackOffice.TransactionStatusTransitions.Fields.ToStatus"]
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="UpdateTransactionStatusTransition.ToStatusId"
+                                    name="ToStatusId"
+                                    class="form-select radius-8 js-transition-to-status"
+                                    data-val="true"
+                                    data-val-required="@L["BackOffice.TransactionStatusTransitions.Validation.ToStatusRequired"]">
+                                <option value="">@L["BackOffice.TransactionStatusTransitions.Placeholders.ToStatus"]</option>
+                                @foreach (var item in Model.StatusOptions)
+                                {
+                                    <option value="@item.Id">@item.DisplayText</option>
+                                }
+                            </select>
+                            <span data-valmsg-for="ToStatusId" data-valmsg-replace="true" class="text-danger field-validation-valid"></span>
+                        </div>
+                    </div>
+
+                    <div class="card border shadow-none mb-4">
+                        <div class="card-header border-bottom">
+                            <h6 class="text-md mb-0">@L["Common.Translations"]</h6>
+                        </div>
+
+                        <div class="card-body">
+                            <ul class="nav nav-pills mb-3" role="tablist">
+                                @for (int i = 0; i < formModel.Translations.Count; i++)
+                                {
+                                    string tabId = "updateTransactionStatusTransitionTranslationTab-" + i;
+                                    string paneId = "updateTransactionStatusTransitionTranslationPane-" + i;
+
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link @(i == 0 ? "active" : string.Empty)"
+                                                id="@tabId"
+                                                data-bs-toggle="pill"
+                                                data-bs-target="#@paneId"
+                                                type="button"
+                                                role="tab"
+                                                aria-controls="@paneId"
+                                                aria-selected="@(i == 0 ? "true" : "false")">
+                                            @formModel.Translations[i].LanguageName
+                                            @if (formModel.Translations[i].IsDefault)
+                                            {
+                                                <span class="badge bg-primary-50 text-primary-600 ms-1">@L["Common.Default"]</span>
+                                            }
+                                        </button>
+                                    </li>
+                                }
+                            </ul>
+
+                            <div class="tab-content">
+                                @for (int i = 0; i < formModel.Translations.Count; i++)
+                                {
+                                    string paneId = "updateTransactionStatusTransitionTranslationPane-" + i;
+                                    string requiredMessage = L.GetStringValue("BackOffice.TransactionStatusTransitions.Validation.NameRequired");
+                                    if (string.IsNullOrWhiteSpace(requiredMessage) || string.Equals(requiredMessage, "BackOffice.TransactionStatusTransitions.Validation.NameRequired", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        requiredMessage = "Ad alanı zorunludur.";
+                                    }
+
+                                    <div class="tab-pane fade @(i == 0 ? "show active" : string.Empty)"
+                                         id="@paneId"
+                                         role="tabpanel">
+
+                                        <input name="Translations[@i].LanguageId" value="@formModel.Translations[i].LanguageId" type="hidden" data-language-id="@formModel.Translations[i].LanguageId" />
+                                        <input name="Translations[@i].Culture" value="@formModel.Translations[i].Culture" type="hidden" />
+                                        <input name="Translations[@i].LanguageName" value="@formModel.Translations[i].LanguageName" type="hidden" />
+                                        <input name="Translations[@i].IsDefault" value="@formModel.Translations[i].IsDefault" type="hidden" />
+                                        <input name="Translations[@i].Exists" value="@formModel.Translations[i].Exists" type="hidden" data-language-id="@formModel.Translations[i].LanguageId" />
+
+                                        <div class="row gy-3">
+                                            <div class="col-12">
+                                                <label class="form-label" for="UpdateTransitionTranslations_@(i)__Name">
+                                                    @L["BackOffice.TransactionStatusTransitions.Fields.Name"]
+                                                    @if (formModel.Translations[i].IsDefault)
+                                                    {
+                                                        <span class="text-danger">*</span>
+                                                    }
+                                                </label>
+
+                                                <input id="UpdateTransitionTranslations_@(i)__Name"
+                                                       name="Translations[@i].Name"
+                                                       class="form-control radius-8"
+                                                       maxlength="256"
+                                                       data-language-id="@formModel.Translations[i].LanguageId"
+                                                       placeholder="@L["BackOffice.TransactionStatusTransitions.Placeholders.Name"]"
+                                                       data-val="@(formModel.Translations[i].IsDefault ? "true" : null)"
+                                                       data-val-required="@(formModel.Translations[i].IsDefault ? requiredMessage : null)" />
+
+                                                <span data-valmsg-for="Translations[@i].Name" data-valmsg-replace="true" class="text-danger field-validation-valid"></span>
+                                            </div>
+
+                                            <div class="col-12">
+                                                <label class="form-label" for="UpdateTransitionTranslations_@(i)__Description">
+                                                    @L["BackOffice.TransactionStatusTransitions.Fields.Description"]
+                                                </label>
+                                                <textarea id="UpdateTransitionTranslations_@(i)__Description"
+                                                          name="Translations[@i].Description"
+                                                          class="form-control radius-8"
+                                                          rows="3"
+                                                          maxlength="1024"
+                                                          data-language-id="@formModel.Translations[i].LanguageId"
+                                                          placeholder="@L["BackOffice.TransactionStatusTransitions.Placeholders.Description"]"></textarea>
+
+                                                <span data-valmsg-for="Translations[@i].Description" data-valmsg-replace="true" class="text-danger field-validation-valid"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row gy-3">
+                        <div class="col-md-6">
+                            <label class="form-label d-block" for="updateTransactionStatusTransitionIsActive">
+                                @L["BackOffice.TransactionStatusTransitions.Fields.IsActive"]
+                            </label>
+                            <div class="form-check form-switch d-flex align-items-center gap-2">
+                                <input name="IsActive"
+                                       value="true"
+                                       id="updateTransactionStatusTransitionIsActive"
+                                       class="form-check-input js-lookup-status-switch js-transaction-status-transition-status-switch"
+                                       type="checkbox"
+                                       checked="checked" />
+                                <input name="IsActive" type="hidden" value="false" />
+                                <label class="form-check-label js-lookup-status-label js-transaction-status-transition-status-label"
+                                       for="updateTransactionStatusTransitionIsActive">
+                                    @L["Common.Active"]
+                                </label>
+                            </div>
+                            <span data-valmsg-for="IsActive" data-valmsg-replace="true" class="text-danger field-validation-valid"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                        @L["Common.Cancel"]
+                    </button>
+                    <button type="submit" class="btn btn-primary-600">
+                        @L["Common.Save"]
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -4,9 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Symplify.BackOffice.Application.Services.Repositories;
 using Symplify.BackOffice.Persistence.Contexts;
 using Symplify.BackOffice.Persistence.Repositories;
-using Symplify.BackOffice.Persistence.Seeding.Abstractions;
 using Symplify.BackOffice.Persistence.Seeding.Extensions;
-using Symplify.BackOffice.Persistence.Seeding.Seeders;
 
 namespace Symplify.BackOffice.Persistence.DependencyInjection;
 
@@ -26,10 +24,27 @@ public static class PersistenceServiceRegistration
 
         services.AddBackOfficePersistenceSeedingServices(configuration);
 
+        RegisterLocalizationRepositories(services);
+        RegisterLookupRepositories(services);
+        RegisterGeoRepositories(services);
+        RegisterTenantRepositories(services);
+        RegisterCongressRepositories(services);
+        RegisterSubmissionRepositories(services);
+        RegisterPaymentRepositories(services);
+        RegisterWorkflowRepositories(services);
+
+        return services;
+    }
+
+    private static void RegisterLocalizationRepositories(IServiceCollection services)
+    {
         services.AddScoped<ILanguageRepository, LanguageRepository>();
         services.AddScoped<IResourceKeyRepository, ResourceKeyRepository>();
         services.AddScoped<IResourceValueRepository, ResourceValueRepository>();
+    }
 
+    private static void RegisterLookupRepositories(IServiceCollection services)
+    {
         services.AddScoped<ITopicRepository, TopicRepository>();
         services.AddScoped<ITopicTranslationRepository, TopicTranslationRepository>();
 
@@ -47,7 +62,10 @@ public static class PersistenceServiceRegistration
 
         services.AddScoped<ITitleRepository, TitleRepository>();
         services.AddScoped<ITitleTranslationRepository, TitleTranslationRepository>();
+    }
 
+    private static void RegisterGeoRepositories(IServiceCollection services)
+    {
         services.AddScoped<ICountryRepository, CountryRepository>();
         services.AddScoped<IStateRepository, StateRepository>();
         services.AddScoped<ICityRepository, CityRepository>();
@@ -57,11 +75,17 @@ public static class PersistenceServiceRegistration
         services.AddScoped<IStateTranslationRepository, StateTranslationRepository>();
         services.AddScoped<ICityTranslationRepository, CityTranslationRepository>();
         services.AddScoped<IRegionTranslationRepository, RegionTranslationRepository>();
+    }
 
+    private static void RegisterTenantRepositories(IServiceCollection services)
+    {
         services.AddScoped<ITenantRepository, TenantRepository>();
         services.AddScoped<ITenantApiKeyRepository, TenantApiKeyRepository>();
         services.AddScoped<ITenantUserRepository, TenantUserRepository>();
+    }
 
+    private static void RegisterCongressRepositories(IServiceCollection services)
+    {
         services.AddScoped<ICongressRepository, CongressRepository>();
         services.AddScoped<ICongressTranslationRepository, CongressTranslationRepository>();
 
@@ -88,7 +112,10 @@ public static class PersistenceServiceRegistration
         services.AddScoped<ICongressEvaluationCriterionRepository, CongressEvaluationCriterionRepository>();
         services.AddScoped<ICongressSubmissionTypeRepository, CongressSubmissionTypeRepository>();
         services.AddScoped<ICongressTopicRepository, CongressTopicRepository>();
+    }
 
+    private static void RegisterSubmissionRepositories(IServiceCollection services)
+    {
         services.AddScoped<IAuthorRepository, AuthorRepository>();
         services.AddScoped<IReviewerRepository, ReviewerRepository>();
 
@@ -96,11 +123,20 @@ public static class PersistenceServiceRegistration
         services.AddScoped<ISubmissionEvaluationRepository, SubmissionEvaluationRepository>();
         services.AddScoped<IEvaluationScoreRepository, EvaluationScoreRepository>();
         services.AddScoped<ISubmissionHistoryRepository, SubmissionHistoryRepository>();
+    }
 
+    private static void RegisterPaymentRepositories(IServiceCollection services)
+    {
         services.AddScoped<IPaymentDocumentRepository, PaymentDocumentRepository>();
 
         services.AddScoped<IPaymentStatusRepository, PaymentStatusRepository>();
         services.AddScoped<IPaymentStatusTranslationRepository, PaymentStatusTranslationRepository>();
+    }
+
+    private static void RegisterWorkflowRepositories(IServiceCollection services)
+    {
+        services.AddScoped<ITransactionStatusPhaseRepository, TransactionStatusPhaseRepository>();
+        services.AddScoped<ITransactionStatusPhaseTranslationRepository, TransactionStatusPhaseTranslationRepository>();
 
         services.AddScoped<ITransactionStatusRepository, TransactionStatusRepository>();
         services.AddScoped<ITransactionStatusTranslationRepository, TransactionStatusTranslationRepository>();
@@ -108,6 +144,11 @@ public static class PersistenceServiceRegistration
         services.AddScoped<ITransactionStatusTransitionRepository, TransactionStatusTransitionRepository>();
         services.AddScoped<ITransactionStatusTransitionTranslationRepository, TransactionStatusTransitionTranslationRepository>();
 
-        return services;
+        services.AddScoped<IWorkflowTemplateRepository, WorkflowTemplateRepository>();
+        services.AddScoped<IWorkflowTemplateTranslationRepository, WorkflowTemplateTranslationRepository>();
+        services.AddScoped<IWorkflowTemplateTransitionRepository, WorkflowTemplateTransitionRepository>();
+
+        services.AddScoped<ICongressWorkflowSettingRepository, CongressWorkflowSettingRepository>();
+        services.AddScoped<ICongressTransactionStatusTransitionRepository, CongressTransactionStatusTransitionRepository>();
     }
 }

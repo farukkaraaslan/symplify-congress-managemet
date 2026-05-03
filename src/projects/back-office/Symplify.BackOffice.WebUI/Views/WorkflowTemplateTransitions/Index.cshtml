@@ -1,0 +1,113 @@
+@model Symplify.BackOffice.WebUI.Models.WorkflowTemplateTransitions.WorkflowTemplateTransitionsIndexViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    ViewData["Title"] = L.GetStringValue("BackOffice.WorkflowTemplateTransitions.PageTitle");
+    ViewData["AvailableTransitions"] = Model.AvailableTransitions;
+
+    const string controllerName = "WorkflowTemplateTransitions";
+    const string featureName = "workflow-template-transitions";
+
+    string templatesUrl = Url.Action("Index", "WorkflowTemplates", new { culture = currentCulture }) ?? $"/{currentCulture}/workflowtemplates/index";
+    string getListUrl = Url.Action("GetList", controllerName, new { culture = currentCulture, workflowTemplateId = Model.WorkflowTemplateId }) ?? $"/{currentCulture}/workflowtemplatetransitions/getlist?workflowTemplateId={Model.WorkflowTemplateId}";
+    string reorderUrl = Url.Action("Reorder", controllerName, new { culture = currentCulture, workflowTemplateId = Model.WorkflowTemplateId }) ?? $"/{currentCulture}/workflowtemplatetransitions/reorder?workflowTemplateId={Model.WorkflowTemplateId}";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="dashboard-main-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-0">@L["BackOffice.WorkflowTemplateTransitions.PageTitle"]</h6>
+            <small class="text-neutral-500">@Model.WorkflowTemplateName (@Model.WorkflowTemplateCode)</small>
+        </div>
+
+        <ul class="d-flex align-items-center gap-2">
+            <li class="fw-medium">
+                <a href="@templatesUrl" class="d-flex align-items-center gap-1 hover-text-primary text-neutral-600">
+                    <i class="ri-arrow-left-line"></i>
+                    @L["BackOffice.WorkflowTemplates.PageTitle"]
+                </a>
+            </li>
+            <li>-</li>
+            <li class="fw-medium">@L["BackOffice.WorkflowTemplateTransitions.PageTitle"]</li>
+        </ul>
+    </div>
+
+    <div class="alert alert-info bg-primary-50 border-primary-100 text-primary-700 d-flex align-items-start gap-3 mb-24">
+        <i class="ri-information-line text-xl mt-1"></i>
+        <div>
+            <h6 class="text-md mb-1">@L["BackOffice.WorkflowTemplateTransitions.ManagementTitle"]</h6>
+            <p class="mb-0">@L["BackOffice.WorkflowTemplateTransitions.ManagementDescription"]</p>
+        </div>
+    </div>
+
+    <div class="card border shadow-none radius-12">
+        <div class="card-header border-bottom d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+                <h6 class="mb-1">@L["BackOffice.WorkflowTemplateTransitions.ListTitle"]</h6>
+                <small class="text-neutral-500">@L["BackOffice.WorkflowTemplateTransitions.ListDescription"]</small>
+            </div>
+
+            <button type="button"
+                    class="btn btn-primary-600 radius-8 px-20 py-11 d-flex align-items-center gap-2"
+                    data-bs-toggle="modal"
+                    data-bs-target="#createWorkflowTemplateTransitionModal">
+                <i class="ri-add-line"></i>
+                @L["BackOffice.WorkflowTemplateTransitions.CreateButton"]
+            </button>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table bordered-table mb-0 js-workflow-template-transition-table"
+                       id="workflowTemplateTransitionsTable"
+                       data-feature="@featureName"
+                       data-workflow-template-id="@Model.WorkflowTemplateId"
+                       data-source-url="@getListUrl"
+                       data-reorder-url="@reorderUrl">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th></th>
+                            <th>@L["Common.Order"]</th>
+                            <th>@L["BackOffice.WorkflowTemplateTransitions.FromStatus"]</th>
+                            <th>@L["BackOffice.WorkflowTemplateTransitions.ToStatus"]</th>
+                            <th>@L["BackOffice.WorkflowTemplateTransitions.Transition"]</th>
+                            <th>@L["Common.Description"]</th>
+                            <th>@L["Common.Status"]</th>
+                            <th class="text-end">@L["Common.Actions"]</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_CreateWorkflowTemplateTransitionModal", Model.CreateTransition)
+@await Html.PartialAsync("_UpdateWorkflowTemplateTransitionModal", Model.UpdateTransition)
+
+<form id="deleteWorkflowTemplateTransitionForm" asp-controller="WorkflowTemplateTransitions" asp-action="Delete" asp-route-culture="@currentCulture" method="post">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    @await Html.PartialAsync("_LocalizationScripts")
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+
+    <script>
+        window.Symplify = window.Symplify || {};
+        window.Symplify.WorkflowTemplateTransitions = window.Symplify.WorkflowTemplateTransitions || {};
+        window.Symplify.WorkflowTemplateTransitions.workflowTemplateId = '@Model.WorkflowTemplateId';
+    </script>
+
+    <script src="~/js/shared/ajax/symplify.ajax.js" asp-append-version="true"></script>
+    <script src="~/js/features/workflow-template-transitions/workflow-template-transitions.table.js" asp-append-version="true"></script>
+    <script src="~/js/features/workflow-template-transitions/workflow-template-transitions.create.js" asp-append-version="true"></script>
+    <script src="~/js/features/workflow-template-transitions/workflow-template-transitions.update.js" asp-append-version="true"></script>
+    <script src="~/js/features/workflow-template-transitions/workflow-template-transitions.delete.js" asp-append-version="true"></script>
+    <script src="~/js/features/workflow-template-transitions/workflow-template-transitions.index.js" asp-append-version="true"></script>
+}

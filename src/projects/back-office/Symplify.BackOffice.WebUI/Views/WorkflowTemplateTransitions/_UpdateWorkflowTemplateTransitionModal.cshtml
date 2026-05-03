@@ -1,0 +1,44 @@
+@model Symplify.BackOffice.WebUI.Models.WorkflowTemplateTransitions.UpdateWorkflowTemplateTransitionViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+@using Symplify.BackOffice.WebUI.Models.WorkflowTemplateTransitions
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    var transitions = ViewData["AvailableTransitions"] as List<TransactionStatusTransitionSelectItemViewModel> ?? new();
+}
+
+<div class="modal fade" id="updateWorkflowTemplateTransitionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content radius-16">
+            <form id="updateWorkflowTemplateTransitionForm" asp-controller="WorkflowTemplateTransitions" asp-action="Update" asp-route-culture="@currentCulture" method="post">
+                @Html.AntiForgeryToken()
+                <input asp-for="Id" type="hidden" />
+                <input asp-for="WorkflowTemplateId" type="hidden" />
+                <div class="modal-header border-bottom">
+                    <h6 class="modal-title">@L["BackOffice.WorkflowTemplateTransitions.UpdateTitle"]</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Common.Close"]"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">@L["BackOffice.WorkflowTemplateTransitions.Transition"] <span class="text-danger">*</span></label>
+                        <select asp-for="TransactionStatusTransitionId" class="form-select">
+                            <option value="">@L["Common.SelectPlease"]</option>
+                            @foreach (TransactionStatusTransitionSelectItemViewModel item in transitions)
+                            {
+                                <option value="@item.Id">@item.DisplayText</option>
+                            }
+                        </select>
+                        <span asp-validation-for="TransactionStatusTransitionId" class="text-danger"></span>
+                    </div>
+                    <div class="form-check form-switch d-flex align-items-center gap-2">
+                        <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                        <label asp-for="IsActive" class="form-check-label">@L["Common.Active"]</label>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">@L["Common.Cancel"]</button>
+                    <button type="submit" class="btn btn-primary-600">@L["Common.Save"]</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
