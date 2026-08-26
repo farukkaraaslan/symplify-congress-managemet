@@ -1,0 +1,122 @@
+@using System.Globalization
+@{
+    string title = ViewData["Title"]?.ToString() ?? "Symplify";
+    string currentCulture = Convert.ToString(ViewContext.RouteData.Values["culture"])
+                            ?? Convert.ToString(Context.Request.RouteValues["culture"])
+                            ?? CultureInfo.CurrentUICulture.Name;
+    currentCulture = string.IsNullOrWhiteSpace(currentCulture) ? "tr-TR" : currentCulture;
+    string htmlLang = CultureInfo.CurrentUICulture.Name;
+    htmlLang = string.IsNullOrWhiteSpace(htmlLang) ? currentCulture : htmlLang;
+}
+<!DOCTYPE html>
+<html lang="@htmlLang" data-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@title - Symplify</title>
+    <link rel="icon" type="image/png" href="~/assets/images/favicon.png" sizes="16x16" />
+    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/lib/remixicon/fonts/remixicon.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="~/lib/datatables.net-dt/css/dataTables.dataTables.min.css" asp-append-version="true" />
+    <link href="~/lib/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <div class="body-overlay"></div>
+
+    <main class="author-shell">
+        <header class="author-topbar">
+            <div class="author-topbar__inner">
+                <a asp-controller="Home"
+                   asp-action="Index"
+                   asp-route-culture="@currentCulture"
+                   class="d-inline-flex align-items-center gap-2 text-decoration-none"
+                   aria-label="Symplify">
+                    <img src="~/assets/images/logo.png" alt="Symplify" class="author-logo" />
+                </a>
+
+                <div class="author-topbar__actions">
+                    <a asp-controller="Home"
+                       asp-action="Index"
+                       asp-route-culture="@currentCulture"
+                       class="btn btn-sm btn-outline-primary-600 radius-8 d-none d-lg-inline-flex align-items-center gap-2">
+                        <i class="ri-home-5-line"></i>
+                        Panel
+                    </a>
+
+                    <a asp-controller="Submissions"
+                       asp-action="Index"
+                       asp-route-culture="@currentCulture"
+                       class="btn btn-sm btn-outline-primary-600 radius-8 d-none d-lg-inline-flex align-items-center gap-2">
+                        <i class="ri-file-list-3-line"></i>
+                        Bildirilerim
+                    </a>
+
+                    <button type="button" data-theme-toggle class="author-icon-btn" aria-label="Tema değiştir"></button>
+
+                    @await Component.InvokeAsync("LanguageSwitcher")
+
+                    <div class="dropdown">
+                        <button class="author-icon-btn" type="button" data-bs-toggle="dropdown" aria-label="Mesajlar">
+                            <i class="ri-mail-line text-lg"></i>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0">
+                            <div class="m-16 py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2">
+                                <div>
+                                    <h6 class="text-lg text-primary-light fw-semibold mb-0">Mesajlar</h6>
+                                    <small class="text-secondary-light">Kişisel mesajlarınız burada gösterilecek.</small>
+                                </div>
+                                <span class="text-primary-600 fw-semibold text-lg w-40-px h-40-px rounded-circle bg-base d-flex justify-content-center align-items-center">0</span>
+                            </div>
+                            <div class="px-24 py-24 text-center text-secondary-light">
+                                <i class="ri-chat-off-line text-3xl d-block mb-8"></i>
+                                Henüz okunmamış mesaj yok.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dropdown">
+                        <button class="author-icon-btn" type="button" data-bs-toggle="dropdown" aria-label="Bildirimler">
+                            <i class="ri-notification-3-line text-lg"></i>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0">
+                            <div class="m-16 py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2">
+                                <div>
+                                    <h6 class="text-lg text-primary-light fw-semibold mb-0">Bildirimler</h6>
+                                    <small class="text-secondary-light">Sistem bildirimleri burada gösterilecek.</small>
+                                </div>
+                                <span class="text-primary-600 fw-semibold text-lg w-40-px h-40-px rounded-circle bg-base d-flex justify-content-center align-items-center">0</span>
+                            </div>
+                            <div class="px-24 py-24 text-center text-secondary-light">
+                                <i class="ri-notification-off-line text-3xl d-block mb-8"></i>
+                                Şu anda yeni bildiriminiz yok.
+                            </div>
+                        </div>
+                    </div>
+
+                    @await Component.InvokeAsync("UserMenu")
+                </div>
+            </div>
+        </header>
+
+        @RenderBody()
+    </main>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-ui/dist/jquery-ui.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/datatables.net/js/dataTables.min.js" asp-append-version="true"></script>
+    <script src="~/lib/sweetalert2/sweetalert2.all.min.js"></script>
+    <script src="~/lib/iconify-icon/dist/iconify-icon.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/app.js" asp-append-version="true"></script>
+    <script src="~/js/shared/ajax/symplify.ajax.js" asp-append-version="true"></script>
+    <script src="~/js/shared/files/symplify.dropzone.js" asp-append-version="true"></script>
+    <script src="~/js/shared/editors/symplify.tinymce.js" asp-append-version="true"></script>
+    <script src="~/js/shared/datetime/symplify.tempus-dominus.js" asp-append-version="true"></script>
+    <script src="~/js/shared/forms/symplify.forms.js" asp-append-version="true"></script>
+    <script src="~/js/author-template.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

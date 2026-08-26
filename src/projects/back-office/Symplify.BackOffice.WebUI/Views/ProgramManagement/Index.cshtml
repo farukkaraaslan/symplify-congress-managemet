@@ -1,0 +1,943 @@
+@using System.Globalization
+@using Symplify.BackOffice.Application.Features.ProgramManagement.Models
+@using Symplify.BackOffice.Domain.Enums
+@using Symplify.BackOffice.WebUI.Localization
+@model Symplify.BackOffice.WebUI.Models.ProgramManagement.ProgramManagementIndexViewModel
+@inject IBackOfficeViewLocalizer L
+
+@{
+    ViewData["Title"] = L["BackOffice.ProgramManagement.PageTitle"];
+    string culture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    ProgramPlanDto? plan = Model.Page.Plan;
+    ProgramGenerationSourceDto? source = Model.Page.Source;
+    DateTime? programStartDate = source?.StartDate;
+    DateTime? programEndDate = source?.EndDate;
+    int programDayCount = programStartDate.HasValue && programEndDate.HasValue
+        ? Math.Max(1, (programEndDate.Value.Date - programStartDate.Value.Date).Days + 1)
+        : 1;
+    string programDayLabel = L["BackOffice.ProgramManagement.Day"].ToString();
+}
+
+<div class="dashboard-main-body"
+     id="programManagementRoot"
+     data-congress-id="@(Model.Page.SelectedCongressId?.ToString() ?? string.Empty)"
+     data-program-day-count="@programDayCount"
+     data-reorder-url="@Url.Action("ReorderItems", "ProgramManagement", new { culture })"
+     data-break-reorder-url="@Url.Action("ReorderBreak", "ProgramManagement", new { culture })"
+     data-break-delete-url="@Url.Action("DeleteBreak", "ProgramManagement", new { culture })"
+     data-remove-break-title="@L["BackOffice.ProgramManagement.RemoveBreakConfirmTitle"]"
+     data-remove-break-text="@L["BackOffice.ProgramManagement.RemoveBreakConfirmText"]"
+     data-remove-break-confirm="@L["BackOffice.ProgramManagement.Remove"]"
+     data-cancel-text="@L["BackOffice.ProgramManagement.Cancel"]"
+     data-duration-url="@Url.Action("UpdateDuration", "ProgramManagement", new { culture })"
+     data-lock-url="@Url.Action("ToggleLock", "ProgramManagement", new { culture })"
+     data-session-officials-url="@Url.Action("UpdateSessionOfficials", "ProgramManagement", new { culture })"
+     data-same-official-error="@L["BackOffice.ProgramManagement.SameOfficialError"]">
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-1">@L["BackOffice.ProgramManagement.PageTitle"]</h6>
+            <p class="text-neutral-500 mb-0">@L["BackOffice.ProgramManagement.PageDescription"]</p>
+        </div>
+        @if (plan is not null)
+        {
+            <span class="badge bg-warning-focus text-warning-main px-16 py-8 radius-8">
+                <i class="ri-draft-line me-1"></i>@L["BackOffice.ProgramManagement.Draft"]
+            </span>
+        }
+    </div>
+
+    @if (TempData["SuccessMessage"] is not null)
+    {
+        <div class="alert alert-success border-success-100 text-success-700 mb-24">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] is not null)
+    {
+        <div class="alert alert-danger border-danger-100 text-danger-700 mb-24">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="card border-0 radius-12 mb-24">
+        <div class="card-body p-24">
+            <form method="get" asp-action="Index" asp-controller="ProgramManagement" asp-route-culture="@culture" class="row g-3 align-items-end">
+                <div class="col-lg-8">
+                    <label class="form-label fw-semibold">@L["BackOffice.ProgramManagement.Congress"]</label>
+                    <select class="form-select" name="congressId" onchange="this.form.submit()">
+                        @foreach (ProgramCongressOptionDto congress in Model.Page.Congresses)
+                        {
+                            <option value="@congress.Id" selected="@(Model.Page.SelectedCongressId == congress.Id ? "selected" : null)">
+                                @congress.Name
+                                @if (congress.StartDate.HasValue)
+                                {
+                                    <text> (@congress.StartDate.Value.ToString("dd.MM.yyyy") - @(congress.EndDate?.ToString("dd.MM.yyyy") ?? "?"))</text>
+                                }
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="col-lg-4 text-lg-end">
+                    @if (source is not null)
+                    {
+                        <span class="text-sm text-neutral-600">
+                            @L["BackOffice.ProgramManagement.TotalActiveSubmissions"]: <strong>@source.AllSubmissions.Count</strong>
+                            · @L["BackOffice.ProgramManagement.Rooms"]: <strong>@source.Rooms.Count</strong>
+                        </span>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (source is null)
+    {
+        <div class="card border-0 radius-12"><div class="card-body p-40 text-center text-neutral-500">@L["BackOffice.ProgramManagement.NoCongress"]</div></div>
+    }
+    else
+    {
+        <div class="card border-0 radius-12 mb-24">
+            <div class="card-header bg-base border-bottom py-16 px-24 d-flex align-items-center justify-content-between gap-3">
+                <div>
+                    <h6 class="mb-1">@L["BackOffice.ProgramManagement.AutomaticSetup"]</h6>
+                    <p class="text-sm text-neutral-500 mb-0">@L["BackOffice.ProgramManagement.AutomaticSetupDescription"]</p>
+                </div>
+                <button class="btn btn-outline-primary-600 btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#programSetupCollapse">
+                    <i class="ri-settings-3-line me-1"></i>@L["BackOffice.ProgramManagement.Settings"]
+                </button>
+            </div>
+            <div class="collapse @(plan is null ? "show" : string.Empty)" id="programSetupCollapse">
+                <div class="card-body p-24">
+                    <form asp-action="Generate" asp-controller="ProgramManagement" asp-route-culture="@culture" method="post" id="programGenerateForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="Generate.CongressId" />
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 px-3 mb-4 d-none"></div>
+
+                        <div class="row g-4">
+                            <div class="col-12">
+                                <div class="card border radius-12 bg-light-subtle">
+                                    <div class="card-body p-20">
+                                        <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-18">
+                                            <div>
+                                                <h6 class="mb-1 d-flex align-items-center gap-2">
+                                                    <i class="ri-filter-3-line text-primary-600"></i>@L["BackOffice.ProgramManagement.SubmissionScope"]
+                                                </h6>
+                                                <p class="text-sm text-neutral-500 mb-0">@L["BackOffice.ProgramManagement.SubmissionScopeDescription"]</p>
+                                            </div>
+                                            <span class="badge bg-primary-focus text-primary-main border border-primary-100 px-12 py-8 radius-8">
+                                                @L["BackOffice.ProgramManagement.FilteredSubmissionCount"]
+                                                <strong id="programFilteredSubmissionCount" class="ms-1">0</strong>
+                                                <span class="text-neutral-500">/ @source.AllSubmissions.Count</span>
+                                            </span>
+                                        </div>
+
+                                        <div class="row g-3">
+                                            <div class="col-lg-4">
+                                                <label asp-for="Generate.SubmissionScopePreset" class="form-label fw-semibold">@L["BackOffice.ProgramManagement.ScopePreset"]</label>
+                                                <select asp-for="Generate.SubmissionScopePreset" class="form-select js-program-submission-filter">
+                                                    <option value="@((int)ProgramSubmissionScopePreset.AllActive)">@L["BackOffice.ProgramManagement.ScopeAllActive"]</option>
+                                                    <option value="@((int)ProgramSubmissionScopePreset.AcceptedOnly)">@L["BackOffice.ProgramManagement.ScopeAcceptedOnly"]</option>
+                                                    <option value="@((int)ProgramSubmissionScopePreset.PaidOnly)">@L["BackOffice.ProgramManagement.ScopePaidOnly"]</option>
+                                                    <option value="@((int)ProgramSubmissionScopePreset.AcceptedAndPaid)">@L["BackOffice.ProgramManagement.ScopeAcceptedAndPaid"]</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-lg-8">
+                                                <label asp-for="Generate.SubmissionSearchText" class="form-label fw-semibold">@L["BackOffice.ProgramManagement.SearchSubmissions"]</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-base"><i class="ri-search-line"></i></span>
+                                                    <input asp-for="Generate.SubmissionSearchText"
+                                                           class="form-control js-program-submission-filter"
+                                                           placeholder="@L["BackOffice.ProgramManagement.SearchSubmissionsPlaceholder"]" />
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6 col-xl-3">
+                                                <label asp-for="Generate.WorkflowStatusCodes" class="form-label fw-semibold">@L["BackOffice.ProgramManagement.WorkflowStatuses"]</label>
+                                                <select asp-for="Generate.WorkflowStatusCodes" multiple class="form-select js-program-submission-filter js-program-filter-multi"
+                                                        data-placeholder="@L["BackOffice.ProgramManagement.WorkflowStatuses"]"
+                                                        data-search-placeholder="@L["BackOffice.ProgramManagement.FilterSearchPlaceholder"]"
+                                                        data-select-all-text="@L["BackOffice.ProgramManagement.FilterSelectAll"]"
+                                                        data-clear-text="@L["BackOffice.ProgramManagement.FilterClearSelection"]"
+                                                        data-no-options-text="@L["BackOffice.ProgramManagement.FilterNoOptions"]">
+                                                    @foreach (ProgramStringFilterOptionDto option in source.FilterOptions.WorkflowStatuses)
+                                                    {
+                                                        <option value="@option.Value">@option.Name</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 col-xl-3">
+                                                <label asp-for="Generate.PaymentStatusIds" class="form-label fw-semibold">@L["BackOffice.ProgramManagement.PaymentStatuses"]</label>
+                                                <select asp-for="Generate.PaymentStatusIds" multiple class="form-select js-program-submission-filter js-program-filter-multi"
+                                                        data-placeholder="@L["BackOffice.ProgramManagement.PaymentStatuses"]"
+                                                        data-search-placeholder="@L["BackOffice.ProgramManagement.FilterSearchPlaceholder"]"
+                                                        data-select-all-text="@L["BackOffice.ProgramManagement.FilterSelectAll"]"
+                                                        data-clear-text="@L["BackOffice.ProgramManagement.FilterClearSelection"]"
+                                                        data-no-options-text="@L["BackOffice.ProgramManagement.FilterNoOptions"]">
+                                                    @foreach (ProgramIntFilterOptionDto option in source.FilterOptions.PaymentStatuses)
+                                                    {
+                                                        <option value="@option.Id">@option.Name</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 col-xl-3">
+                                                <label asp-for="Generate.SubmissionTypeIds" class="form-label fw-semibold">@L["BackOffice.ProgramManagement.SubmissionTypes"]</label>
+                                                <select asp-for="Generate.SubmissionTypeIds" multiple class="form-select js-program-submission-filter js-program-filter-multi"
+                                                        data-placeholder="@L["BackOffice.ProgramManagement.SubmissionTypes"]"
+                                                        data-search-placeholder="@L["BackOffice.ProgramManagement.FilterSearchPlaceholder"]"
+                                                        data-select-all-text="@L["BackOffice.ProgramManagement.FilterSelectAll"]"
+                                                        data-clear-text="@L["BackOffice.ProgramManagement.FilterClearSelection"]"
+                                                        data-no-options-text="@L["BackOffice.ProgramManagement.FilterNoOptions"]">
+                                                    @foreach (ProgramGuidFilterOptionDto option in source.FilterOptions.SubmissionTypes)
+                                                    {
+                                                        <option value="@option.Id">@option.Name</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 col-xl-3">
+                                                <label asp-for="Generate.TopicIds" class="form-label fw-semibold">@L["BackOffice.ProgramManagement.Topics"]</label>
+                                                <select asp-for="Generate.TopicIds" multiple class="form-select js-program-submission-filter js-program-filter-multi"
+                                                        data-placeholder="@L["BackOffice.ProgramManagement.Topics"]"
+                                                        data-search-placeholder="@L["BackOffice.ProgramManagement.FilterSearchPlaceholder"]"
+                                                        data-select-all-text="@L["BackOffice.ProgramManagement.FilterSelectAll"]"
+                                                        data-clear-text="@L["BackOffice.ProgramManagement.FilterClearSelection"]"
+                                                        data-no-options-text="@L["BackOffice.ProgramManagement.FilterNoOptions"]">
+                                                    @foreach (ProgramGuidFilterOptionDto option in source.FilterOptions.Topics)
+                                                    {
+                                                        <option value="@option.Id">@option.Name</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-16 pt-12 border-top">
+                                            <small class="text-neutral-500">@L["BackOffice.ProgramManagement.MultiSelectHelp"]</small>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="clearProgramSubmissionFilters">
+                                                <i class="ri-filter-off-line me-1"></i>@L["BackOffice.ProgramManagement.ClearAdditionalFilters"]
+                                            </button>
+                                        </div>
+
+                                        <div id="programSubmissionCandidatesData" class="d-none" aria-hidden="true">
+                                            @foreach (ProgramSubmissionSourceDto submission in source.AllSubmissions)
+                                            {
+                                                string searchableText = $"{submission.SubmissionNumber} {submission.Title} {submission.Authors} {submission.TopicName} {submission.SubmissionTypeName} {submission.WorkflowStatusName} {submission.PaymentStatusName}";
+                                                <span data-program-candidate
+                                                      data-workflow-status="@submission.WorkflowStatusCode"
+                                                      data-payment-status-id="@(submission.PaymentStatusId?.ToString() ?? string.Empty)"
+                                                      data-submission-type-id="@(submission.SubmissionTypeId?.ToString() ?? string.Empty)"
+                                                      data-topic-id="@(submission.TopicId?.ToString() ?? string.Empty)"
+                                                      data-is-accepted="@submission.IsAccepted.ToString().ToLowerInvariant()"
+                                                      data-is-paid="@submission.IsPaid.ToString().ToLowerInvariant()"
+                                                      data-search="@searchableText"></span>
+                                            }
+                                        </div>
+
+                                        <div class="alert alert-warning py-2 px-3 mt-3 mb-0 d-none" id="programNoFilterCandidates">
+                                            <i class="ri-alert-line me-1"></i>@L["BackOffice.ProgramManagement.NoFilteredSubmissions"]
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="card border radius-12">
+                                    <div class="card-header bg-base border-bottom py-14 px-20">
+                                        <h6 class="mb-1 d-flex align-items-center gap-2">
+                                            <i class="ri-layout-grid-line text-primary-600"></i>@L["BackOffice.ProgramManagement.RoomAndTimeSettings"]
+                                        </h6>
+                                        <p class="text-sm text-neutral-500 mb-0">@L["BackOffice.ProgramManagement.RoomAndTimeSettingsHelp"]</p>
+                                    </div>
+                                    <div class="card-body p-20">
+                                        <div class="mb-18">
+                                            <label class="form-label fw-semibold">@L["BackOffice.ProgramManagement.SelectRooms"]</label>
+                                            <div class="row g-2">
+                                                @foreach (ProgramRoomOptionDto room in source.Rooms)
+                                                {
+                                                    <div class="col-6 col-md-4 col-xl-2">
+                                                        <label class="border rounded-3 px-14 py-12 d-flex align-items-center gap-2 bg-base h-100">
+                                                            <input class="form-check-input mt-0" type="checkbox" name="Generate.RoomIds" value="@room.Id" checked="@(Model.Generate.RoomIds.Contains(room.Id) ? "checked" : null)" />
+                                                            <span class="fw-semibold text-sm"><i class="ri-building-2-line me-1"></i>@room.Name</span>
+                                                        </label>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+
+                                        <div class="row g-3">
+                                            <div class="col-md-6 col-xl-3">
+                                                <label class="form-label fw-semibold">@L["BackOffice.ProgramManagement.DayStart"]</label>
+                                                <input asp-for="Generate.DayStartTime" type="time" class="form-control" />
+                                                <span asp-validation-for="Generate.DayStartTime" class="text-danger text-sm"></span>
+                                            </div>
+                                            <div class="col-md-6 col-xl-3">
+                                                <label class="form-label fw-semibold">@L["BackOffice.ProgramManagement.DayEnd"]</label>
+                                                <input asp-for="Generate.DayEndTime" type="time" class="form-control" />
+                                                <span asp-validation-for="Generate.DayEndTime" class="text-danger text-sm"></span>
+                                            </div>
+                                            <div class="col-md-6 col-xl-3">
+                                                <label class="form-label fw-semibold">@L["BackOffice.ProgramManagement.SessionMinutes"]</label>
+                                                <input asp-for="Generate.SessionDurationMinutes" type="number" min="30" max="360" class="form-control" />
+                                                <span asp-validation-for="Generate.SessionDurationMinutes" class="text-danger text-sm"></span>
+                                            </div>
+                                            <div class="col-md-6 col-xl-3">
+                                                <label class="form-label fw-semibold">@L["BackOffice.ProgramManagement.PresentationMinutes"]</label>
+                                                <input asp-for="Generate.PresentationDurationMinutes" type="number" min="5" max="120" class="form-control" />
+                                                <span asp-validation-for="Generate.PresentationDurationMinutes" class="text-danger text-sm"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="card border radius-12">
+                                    <div class="card-header bg-base border-bottom py-14 px-20">
+                                        <h6 class="mb-1 d-flex align-items-center gap-2">
+                                            <i class="ri-equalizer-line text-primary-600"></i>@L["BackOffice.ProgramManagement.SessionOptionSettings"]
+                                        </h6>
+                                        <p class="text-sm text-neutral-500 mb-0">@L["BackOffice.ProgramManagement.SessionOptionSettingsHelp"]</p>
+                                    </div>
+                                    <div class="card-body p-20">
+                                        <div class="row g-3">
+                                            <div class="col-lg-4">
+                                                <div class="border rounded-3 p-16 bg-light-subtle h-100">
+                                                    <div class="form-check form-switch mb-14">
+                                                        <input asp-for="Generate.IncludeQuestionAnswer"
+                                                               class="form-check-input"
+                                                               data-question-answer-toggle />
+                                                        <label asp-for="Generate.IncludeQuestionAnswer" class="form-check-label fw-semibold">
+                                                            @L["BackOffice.ProgramManagement.IncludeQuestionAnswer"]
+                                                        </label>
+                                                    </div>
+                                                    <div data-question-answer-duration-wrapper>
+                                                        <label class="form-label fw-semibold">@L["BackOffice.ProgramManagement.QuestionAnswerMinutes"]</label>
+                                                        <input asp-for="Generate.QuestionAnswerDurationMinutes"
+                                                               type="number"
+                                                               min="1"
+                                                               max="180"
+                                                               class="form-control"
+                                                               data-question-answer-duration />
+                                                        <span asp-validation-for="Generate.QuestionAnswerDurationMinutes" class="text-danger text-sm"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-lg-4">
+                                                <div class="border rounded-3 p-16 bg-light-subtle h-100">
+                                                    <div class="form-check form-switch mb-14">
+                                                        <input asp-for="Generate.IncludeSessionBreaks"
+                                                               class="form-check-input"
+                                                               data-session-break-toggle />
+                                                        <label asp-for="Generate.IncludeSessionBreaks" class="form-check-label fw-semibold">
+                                                            @L["BackOffice.ProgramManagement.IncludeSessionBreak"]
+                                                        </label>
+                                                    </div>
+                                                    <div data-session-break-duration-wrapper>
+                                                        <label class="form-label fw-semibold">@L["BackOffice.ProgramManagement.SessionBreakMinutes"]</label>
+                                                        <input asp-for="Generate.SessionBreakDurationMinutes"
+                                                               type="number"
+                                                               min="1"
+                                                               max="60"
+                                                               class="form-control"
+                                                               data-session-break-duration />
+                                                        <span asp-validation-for="Generate.SessionBreakDurationMinutes" class="text-danger text-sm"></span>
+                                                        <small class="text-neutral-500 d-block mt-1">@L["BackOffice.ProgramManagement.SessionBreakHelp"]</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-lg-4">
+                                                <div class="border rounded-3 p-16 bg-light-subtle h-100">
+                                                    <label class="form-label fw-semibold">@L["BackOffice.ProgramManagement.BreakMinutes"]</label>
+                                                    <input asp-for="Generate.BreakDurationMinutes" type="number" min="0" max="180" class="form-control" />
+                                                    <span asp-validation-for="Generate.BreakDurationMinutes" class="text-danger text-sm"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="card border radius-12">
+                                    <div class="card-header bg-base border-bottom py-14 px-20">
+                                        <h6 class="mb-1 d-flex align-items-center gap-2">
+                                            <i class="ri-calendar-event-line text-primary-600"></i>@L["BackOffice.ProgramManagement.FixedBlocksSettings"]
+                                        </h6>
+                                        <p class="text-sm text-neutral-500 mb-0">@L["BackOffice.ProgramManagement.FixedBlocksSettingsHelp"]</p>
+                                    </div>
+                                    <div class="card-body p-20">
+                                        <div class="row g-3">
+                                            <div class="col-lg-6">
+                                                <div class="border rounded-3 p-16 bg-light-subtle h-100">
+                                                    <div class="form-check form-switch mb-14">
+                                                        <input asp-for="Generate.IncludeOpening" class="form-check-input" />
+                                                        <label asp-for="Generate.IncludeOpening" class="form-check-label fw-semibold">@L["BackOffice.ProgramManagement.IncludeOpening"]</label>
+                                                    </div>
+                                                    <div class="row g-3">
+                                                        <div class="col-md-6">
+                                                            <label class="form-label">@L["BackOffice.ProgramManagement.BlockTitle"]</label>
+                                                            <input asp-for="Generate.OpeningTitle" class="form-control" />
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <label class="form-label">@L["BackOffice.ProgramManagement.Duration"]</label>
+                                                            <input asp-for="Generate.OpeningDurationMinutes" type="number" min="0" max="360" class="form-control" />
+                                                            <span asp-validation-for="Generate.OpeningDurationMinutes" class="text-danger text-sm"></span>
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <label class="form-label">@L["BackOffice.ProgramManagement.Room"]</label>
+                                                            <select asp-for="Generate.OpeningRoomId" class="form-select">
+                                                                <option value="">@L["BackOffice.ProgramManagement.AllRooms"]</option>
+                                                                @foreach (ProgramRoomOptionDto room in source.Rooms)
+                                                                {
+                                                                    <option value="@room.Id">@room.Name</option>
+                                                                }
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-lg-6">
+                                                <div class="border rounded-3 p-16 bg-light-subtle h-100">
+                                                    <div class="form-check form-switch mb-14">
+                                                        <input asp-for="Generate.IncludeLunch" class="form-check-input" />
+                                                        <label asp-for="Generate.IncludeLunch" class="form-check-label fw-semibold">@L["BackOffice.ProgramManagement.IncludeLunch"]</label>
+                                                    </div>
+                                                    <div class="row g-3">
+                                                        <div class="col-md-5">
+                                                            <label class="form-label">@L["BackOffice.ProgramManagement.BlockTitle"]</label>
+                                                            <input asp-for="Generate.LunchTitle" class="form-control" />
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label class="form-label">@L["BackOffice.ProgramManagement.StartTime"]</label>
+                                                            <input asp-for="Generate.LunchStartTime" type="time" class="form-control" />
+                                                            <span asp-validation-for="Generate.LunchStartTime" class="text-danger text-sm"></span>
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <label class="form-label">@L["BackOffice.ProgramManagement.Duration"]</label>
+                                                            <input asp-for="Generate.LunchDurationMinutes" type="number" min="0" max="180" class="form-control" />
+                                                            <span asp-validation-for="Generate.LunchDurationMinutes" class="text-danger text-sm"></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="program-schedule-preview border radius-12 bg-neutral-50 overflow-hidden" id="programSchedulePreview"
+                                     data-title="@L["BackOffice.ProgramManagement.SchedulePreview"]"
+                                     data-valid="@L["BackOffice.ProgramManagement.TimelineValid"]"
+                                     data-invalid="@L["BackOffice.ProgramManagement.SchedulePreviewInvalid"]"
+                                     data-first-day="@L["BackOffice.ProgramManagement.FirstDay"]"
+                                     data-other-days="@L["BackOffice.ProgramManagement.OtherDays"]"
+                                     data-session-label="@L["BackOffice.ProgramManagement.EstimatedSessions"]"
+                                     data-capacity-label="@L["BackOffice.ProgramManagement.EstimatedCapacity"]">
+                                    <div class="program-schedule-preview__header d-flex align-items-center gap-2 p-16 border-bottom">
+                                        <i class="ri-time-line"></i>
+                                        <div>
+                                            <strong>@L["BackOffice.ProgramManagement.SchedulePreview"]</strong>
+                                            <small>@L["BackOffice.ProgramManagement.SchedulePreviewHelp"]</small>
+                                        </div>
+                                    </div>
+                                    <div class="program-schedule-preview__body js-program-schedule-preview-body p-16 text-sm"></div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 d-flex flex-wrap justify-content-end gap-2 pt-2 border-top">
+                                @if (plan is not null)
+                                {
+                                    <button type="submit" name="Generate.Mode" value="@((int)CongressProgramGenerationMode.FillUnassigned)" class="btn btn-outline-primary-600">
+                                        <i class="ri-add-circle-line me-1"></i>@L["BackOffice.ProgramManagement.FillUnassigned"]
+                                    </button>
+                                }
+                                <button type="submit" name="Generate.Mode" value="@((int)CongressProgramGenerationMode.ReplaceAll)" class="btn btn-primary-600 js-generate-program">
+                                    <i class="ri-magic-line me-1"></i>@(plan is null ? L["BackOffice.ProgramManagement.Generate"] : L["BackOffice.ProgramManagement.Regenerate"])
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        @if (plan is not null)
+        {
+            <div class="row gy-4 mb-24">
+                <div class="col-sm-6 col-xl-3">
+                    <div class="card border-0 radius-12 h-100"><div class="card-body p-20"><span class="text-neutral-500 text-sm">@L["BackOffice.ProgramManagement.EligibleSubmissions"]</span><h4 class="mb-0 mt-2">@plan.EligibleCount</h4></div></div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="card border-0 radius-12 h-100"><div class="card-body p-20"><span class="text-neutral-500 text-sm">@L["BackOffice.ProgramManagement.Assigned"]</span><h4 class="mb-0 mt-2 text-success-600">@plan.AssignedCount</h4></div></div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="card border-0 radius-12 h-100"><div class="card-body p-20"><span class="text-neutral-500 text-sm">@L["BackOffice.ProgramManagement.Unassigned"]</span><h4 class="mb-0 mt-2 @(plan.UnassignedCount > 0 ? "text-warning-600" : "text-success-600")">@plan.UnassignedCount</h4></div></div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="card border-0 radius-12 h-100"><div class="card-body p-20"><span class="text-neutral-500 text-sm">@L["BackOffice.ProgramManagement.Days"]</span><h4 class="mb-0 mt-2">@plan.Days.Count</h4></div></div>
+                </div>
+            </div>
+
+            @if (!plan.IsTimelineConsistent)
+            {
+                <div class="alert alert-warning border-warning-200 mb-24">
+                    <div class="fw-semibold mb-1"><i class="ri-alert-line me-1"></i>@L["BackOffice.ProgramManagement.TimelineWarning"]</div>
+                    <ul class="mb-0 ps-20 text-sm">
+                        @foreach (string issue in plan.TimelineIssues)
+                        {
+                            <li>@issue</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <div class="card border-0 radius-12 mb-24">
+                <div class="card-header bg-base border-bottom py-16 px-24">
+                    <h6 class="mb-1">@L["BackOffice.ProgramManagement.ProgramBookExport"]</h6>
+                    <p class="text-sm text-neutral-500 mb-0">@L["BackOffice.ProgramManagement.ProgramBookExportHelp"]</p>
+                </div>
+                <div class="card-body p-24">
+                    <form id="programBookExportForm"
+                          method="post"
+                          enctype="multipart/form-data"
+                          class="row g-3 align-items-end">
+                        @Html.AntiForgeryToken()
+                        <input asp-for="Export.CongressId" type="hidden" />
+                        <input type="hidden" name="coverImageSelected" value="false" data-program-book-cover-selected />
+
+                        <div class="col-lg-7">
+                            <label asp-for="Export.CoverImageFile" class="form-label fw-semibold">
+                                @L["BackOffice.ProgramManagement.ProgramBookCover"]
+                            </label>
+                            <input asp-for="Export.CoverImageFile"
+                                   type="file"
+                                   class="form-control"
+                                   accept="image/png,image/jpeg,.png,.jpg,.jpeg"
+                                   data-program-book-cover-input />
+                            <small class="text-neutral-500 d-block mt-1">
+                                @L["BackOffice.ProgramManagement.ProgramBookCoverHelp"]
+                            </small>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="border rounded-3 p-3 bg-light-subtle">
+                                <div class="fw-semibold mb-2">@L["BackOffice.ProgramManagement.ProgramBookOptions"]</div>
+                                <div class="row g-2">
+                                    <div class="col-md-6 col-xl-4">
+                                        <div class="form-check form-switch">
+                                            <input asp-for="Export.IncludeTableOfContents" class="form-check-input" />
+                                            <label asp-for="Export.IncludeTableOfContents" class="form-check-label">
+                                                @L["BackOffice.ProgramManagement.IncludeTableOfContents"]
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-xl-4">
+                                        <div class="form-check form-switch">
+                                            <input asp-for="Export.IncludeScheduleTimes" class="form-check-input" />
+                                            <label asp-for="Export.IncludeScheduleTimes" class="form-check-label">
+                                                @L["BackOffice.ProgramManagement.IncludeScheduleTimes"]
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-xl-4">
+                                        <div class="form-check form-switch">
+                                            <input asp-for="Export.IncludeBoards" class="form-check-input" />
+                                            <label asp-for="Export.IncludeBoards" class="form-check-label">
+                                                @L["BackOffice.ProgramManagement.IncludeBoards"]
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <small class="text-neutral-500 d-block mt-2">
+                                    @L["BackOffice.ProgramManagement.VideoPresentationsExportHelp"]
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-5 ms-lg-auto">
+                            <div class="d-flex flex-wrap justify-content-lg-end gap-2">
+                                <button type="submit"
+                                        formaction="@Url.Action("DraftPdf", "ProgramManagement", new { culture })"
+                                        formtarget="_blank"
+                                        class="btn btn-outline-primary-600">
+                                    <i class="ri-file-pdf-2-line me-1"></i>@L["BackOffice.ProgramManagement.DraftPdf"]
+                                </button>
+                                <button type="submit"
+                                        formaction="@Url.Action("DraftWord", "ProgramManagement", new { culture })"
+                                        class="btn btn-outline-primary-600">
+                                    <i class="ri-file-word-2-line me-1"></i>@L["BackOffice.ProgramManagement.DraftWord"]
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card border-0 radius-12 mb-24">
+                <div class="card-header bg-base border-bottom py-16 px-24 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div>
+                        <h6 class="mb-1">@L["BackOffice.ProgramManagement.Planner"]</h6>
+                        <p class="text-sm text-neutral-500 mb-0">@L["BackOffice.ProgramManagement.PlannerHelp"]</p>
+                    </div>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <form asp-action="Reset" asp-controller="ProgramManagement" asp-route-culture="@culture" method="post" class="js-reset-program-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="congressId" value="@plan.CongressId" />
+                            <button type="submit" class="btn btn-outline-danger-600 btn-sm"><i class="ri-delete-bin-line me-1"></i>@L["BackOffice.ProgramManagement.Reset"]</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="nav nav-pills program-day-tabs px-24 pt-20 gap-2 flex-wrap" role="tablist">
+                        @foreach (ProgramDayDto day in plan.Days)
+                        {
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link radius-8 @(day.Order == 1 ? "active" : string.Empty)" data-bs-toggle="pill" data-bs-target="#program-day-@day.Id" type="button">
+                                    @day.Order. @L["BackOffice.ProgramManagement.Day"] · @day.Date.ToString("dd.MM.yyyy")
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                    <div class="tab-content p-24">
+                        @foreach (ProgramDayDto day in plan.Days)
+                        {
+                            <div class="tab-pane fade @(day.Order == 1 ? "show active" : string.Empty)" id="program-day-@day.Id">
+                                <div class="program-room-grid d-grid gap-3">
+                                    @foreach (ProgramRoomScheduleDto room in day.Rooms.OrderBy(x => x.RoomOrder))
+                                    {
+                                        <section class="program-room-column card border radius-12 shadow-none overflow-hidden">
+                                            <header class="program-room-header d-flex align-items-center gap-3 p-16 bg-primary-600 text-white">
+                                                <i class="ri-building-2-line"></i>
+                                                <div><strong>@room.RoomName</strong><small>@day.Date.ToString("dddd", CultureInfo.CurrentUICulture)</small></div>
+                                            </header>
+                                            <div class="program-room-timeline d-flex flex-column gap-3 p-16"
+                                                 data-program-day-id="@day.Id"
+                                                 data-room-id="@room.RoomId">
+                                                @foreach (ProgramScheduleBlockDto block in room.Blocks)
+                                                {
+                                                    if (block.Kind == "fixed")
+                                                    {
+                                                        string persistedClass = block.IsPersisted ? "program-timeline-persisted-block" : string.Empty;
+                                                        string movableClass = block.IsMovable ? "is-movable js-break-insert-source" : string.Empty;
+                                                        string? blockKey = block.IsPersisted ? $"fixed:{block.Id:D}" : null;
+                                                        string? breakId = block.IsMovable ? block.Id.ToString("D") : null;
+                                                        <div class="program-fixed-block d-flex flex-wrap align-items-center justify-content-between gap-2 p-12 border border-warning-300 border-dashed radius-8 bg-warning-50 text-warning-700 program-fixed-@block.FixedBlockType?.ToString().ToLowerInvariant() @persistedClass @movableClass"
+                                                             data-block-key="@blockKey"
+                                                             data-break-id="@breakId"
+                                                             data-program-day-id="@day.Id"
+                                                             data-room-id="@room.RoomId">
+                                                            @if (block.IsMovable)
+                                                            {
+                                                                <span class="program-fixed-drag-handle w-32-px h-32-px d-inline-flex align-items-center justify-content-center radius-8 text-neutral-500 cursor-pointer" title="@L["BackOffice.ProgramManagement.Drag"]">
+                                                                    <i class="ri-drag-move-2-line"></i>
+                                                                </span>
+                                                                <span class="program-break-insert-handle w-32-px h-32-px d-inline-flex align-items-center justify-content-center radius-8 text-neutral-500 cursor-pointer" title="@L["BackOffice.ProgramManagement.Drag"]">
+                                                                    <i class="ri-node-tree"></i>
+                                                                </span>
+                                                            }
+                                                            <span class="program-time badge bg-neutral-100 text-neutral-700">@block.StartTime.ToString("HH:mm")–@block.EndTime.ToString("HH:mm")</span>
+                                                            <strong>@block.Title</strong>
+                                                            @if (block.IsMovable)
+                                                            {
+                                                                <button type="button"
+                                                                        class="program-break-delete js-delete-break btn btn-sm btn-outline-danger-600 w-32-px h-32-px p-0 d-inline-flex align-items-center justify-content-center"
+                                                                        data-break-id="@block.Id"
+                                                                        title="@L["BackOffice.ProgramManagement.RemoveBreak"]"
+                                                                        aria-label="@L["BackOffice.ProgramManagement.RemoveBreak"]">
+                                                                    <i class="ri-delete-bin-6-line"></i>
+                                                                </button>
+                                                            }
+                                                        </div>
+                                                    }
+                                                    else if (block.Session is not null)
+                                                    {
+                                                        ProgramSessionDto session = block.Session;
+                                                        if (session.IsEmpty)
+                                                        {
+                                                            <div class="d-none program-hidden-session-marker program-timeline-persisted-block"
+                                                                 data-block-key="@($"session:{session.Id:D}")"></div>
+                                                            continue;
+                                                        }
+
+                                                        <article class="program-session-card program-timeline-persisted-block card border radius-12 shadow-none overflow-hidden @(session.IsOverCapacity ? "border-danger-300" : string.Empty)"
+                                                                 data-block-key="@($"session:{session.Id:D}")">
+                                                            <header class="card-header bg-neutral-50 border-bottom p-12 d-flex flex-wrap align-items-start justify-content-between gap-2">
+                                                                <div class="program-session-heading flex-grow-1 min-w-0">
+                                                                    <span class="program-time badge bg-neutral-100 text-neutral-700">@session.StartTime.ToString("HH:mm")–@session.EndTime.ToString("HH:mm")</span>
+                                                                    <h6>@session.Title</h6>
+                                                                    @if (!string.IsNullOrWhiteSpace(session.ChairName)
+                                                                         || !string.IsNullOrWhiteSpace(session.ViceChairName))
+                                                                    {
+                                                                        <div class="program-session-officials d-flex flex-wrap gap-2 mt-2 text-sm text-neutral-600">
+                                                                            @if (!string.IsNullOrWhiteSpace(session.ChairName))
+                                                                            {
+                                                                                <span>
+                                                                                    <i class="ri-user-star-line"></i>
+                                                                                    <strong>@L["BackOffice.ProgramManagement.SessionChair"]:</strong>
+                                                                                    @session.ChairName
+                                                                                </span>
+                                                                            }
+                                                                            @if (!string.IsNullOrWhiteSpace(session.ViceChairName))
+                                                                            {
+                                                                                <span>
+                                                                                    <i class="ri-user-follow-line"></i>
+                                                                                    <strong>@L["BackOffice.ProgramManagement.SessionViceChair"]:</strong>
+                                                                                    @session.ViceChairName
+                                                                                </span>
+                                                                            }
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                                <div class="program-session-header-actions d-flex flex-wrap align-items-center justify-content-end gap-2">
+                                                                    <span class="program-capacity badge bg-primary-50 text-primary-600">@session.UsedPresentationMinutes / @session.AvailablePresentationMinutes dk</span>
+                                                                    <button type="button"
+                                                                            class="btn btn-sm btn-outline-primary-600 js-edit-session-officials"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#sessionOfficialsModal"
+                                                                            data-session-id="@session.Id"
+                                                                            data-session-title="@session.Title"
+                                                                            data-session-author-ids="@string.Join(',', session.ParticipantAuthorIds.Select(id => id.ToString("D")))"
+                                                                            data-chair-official-key="@(session.ChairAuthorId.HasValue
+                                                                                ? $"author:{session.ChairAuthorId.Value:D}"
+                                                                                : session.ChairBoardMemberId.HasValue
+                                                                                    ? $"board:{session.ChairBoardMemberId.Value:D}"
+                                                                                    : string.Empty)"
+                                                                            data-vice-chair-official-key="@(session.ViceChairAuthorId.HasValue
+                                                                                ? $"author:{session.ViceChairAuthorId.Value:D}"
+                                                                                : session.ViceChairBoardMemberId.HasValue
+                                                                                    ? $"board:{session.ViceChairBoardMemberId.Value:D}"
+                                                                                    : string.Empty)"
+                                                                            title="@L["BackOffice.ProgramManagement.AssignSessionOfficials"]">
+                                                                        <i class="ri-team-line"></i>
+                                                                        <span>@L["BackOffice.ProgramManagement.AssignSessionOfficials"]</span>
+                                                                    </button>
+                                                                </div>
+                                                            </header>
+                                                            <ul class="program-item-list list-unstyled d-flex flex-column gap-2 p-12 mb-0"
+                                                                data-session-id="@session.Id"
+                                                                data-program-day-id="@day.Id"
+                                                                data-room-id="@room.RoomId">
+                                                                @{ int renderedItemIndex = 0; }
+                                                                <li class="program-break-drop-zone d-none"
+                                                                    data-target-session-id="@session.Id"
+                                                                    data-target-item-index="0"
+                                                                    aria-hidden="true"></li>
+                                                                @foreach (ProgramSessionEntryDto entry in session.Entries)
+                                                                {
+                                                                    if (entry.Kind == "break" && entry.Break is not null)
+                                                                    {
+                                                                        ProgramEmbeddedBreakDto embeddedBreak = entry.Break;
+                                                                        <li class="program-session-break js-break-insert-source d-flex flex-wrap align-items-center gap-2 p-12 border border-dashed radius-8 bg-neutral-100 text-neutral-700"
+                                                                            data-break-id="@embeddedBreak.Id"
+                                                                            data-program-day-id="@day.Id"
+                                                                            data-room-id="@room.RoomId">
+                                                                            <span class="program-break-insert-handle w-32-px h-32-px d-inline-flex align-items-center justify-content-center radius-8 text-neutral-500 cursor-pointer" title="@L["BackOffice.ProgramManagement.Drag"]">
+                                                                                <i class="ri-drag-move-2-line"></i>
+                                                                            </span>
+                                                                            <span class="program-time badge bg-neutral-100 text-neutral-700">@embeddedBreak.StartTime.ToString("HH:mm")–@embeddedBreak.EndTime.ToString("HH:mm")</span>
+                                                                            <strong>@embeddedBreak.Title</strong>
+                                                                            <small>@embeddedBreak.DurationMinutes dk</small>
+                                                                            <button type="button"
+                                                                                    class="program-break-delete js-delete-break btn btn-sm btn-outline-danger-600 w-32-px h-32-px p-0 d-inline-flex align-items-center justify-content-center"
+                                                                                    data-break-id="@embeddedBreak.Id"
+                                                                                    title="@L["BackOffice.ProgramManagement.RemoveBreak"]"
+                                                                                    aria-label="@L["BackOffice.ProgramManagement.RemoveBreak"]">
+                                                                                <i class="ri-delete-bin-6-line"></i>
+                                                                            </button>
+                                                                        </li>
+                                                                    }
+                                                                    else if (entry.Kind == "item" && entry.Item is not null)
+                                                                    {
+                                                                        ProgramItemDto item = entry.Item;
+                                                                        <li class="program-item d-flex flex-wrap align-items-center gap-2 p-12 border radius-8 bg-base @(item.IsLocked ? "is-locked bg-warning-50 border-warning-300" : string.Empty)" data-item-id="@item.Id" data-session-id="@session.Id">
+                                                                            <span class="program-drag-handle w-32-px h-40-px d-inline-flex align-items-center justify-content-center radius-8 text-neutral-500 cursor-pointer flex-shrink-0" title="@L["BackOffice.ProgramManagement.Drag"]"><i class="ri-drag-move-2-line"></i></span>
+                                                                            <span class="program-item-sequence w-28-px h-28-px rounded-circle bg-primary-50 text-primary-600 d-inline-flex align-items-center justify-content-center text-sm fw-bold flex-shrink-0" title="@L["BackOffice.ProgramManagement.Order"]">@(renderedItemIndex + 1)</span>
+                                                                            <div class="program-item-content flex-grow-1 min-w-0">
+                                                                                <div class="d-flex align-items-start justify-content-between gap-2">
+                                                                                    <strong><span class="program-item-time">@item.StartTime.ToString("HH:mm")</span> @item.SubmissionNumber</strong>
+                                                                                    <span class="badge bg-primary-50 text-primary-600">@item.TopicName</span>
+                                                                                </div>
+                                                                                <p class="text-sm text-primary-light my-1">@item.Title</p>
+                                                                                <small class="text-neutral-500 d-block">@item.Authors</small>
+                                                                            </div>
+                                                                            <div class="program-item-actions d-flex align-items-center gap-2 ms-auto">
+                                                                                <label>
+                                                                                    <input class="form-control form-control-sm js-duration-input" type="number" min="5" max="120" value="@item.DurationMinutes" @(item.IsLocked ? "disabled" : null) />
+                                                                                    <span>dk</span>
+                                                                                </label>
+                                                                                <button type="button" class="btn btn-sm js-lock-item @(item.IsLocked ? "btn-warning-600" : "btn-outline-neutral-400")" title="@L["BackOffice.ProgramManagement.Lock"]">
+                                                                                    <i class="@(item.IsLocked ? "ri-lock-line" : "ri-lock-unlock-line")"></i>
+                                                                                </button>
+                                                                            </div>
+                                                                        </li>
+                                                                        renderedItemIndex++;
+                                                                        <li class="program-break-drop-zone d-none"
+                                                                            data-target-session-id="@session.Id"
+                                                                            data-target-item-index="@renderedItemIndex"
+                                                                            aria-hidden="true"></li>
+                                                                    }
+                                                                }
+                                                            </ul>
+                                                            @if (session.QuestionAnswerDurationMinutes > 0
+                                                                 && session.QuestionAnswerStartTime.HasValue
+                                                                 && session.QuestionAnswerEndTime.HasValue)
+                                                            {
+                                                                <footer class="card-footer d-flex flex-wrap align-items-center gap-2 bg-info-50 text-info-600 p-12 text-sm fw-semibold">
+                                                                    <i class="ri-question-answer-line"></i>
+                                                                    <span>@session.QuestionAnswerStartTime.Value.ToString("HH:mm")–@session.QuestionAnswerEndTime.Value.ToString("HH:mm")</span>
+                                                                    <span>@L["BackOffice.ProgramManagement.QuestionAnswer"] · @session.QuestionAnswerDurationMinutes dk</span>
+                                                                </footer>
+                                                            }
+                                                        </article>
+                                                    }
+                                                }
+                                            </div>
+                                        </section>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            @if (plan.UnassignedSubmissions.Count > 0)
+            {
+                <div class="card border-0 radius-12 mb-24">
+                    <div class="card-header bg-base border-bottom px-24 py-16">
+                        <h6 class="mb-1">@L["BackOffice.ProgramManagement.UnassignedList"] (@plan.UnassignedSubmissions.Count)</h6>
+                        <p class="text-sm text-neutral-500 mb-0">@L["BackOffice.ProgramManagement.UnassignedHelp"]</p>
+                    </div>
+                    <div class="card-body p-24">
+                        <div class="table-responsive">
+                            <table class="table bordered-table mb-0">
+                                <thead><tr><th>@L["BackOffice.ProgramManagement.Number"]</th><th>@L["BackOffice.ProgramManagement.Title"]</th><th>@L["BackOffice.ProgramManagement.Topic"]</th></tr></thead>
+                                <tbody>
+                                @foreach (ProgramSubmissionSourceDto item in plan.UnassignedSubmissions)
+                                {
+                                    <tr><td>@item.SubmissionNumber</td><td>@item.Title</td><td>@item.TopicName</td></tr>
+                                }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    }
+
+
+    @if (plan is not null && source is not null)
+    {
+        <div id="programOfficialCandidatesData" class="d-none" aria-hidden="true">
+            @foreach (ProgramAuthorOptionDto author in source.AuthorOptions)
+            {
+                <span data-official-key="@($"author:{author.Id:D}")"
+                      data-official-source="author"
+                      data-official-id="@author.Id"
+                      data-official-name="@author.DisplayName"
+                      data-official-institution="@author.Institution"
+                      data-official-email="@(author.Email ?? string.Empty)"
+                      data-official-title-order="@author.TitleOrder"></span>
+            }
+            @foreach (ProgramBoardMemberOptionDto member in source.BoardMemberOptions)
+            {
+                <span data-official-key="@($"board:{member.Id:D}")"
+                      data-official-source="board"
+                      data-official-id="@member.Id"
+                      data-official-name="@member.DisplayName"
+                      data-official-institution="@member.Institution"
+                      data-official-email=""
+                      data-official-title-order="@member.TitleOrder"></span>
+            }
+        </div>
+
+        <div class="modal fade" id="sessionOfficialsModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content radius-12 border-0">
+                    <div class="modal-header border-bottom">
+                        <div>
+                            <h6 class="modal-title mb-1">@L["BackOffice.ProgramManagement.SessionOfficials"]</h6>
+                            <small class="text-neutral-500" id="sessionOfficialsModalTitle"></small>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="sessionOfficialsForm">
+                        <div class="modal-body p-24">
+                            <input type="hidden" id="sessionOfficialsSessionId" />
+
+                            <div class="program-official-toolbar mb-20 d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+                                <div class="program-official-scope-tabs d-flex flex-wrap gap-2" role="group" aria-label="@L["BackOffice.ProgramManagement.SessionOfficials"]">
+                                    <button type="button"
+                                            class="program-official-scope btn btn-sm btn-primary-600 active d-inline-flex align-items-center gap-2"
+                                            data-official-scope="session">
+                                        <i class="ri-group-line"></i>
+                                        @L["BackOffice.ProgramManagement.OfficialsInSession"]
+                                    </button>
+                                    <button type="button"
+                                            class="program-official-scope btn btn-sm btn-outline-primary-600 d-inline-flex align-items-center gap-2"
+                                            data-official-scope="board">
+                                        <i class="ri-shield-star-line"></i>
+                                        @L["BackOffice.ProgramManagement.OfficialsBoardMembers"]
+                                    </button>
+                                    <button type="button"
+                                            class="program-official-scope btn btn-sm btn-outline-primary-600 d-inline-flex align-items-center gap-2"
+                                            data-official-scope="all">
+                                        <i class="ri-user-search-line"></i>
+                                        @L["BackOffice.ProgramManagement.OfficialsAllParticipants"]
+                                    </button>
+                                </div>
+
+                                <div class="program-official-search-wrap input-group flex-grow-1">
+                                    <span class="input-group-text"><i class="ri-search-line"></i></span>
+                                    <input type="search"
+                                           class="form-control"
+                                           id="sessionOfficialSearch"
+                                           placeholder="@L["BackOffice.ProgramManagement.SearchOfficials"]"
+                                           autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="alert alert-light border text-neutral-600 py-10 px-12 mb-20 d-none"
+                                 id="sessionOfficialNoResults">
+                                @L["BackOffice.ProgramManagement.NoOfficialCandidates"]
+                            </div>
+
+                            <div class="row g-20">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold" for="sessionChairOfficialKey">
+                                        @L["BackOffice.ProgramManagement.SessionChair"]
+                                    </label>
+                                    <select class="form-select program-official-select" id="sessionChairOfficialKey">
+                                        <option value="">@L["BackOffice.ProgramManagement.NotAssigned"]</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold" for="sessionViceChairOfficialKey">
+                                        @L["BackOffice.ProgramManagement.SessionViceChair"]
+                                    </label>
+                                    <select class="form-select program-official-select" id="sessionViceChairOfficialKey">
+                                        <option value="">@L["BackOffice.ProgramManagement.NotAssigned"]</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-top">
+                            <button type="button" class="btn btn-outline-neutral-400" data-bs-dismiss="modal">
+                                @L["BackOffice.ProgramManagement.Cancel"]
+                            </button>
+                            <button type="submit" class="btn btn-primary-600" id="saveSessionOfficialsButton">
+                                <i class="ri-save-line me-1"></i>@L["BackOffice.ProgramManagement.SaveSessionOfficials"]
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+
+    <form id="programAjaxTokenForm" class="d-none">@Html.AntiForgeryToken()</form>
+</div>
+
+@section Scripts {
+    <script src="~/js/features/program-management/program-management.index.js" asp-append-version="true"></script>
+}

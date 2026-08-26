@@ -1,0 +1,38 @@
+@model Symplify.BackOffice.WebUI.Models.CongressBoardMembers.UpdateCongressBoardMemberViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    string postUrl = Url.Action("Update", "CongressBoardMemberSignatures", new { culture = currentCulture }) ?? $"/{currentCulture}/congress-board-member-signatures/update";
+}
+
+<form class="js-board-member-signature-form" action="@postUrl" method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" value="@Model.Id" />
+    <input type="hidden" name="congressId" value="@Model.CongressId" />
+
+    <div class="card border shadow-none mt-4">
+        <div class="card-header border-bottom">
+            <h6 class="text-md mb-0">@L.GetStringValue("BackOffice.CongressBoardMembers.Signature.Title")</h6>
+        </div>
+        <div class="card-body row gy-4">
+            <div class="col-md-6 d-flex align-items-end">
+                <div class="form-switch switch-primary d-flex align-items-center gap-2 mt-4">
+                    <input class="form-check-input" type="checkbox" role="switch" name="isAcceptanceLetterSigner" value="true" @(Model.IsAcceptanceLetterSigner ? "checked" : null) />
+                    <input type="hidden" name="isAcceptanceLetterSigner" value="false" />
+                    <label class="form-check-label">@L.GetStringValue("BackOffice.CongressBoardMembers.Signature.IsSigner")</label>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">@L.GetStringValue("BackOffice.CongressBoardMembers.Signature.File")</label>
+                <input type="file" name="signatureFile" class="form-control" accept="image/png,image/jpeg,.png,.jpg,.jpeg" />
+                <small class="text-neutral-500 d-block mt-1">@L.GetStringValue("BackOffice.CongressBoardMembers.Signature.Help")</small>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary-600 radius-8 px-20 py-11 d-inline-flex align-items-center gap-2">
+                    <i class="ri-save-line"></i>
+                    @L.GetStringValue("BackOffice.CongressBoardMembers.Signature.Save")
+                </button>
+            </div>
+        </div>
+    </div>
+</form>

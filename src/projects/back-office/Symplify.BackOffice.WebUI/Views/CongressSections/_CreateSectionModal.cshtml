@@ -1,0 +1,193 @@
+@model Symplify.BackOffice.WebUI.Models.CongressSections.CreateCongressSectionViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    string formActionUrl = Url.Action("Create", "CongressSections", new { culture = currentCulture }) ?? $"/{currentCulture}/CongressSections/Create";
+    string defaultLanguageLabel = L.GetStringValue("Common.Default");
+    if (string.IsNullOrWhiteSpace(defaultLanguageLabel) || string.Equals(defaultLanguageLabel, "Common.Default", StringComparison.OrdinalIgnoreCase))
+    {
+        defaultLanguageLabel = "Varsayılan";
+    }
+}
+
+<div aria-hidden="true" class="modal fade congress-section-modal" id="createSectionModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <form id="createCongressSectionForm"
+              class="modal-content"
+              action="@formActionUrl"
+              method="post"
+              autocomplete="off">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" asp-for="CongressId" />
+            <input type="hidden" asp-for="Order" />
+
+            <div class="modal-header">
+                <div>
+                    <h6 class="modal-title">
+                        @L.GetStringValue("BackOffice.CongressSections.Create.Title")
+                    </h6>
+
+                    <small class="text-neutral-500 d-block mt-1">
+                        @L.GetStringValue("BackOffice.CongressSections.Create.Description")
+                    </small>
+                </div>
+
+                <button aria-label='@L.GetStringValue("Common.Close")'
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        type="button">
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div asp-validation-summary="ModelOnly"
+                     class="alert alert-danger d-none js-section-validation-summary">
+                </div>
+
+                <div class="card border shadow-none mb-4">
+                    <div class="card-header border-bottom">
+                        <h6 class="text-md mb-0">
+                            @L.GetStringValue("BackOffice.CongressSections.BasicInfo")
+                        </h6>
+                    </div>
+
+                    <div class="card-body row gy-4">
+                        <div class="col-lg-8">
+                            <label class="form-label" asp-for="BindingKey">
+                                @L.GetStringValue("BackOffice.CongressSections.Fields.BindingKey")
+                                <required-mark></required-mark>
+                            </label>
+
+                            <input class="form-control"
+                                   asp-for="BindingKey"
+                                   maxlength="100"
+                                   placeholder='@L.GetStringValue("BackOffice.CongressSections.Placeholders.BindingKey")' />
+
+                            <small class="text-neutral-500 d-block mt-1">
+                                @L.GetStringValue("BackOffice.CongressSections.Help.BindingKey")
+                            </small>
+
+                            <span asp-validation-for="BindingKey" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-lg-4 d-flex align-items-end">
+                            <div class="form-switch switch-primary d-flex align-items-center gap-3 mb-2">
+                                <input class="form-check-input js-section-status-switch"
+                                       asp-for="IsActive"
+                                       type="checkbox"
+                                       role="switch" />
+
+                                <label class="form-check-label" asp-for="IsActive">
+                                    @L.GetStringValue("BackOffice.CongressSections.Fields.IsActive")
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border shadow-none">
+                    <div class="card-header border-bottom">
+                        <h6 class="text-md mb-0">
+                            @L.GetStringValue("Common.Translations")
+                        </h6>
+                    </div>
+
+                    <div class="card-body">
+                        <ul class="nav nav-pills mb-3" role="tablist">
+                            @for (int i = 0; i < Model.Translations.Count; i++)
+                            {
+                                string tabId = $"createSectionTranslation-{Model.Translations[i].Culture}".Replace(".", "-");
+
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link @(i == 0 ? "active" : string.Empty)"
+                                            id="@tabId-tab"
+                                            data-bs-toggle="pill"
+                                            data-bs-target="#@tabId"
+                                            type="button"
+                                            role="tab"
+                                            aria-controls="@tabId"
+                                            aria-selected="@(i == 0 ? "true" : "false")">
+                                        <span class="d-inline-flex align-items-center gap-2">
+                                            <span>@Model.Translations[i].LanguageName</span>
+                                            @if (Model.Translations[i].IsDefault)
+                                            {
+                                                <span class="badge bg-primary-50 text-primary-600 rounded-pill">@defaultLanguageLabel</span>
+                                            }
+                                        </span>
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+
+                        <div class="tab-content">
+                            @for (int i = 0; i < Model.Translations.Count; i++)
+                            {
+                                string tabId = $"createSectionTranslation-{Model.Translations[i].Culture}".Replace(".", "-");
+
+                                <div class="tab-pane fade @(i == 0 ? "show active" : null)"
+                                     id="@tabId"
+                                     role="tabpanel"
+                                     aria-labelledby="@tabId-tab"
+                                     tabindex="0">
+
+                                    <input type="hidden" asp-for="Translations[i].LanguageId" />
+                                    <input type="hidden" asp-for="Translations[i].Culture" />
+                                    <input type="hidden" asp-for="Translations[i].LanguageName" />
+                                    <input type="hidden" asp-for="Translations[i].IsDefault" />
+
+                                    <div class="row gy-4">
+                                        <div class="col-12">
+                                            <label class="form-label" asp-for="Translations[i].Title">
+                                                @L.GetStringValue("BackOffice.CongressSections.Fields.Title")
+                                                <required-mark visible="@Model.Translations[i].IsDefault"></required-mark>
+                                            </label>
+
+                                            <input class="form-control"
+                                                   asp-for="Translations[i].Title"
+                                                   placeholder='@L.GetStringValue("BackOffice.CongressSections.Placeholders.Title")' />
+
+                                            <span asp-validation-for="Translations[i].Title" class="text-danger"></span>
+                                        </div>
+
+                                        <div class="col-12">
+                                            <label class="form-label" asp-for="Translations[i].Content">
+                                                @L.GetStringValue("BackOffice.CongressSections.Fields.Content")
+                                            </label>
+
+                                            <textarea class="form-control js-section-content-editor"
+                                                      asp-for="Translations[i].Content"
+                                                      rows="8"
+                                                      data-symplify-editor
+                                                      data-editor-height="360"
+                                                      data-editor-profile="content"
+                                                      placeholder='@L.GetStringValue("BackOffice.CongressSections.Placeholders.Content")'></textarea>
+
+                                            <span asp-validation-for="Translations[i].Content" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-light-100 text-dark radius-8 px-20 py-11 d-flex align-items-center gap-2"
+                        data-bs-dismiss="modal"
+                        type="button">
+                    @L.GetStringValue("Common.Cancel")
+                </button>
+
+                <button class="btn btn-primary-600 radius-8 px-20 py-11 d-flex align-items-center gap-2"
+                        type="submit">
+                    @L.GetStringValue("BackOffice.CongressSections.Buttons.Save")
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+

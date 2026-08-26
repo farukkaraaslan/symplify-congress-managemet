@@ -1,0 +1,355 @@
+@using Symplify.BackOffice.Application.Features.Users.Dtos
+@using Symplify.BackOffice.WebUI.Localization
+@inject IBackOfficeViewLocalizer L
+@model UserDetailDto
+
+@{
+    string T(string key, string fallback = "") {
+        var value = L.GetStringValue(key);
+        return string.IsNullOrWhiteSpace(value) || string.Equals(value, key, StringComparison.OrdinalIgnoreCase)
+            ? (string.IsNullOrWhiteSpace(fallback) ? key : fallback)
+            : value;
+    }
+
+    ViewData["Title"] = T("BackOffice.Users.Details.PageTitle", "Kullanıcı Detayı");
+    string culture = Context.Request.RouteValues["culture"]?.ToString() ?? "tr-TR";
+    string initials = string.Concat(new[] { Model.Name, Model.Surname }
+        .Where(value => !string.IsNullOrWhiteSpace(value))
+        .Select(value => char.ToUpperInvariant(value.Trim()[0])))
+        .PadRight(2, 'K')[..2];
+    string location = string.Join(" / ", new[] { Model.CountryName, Model.StateName }.Where(value => !string.IsNullOrWhiteSpace(value)));
+    string statusText = Model.IsBlacklisted
+        ? T("BackOffice.Users.BlacklistBadge", "Kara Liste")
+        : Model.IsLockedOut
+            ? T("BackOffice.Users.Locked", "Kilitli")
+            : T("Common.Active", "Aktif");
+    string statusClass = Model.IsBlacklisted
+        ? "bg-danger-100 text-danger-600 border-danger-100"
+        : Model.IsLockedOut
+            ? "bg-warning-100 text-warning-600 border-warning-100"
+            : "bg-success-100 text-success-600 border-success-100";
+}
+
+<div class="dashboard-main-body pb-24">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-0">@T("BackOffice.Users.Details.PageTitle", "Kullanıcı Detayı")</h6>
+            <small class="text-neutral-500">@T("BackOffice.Users.Details.PageSubtitle", "Profil, erişim, rol ve güvenlik bilgilerini tek ekrandan yönetin.")</small>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a asp-action="Index" asp-route-culture="@culture" class="btn btn-outline-neutral-900 radius-8 px-16 py-10 d-inline-flex align-items-center gap-2">
+                <i class="ri-arrow-left-line"></i> @T("Common.BackToList", "Listeye Dön")
+            </a>
+            <a asp-action="Edit" asp-route-culture="@culture" asp-route-id="@Model.Id" class="btn btn-primary-600 radius-8 px-16 py-10 d-inline-flex align-items-center gap-2">
+                <i class="ri-edit-line"></i> @T("Common.Edit", "Düzenle")
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] is not null)
+    {
+        <div class="alert alert-success border-success-100 text-success-700 mb-24">@TempData["SuccessMessage"]</div>
+    }
+
+    @if (TempData["GeneratedPassword"] is not null)
+    {
+        <div class="alert alert-warning bg-warning-100 border-warning-200 text-warning-700 mb-24">
+            <strong>@T("BackOffice.Users.TempPassword", "Geçici şifre:")</strong>
+            <code class="ms-2">@TempData["GeneratedPassword"]</code>
+            <div class="text-sm mt-1">@T("BackOffice.Users.TempPasswordHint", "Bu şifreyi güvenli bir kanaldan kullanıcıya iletin. Bu bilgi sadece bu ekranda gösterilir.")</div>
+        </div>
+    }
+
+    <div class="card p-0 overflow-hidden position-relative radius-12 mb-24">
+        <div class="card-body p-20">
+            <div class="overflow-x-auto overflow-y-hidden px-2 px-md-0">
+                <ul class="nav border-gradient-tab nav-pills d-flex flex-nowrap" id="userDetailTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link d-flex align-items-center px-24 text-nowrap active" id="overview-tab" data-bs-toggle="pill" data-bs-target="#overview-pane" type="button" role="tab">
+                            <i class="ri-user-line me-2"></i>@T("BackOffice.Users.Details.Overview", "Genel Bilgiler")
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link d-flex align-items-center px-24 text-nowrap" id="authorization-tab" data-bs-toggle="pill" data-bs-target="#authorization-pane" type="button" role="tab">
+                            <i class="ri-shield-user-line me-2"></i>@T("BackOffice.Users.Details.Authorization", "Rol ve Yetkiler")
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link d-flex align-items-center px-24 text-nowrap" id="security-tab" data-bs-toggle="pill" data-bs-target="#security-pane" type="button" role="tab">
+                            <i class="ri-lock-line me-2"></i>@T("BackOffice.Users.Details.Security", "Güvenlik")
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="userDetailTabsContent">
+        <div class="tab-pane fade show active" id="overview-pane" role="tabpanel" aria-labelledby="overview-tab" tabindex="0">
+            <div class="row gy-4 align-items-start">
+                <div class="col-xl-4">
+                    <div class="card p-0 overflow-hidden position-relative radius-16">
+                        <div class="card-body p-24">
+                            <span class="position-absolute top-0 end-0 mt-16 me-16 border px-12 py-4 radius-8 text-sm fw-semibold @statusClass">@statusText</span>
+
+                            <div class="text-center border-bottom pb-24">
+                                <span class="w-120-px h-120-px rounded-circle bg-primary-50 text-primary-600 d-inline-flex justify-content-center align-items-center fw-bold h3">@initials</span>
+                                <h5 class="mb-1 mt-16">@Model.FullName</h5>
+                                <span class="text-secondary-light">@(string.IsNullOrWhiteSpace(Model.TitleShortName) ? "-" : Model.TitleShortName)</span>
+                                @if (!string.IsNullOrWhiteSpace(Model.Institution))
+                                {
+                                    <small class="d-block text-neutral-500 mt-1">@Model.Institution</small>
+                                }
+                            </div>
+
+                            <div class="d-flex align-items-center text-center border-bottom py-16">
+                                <div class="flex-fill border-end">
+                                    <h6 class="mb-0 fw-semibold">@Model.AssignedRoles.Count</h6>
+                                    <span class="text-sm text-secondary-light">@T("BackOffice.Users.Details.RoleCount", "Rol")</span>
+                                </div>
+                                <div class="flex-fill border-end">
+                                    <h6 class="mb-0 fw-semibold">@Model.AssignedClaims.Count</h6>
+                                    <span class="text-sm text-secondary-light">@T("BackOffice.Users.Details.ClaimCount", "Yetki")</span>
+                                </div>
+                                <div class="flex-fill">
+                                    <h6 class="mb-0 fw-semibold">@Model.AccessFailedCount</h6>
+                                    <span class="text-sm text-secondary-light">@T("BackOffice.Users.Details.FailedLogin", "Hatalı Giriş")</span>
+                                </div>
+                            </div>
+
+                            <div class="mt-24">
+                                <h6 class="text-lg mb-16">@T("BackOffice.Users.Details.Contact", "İletişim")</h6>
+                                <ul class="d-flex flex-column gap-14 mb-0">
+                                    <li class="d-flex align-items-center gap-12">
+                                        <span class="w-36-px h-36-px bg-primary-50 text-primary-600 rounded-circle d-flex justify-content-center align-items-center flex-shrink-0"><i class="ri-mail-line"></i></span>
+                                        <div class="flex-grow-1 min-w-0">
+                                            <span class="text-sm text-secondary-light d-block">@T("Common.Email", "E-posta")</span>
+                                            <a href="mailto:@Model.Email" class="text-md fw-semibold text-primary-light text-break">@Model.Email</a>
+                                        </div>
+                                    </li>
+                                    <li class="d-flex align-items-center gap-12">
+                                        <span class="w-36-px h-36-px bg-primary-50 text-primary-600 rounded-circle d-flex justify-content-center align-items-center flex-shrink-0"><i class="ri-phone-line"></i></span>
+                                        <div class="flex-grow-1">
+                                            <span class="text-sm text-secondary-light d-block">@T("BackOffice.Users.Phone", "Telefon")</span>
+                                            <span class="text-md fw-semibold text-primary-light">@(Model.PhoneNumber ?? "-")</span>
+                                        </div>
+                                    </li>
+                                    <li class="d-flex align-items-center gap-12">
+                                        <span class="w-36-px h-36-px bg-primary-50 text-primary-600 rounded-circle d-flex justify-content-center align-items-center flex-shrink-0"><i class="ri-map-pin-line"></i></span>
+                                        <div class="flex-grow-1">
+                                            <span class="text-sm text-secondary-light d-block">@T("BackOffice.Users.Location", "Konum")</span>
+                                            <span class="text-md fw-semibold text-primary-light">@(string.IsNullOrWhiteSpace(location) ? "-" : location)</span>
+                                        </div>
+                                    </li>
+                                    <li class="d-flex align-items-center gap-12">
+                                        <span class="w-36-px h-36-px bg-primary-50 text-primary-600 rounded-circle d-flex justify-content-center align-items-center flex-shrink-0"><i class="ri-id-card-line"></i></span>
+                                        <div class="flex-grow-1">
+                                            <span class="text-sm text-secondary-light d-block">ORCID</span>
+                                            <span class="text-md fw-semibold text-primary-light">@(Model.Orcid ?? "-")</span>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-8">
+                    <div class="card p-0 overflow-hidden position-relative radius-16">
+                        <div class="card-header py-16 px-24 bg-base border-bottom">
+                            <h6 class="text-lg mb-0">@T("BackOffice.Users.Details.PersonalDetails", "Kişisel ve Hesap Bilgileri")</h6>
+                        </div>
+                        <div class="card-body p-24">
+                            <div class="row gy-4">
+                                <div class="col-md-6">
+                                    <span class="text-sm text-secondary-light d-block mb-4">@T("BackOffice.Users.FullName", "Ad Soyad")</span>
+                                    <span class="text-md fw-semibold text-primary-light">@Model.FullName</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="text-sm text-secondary-light d-block mb-4">@T("BackOffice.Users.Title", "Unvan")</span>
+                                    <span class="text-md fw-semibold text-primary-light">@(Model.TitleName ?? "-")</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="text-sm text-secondary-light d-block mb-4">@T("BackOffice.Users.Institution", "Kurum")</span>
+                                    <span class="text-md fw-semibold text-primary-light">@(Model.Institution ?? "-")</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="text-sm text-secondary-light d-block mb-4">@T("BackOffice.Users.Username", "Kullanıcı Adı")</span>
+                                    <span class="text-md fw-semibold text-primary-light text-break">@Model.UserName</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="text-sm text-secondary-light d-block mb-4">@T("BackOffice.Users.ColumnCreated", "Oluşturma")</span>
+                                    <span class="text-md fw-semibold text-primary-light">@Model.CreatedDate.ToString("dd.MM.yyyy HH:mm")</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="text-sm text-secondary-light d-block mb-4">@T("BackOffice.Users.Updated", "Son Güncelleme")</span>
+                                    <span class="text-md fw-semibold text-primary-light">@(Model.UpdatedDate?.ToString("dd.MM.yyyy HH:mm") ?? "-")</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card p-0 overflow-hidden position-relative radius-16 mt-24">
+                        <div class="card-header py-16 px-24 bg-base border-bottom">
+                            <h6 class="text-lg mb-0">@T("BackOffice.Users.Edit.OrgSection", "Organizasyon ve Kongre Erişimi")</h6>
+                        </div>
+                        <div class="card-body p-24">
+                            <div class="row gy-4">
+                                <div class="col-md-6">
+                                    <span class="text-sm text-secondary-light d-block mb-4">@T("BackOffice.Users.Organization", "Organizasyon")</span>
+                                    <span class="text-md fw-semibold text-primary-light">@(Model.OrganizationName ?? "-")</span>
+                                    @if (!string.IsNullOrWhiteSpace(Model.OrganizationShortName) && Model.OrganizationShortName != "-")
+                                    {
+                                        <small class="d-block text-neutral-500">@Model.OrganizationShortName</small>
+                                    }
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="text-sm text-secondary-light d-block mb-4">@T("BackOffice.Users.DefaultCongress", "Varsayılan Kongre")</span>
+                                    <span class="text-md fw-semibold text-primary-light">@(Model.DefaultCongressName ?? "-")</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="text-sm text-secondary-light d-block mb-4">@T("BackOffice.Users.OrgAccess", "Organizasyon Erişimi")</span>
+                                    <span class="badge @(Model.OrganizationAccessIsActive ? "bg-success-100 text-success-600" : "bg-neutral-200 text-neutral-700") rounded-pill px-12 py-6">
+                                        @(Model.OrganizationAccessIsActive ? T("Common.Active", "Aktif") : T("Common.Inactive", "Pasif"))
+                                    </span>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="text-sm text-secondary-light d-block mb-4">@T("BackOffice.Users.EmailConfirmation", "E-posta Onayı")</span>
+                                    <span class="badge @(Model.EmailConfirmed ? "bg-primary-50 text-primary-600" : "bg-warning-100 text-warning-600") rounded-pill px-12 py-6">
+                                        @(Model.EmailConfirmed ? T("BackOffice.Users.EmailConfirmedBadge", "Onaylı") : T("BackOffice.Users.EmailUnconfirmed", "Onaysız"))
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="authorization-pane" role="tabpanel" aria-labelledby="authorization-tab" tabindex="0">
+            <div class="row gy-4">
+                <div class="col-xl-5">
+                    <div class="card p-0 overflow-hidden position-relative radius-16 h-100">
+                        <div class="card-header py-16 px-24 bg-base border-bottom">
+                            <h6 class="text-lg mb-0">@T("BackOffice.Users.Details.RoleCard", "Rol Atama")</h6>
+                        </div>
+                        <div class="card-body p-24">
+                            <form asp-action="UpdateRoles" asp-route-culture="@culture" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="UserId" value="@Model.Id" />
+                                <div class="row gy-2">
+                                    @foreach (RoleOptionDto role in Model.AvailableRoles)
+                                    {
+                                        <div class="col-12">
+                                            <label class="form-check border radius-8 p-12 mb-0 h-100">
+                                                <input class="form-check-input" type="checkbox" name="RoleNames" value="@role.Name" checked="@role.IsAssigned" />
+                                                <span class="form-check-label ps-2 fw-semibold">@role.Name</span>
+                                            </label>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="text-end mt-3">
+                                    <button type="submit" class="btn btn-primary-600 radius-8 px-16 py-10">@T("BackOffice.Users.SaveRoles", "Rolleri Kaydet")</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-7">
+                    <div class="card p-0 overflow-hidden position-relative radius-16 h-100">
+                        <div class="card-header py-16 px-24 bg-base border-bottom">
+                            <h6 class="text-lg mb-0">@T("BackOffice.Users.Details.ClaimsCard", "Doğrudan Yetki / Claim Atama")</h6>
+                            <small class="text-neutral-500">@T("BackOffice.Users.Details.ClaimsCardSubtitle", "Rol dışında kullanıcıya özel permission claim tanımlayın. Normalde rol bazlı yetki tercih edilir.")</small>
+                        </div>
+                        <div class="card-body p-24">
+                            <form asp-action="UpdateClaims" asp-route-culture="@culture" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="UserId" value="@Model.Id" />
+                                <div class="border rounded-3 p-3 max-h-400-px overflow-auto">
+                                    <div class="row gy-2">
+                                        @foreach (ClaimOptionDto claim in Model.AvailableClaims)
+                                        {
+                                            <div class="col-md-6">
+                                                <label class="form-check mb-0">
+                                                    <input class="form-check-input" type="checkbox" name="ClaimNames" value="@claim.Name" checked="@claim.IsAssigned" />
+                                                    <span class="form-check-label text-sm">@claim.Name</span>
+                                                </label>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="text-end mt-3">
+                                    <button type="submit" class="btn btn-primary-600 radius-8 px-16 py-10">@T("BackOffice.Users.SaveClaims", "Yetkileri Kaydet")</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="security-pane" role="tabpanel" aria-labelledby="security-tab" tabindex="0">
+            <div class="row gy-4">
+                <div class="col-lg-4">
+                    <div class="card p-0 overflow-hidden position-relative radius-16 h-100">
+                        <div class="card-header py-16 px-24 bg-base border-bottom">
+                            <h6 class="text-lg mb-0">@T("BackOffice.Users.Details.PasswordCard", "Şifre İşlemleri")</h6>
+                        </div>
+                        <div class="card-body p-24 d-flex flex-column">
+                            <p class="text-neutral-600 text-sm flex-grow-1">@T("BackOffice.Users.Details.PasswordCardHint", "Sistem güvenli rastgele şifre üretir. Aynı kullanıcı için 1 saat içinde en fazla 4 kez sıfırlama yapılabilir.")</p>
+                            <form asp-action="ResetPassword" asp-route-culture="@culture" method="post" data-confirm-title="@T("BackOffice.Users.ResetPasswordConfirmTitle", "Şifre sıfırlansın mı?")" data-confirm-text="@T("BackOffice.Users.ResetPasswordConfirmText", "Yeni geçici şifre üretilecek ve sadece bir kez gösterilecek.")">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="userId" value="@Model.Id" />
+                                <button type="submit" class="btn btn-warning-600 radius-8 px-16 py-10 w-100 js-user-secure-action">
+                                    <i class="ri-key-2-line me-1"></i> @T("BackOffice.Users.ResetPasswordBtn", "Şifreyi Sıfırla")
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card p-0 overflow-hidden position-relative radius-16 h-100">
+                        <div class="card-header py-16 px-24 bg-base border-bottom">
+                            <h6 class="text-lg mb-0">@T("BackOffice.Users.BlacklistBadge", "Kara Liste")</h6>
+                        </div>
+                        <div class="card-body p-24 d-flex flex-column">
+                            <p class="text-neutral-600 text-sm flex-grow-1">@T("BackOffice.Users.Details.BlacklistCardHint", "Kara listeye alınan kullanıcı giriş yapamaz ve hesabı uzun süreli kilitlenir.")</p>
+                            <form asp-action="SetBlacklist" asp-route-culture="@culture" method="post" data-confirm-title="@T("BackOffice.Users.BlacklistConfirmTitle", "Kara liste durumu değişsin mi?")" data-confirm-text="@T("BackOffice.Users.BlacklistConfirmText", "Bu işlem kullanıcının sisteme erişimini etkiler.")">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="userId" value="@Model.Id" />
+                                <input type="hidden" name="isBlacklisted" value="@(!Model.IsBlacklisted)" />
+                                <button type="submit" class="btn @(Model.IsBlacklisted ? "btn-success-600" : "btn-danger-600") radius-8 px-16 py-10 w-100 js-user-secure-action">
+                                    @(Model.IsBlacklisted ? T("BackOffice.Users.RemoveFromBlacklist", "Kara Listeden Çıkar") : T("BackOffice.Users.AddToBlacklist", "Kara Listeye Al"))
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card p-0 overflow-hidden position-relative radius-16 h-100 border-danger-100">
+                        <div class="card-header py-16 px-24 bg-base border-bottom">
+                            <h6 class="text-lg mb-0 text-danger-600">@T("BackOffice.Users.Details.DeactivateCard", "Kullanıcıyı Pasife Al")</h6>
+                        </div>
+                        <div class="card-body p-24 d-flex flex-column">
+                            <p class="text-neutral-600 text-sm flex-grow-1">@T("BackOffice.Users.Details.DeactivateCardHint", "Bu işlem kullanıcıyı soft-delete yapar, kara listeye alır ve girişini kapatır.")</p>
+                            <form asp-action="Delete" asp-route-culture="@culture" method="post" data-confirm-title="@T("BackOffice.Users.DeactivateConfirmTitle", "Kullanıcı pasife alınsın mı?")" data-confirm-text="@T("BackOffice.Users.DeactivateConfirmText", "Kullanıcı listeden kaldırılacak ve giriş yapamayacak.")">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="userId" value="@Model.Id" />
+                                <button type="submit" class="btn btn-danger-600 radius-8 px-16 py-10 w-100 js-user-secure-action">
+                                    @T("BackOffice.Users.Details.DeactivateBtn", "Kullanıcıyı Pasife Al")
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/features/users/users.security.js" asp-append-version="true"></script>
+}

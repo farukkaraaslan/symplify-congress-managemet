@@ -1,0 +1,1137 @@
+@using Symplify.BackOffice.Application.Features.Submissions.Constants
+@using Symplify.BackOffice.Application.Features.Submissions.Queries.GetManage
+@using Symplify.BackOffice.Application.Services.Workflow
+@using Symplify.BackOffice.WebUI.Localization
+@model Symplify.BackOffice.WebUI.Models.Submissions.SubmissionManageViewModel
+@inject IBackOfficeViewLocalizer L
+
+@{
+    ViewData["Title"] = L.GetStringValue(SubmissionManagementResourceKeys.PageTitle);
+    ViewData["ClientResourcePrefixes"] = new[] { "BackOffice.Submissions.Management.Editor." };
+    string? currentCulture = Context.Request.RouteValues["culture"]?.ToString();
+    GetManageSubmissionResponse detail = Model.Detail;
+
+    ManageSubmissionAuthorDto? correspondingAuthor = detail.Authors.FirstOrDefault(item => item.IsCorrespondingAuthor) ?? detail.Authors.FirstOrDefault();
+    int reviewerCount = detail.Reviewers.Count;
+    int completedReviewerCount = detail.Reviewers.Count(item => item.Evaluation?.CompletedAt is not null);
+    string lastActionDate = detail.Histories.Any()
+        ? FormatDate(detail.Histories.Max(item => item.PerformedAt))
+        : FormatDate(detail.UpdatedDate ?? detail.SubmittedAt ?? detail.CreatedDate);
+    string transactionStatusName = string.IsNullOrWhiteSpace(detail.TransactionStatusName) ? T(SubmissionManagementResourceKeys.Draft) : detail.TransactionStatusName;
+    string paymentStatusName = string.IsNullOrWhiteSpace(detail.PaymentStatusName) ? "-" : detail.PaymentStatusName;
+    string editorEvaluationUrl = Url.Action("EditorEvaluation", "SubmissionManagement", new { culture = currentCulture, id = detail.Id }) ?? $"/{currentCulture}/submission-management/{detail.Id}/editor-evaluation";
+    AllowedWorkflowTransitionDto? approveTransition = detail.WorkflowTransitions.FirstOrDefault(item => IsCode(NormalizeCode(item.ToStatusCode), "ACCEPTED"));
+    AllowedWorkflowTransitionDto? completeTransition = detail.WorkflowTransitions.FirstOrDefault(item => IsCode(NormalizeCode(item.ToStatusCode), "COMPLETED"));
+    string currentStatusCode = NormalizeCode(detail.TransactionStatusCode);
+    string currentPaymentStatusCode = NormalizeCode(detail.PaymentStatusCode);
+    bool isAcceptedStatus = IsCode(currentStatusCode, "ACCEPTED");
+    bool isPaymentPendingStatus = IsCode(currentPaymentStatusCode, "PAYMENT_PENDING", "PENDING", "WAITING_PAYMENT")
+        || IsCode(currentStatusCode, "PAYMENT_PENDING");
+    bool isPaymentCompleted = IsCode(currentPaymentStatusCode, "PAID", "PAYMENT_PAID", "PAYMENT_COMPLETED", "APPROVED", "PAYMENT_APPROVED", "COMPLETED")
+        || IsPaidPaymentStatusName(paymentStatusName);
+    bool isCompletedStatus = IsCode(currentStatusCode, "COMPLETED");
+    bool isRejectedStatus = IsCode(currentStatusCode, "REJECTED");
+    bool isTerminalStatus = IsCode(currentStatusCode, "REJECTED", "WITHDRAWN", "COMPLETED");
+    bool isApprovalLockedStatus = isAcceptedStatus || isPaymentPendingStatus || isPaymentCompleted || isCompletedStatus || isRejectedStatus || IsCode(currentStatusCode, "WITHDRAWN");
+    bool hasCompletedEvaluation = detail.Evaluations.Any(item => item.CompletedAt.HasValue);
+    bool canShowApprove = approveTransition is not null && !isApprovalLockedStatus;
+    bool canApprove = canShowApprove && approveTransition!.IsAllowed && hasCompletedEvaluation;
+    bool canReject = !isRejectedStatus;
+    bool canRestartRejectedProcess = isRejectedStatus;
+    bool canCompletePayment = isAcceptedStatus && !isPaymentCompleted && !isRejectedStatus;
+    bool canRevertPayment = isPaymentCompleted && !isRejectedStatus;
+    bool canComplete = completeTransition is not null && completeTransition.IsAllowed && !isTerminalStatus;
+    string focusTitleKey = isCompletedStatus
+        ? SubmissionManagementResourceKeys.FocusCompletedTitle
+        : isPaymentPendingStatus
+            ? SubmissionManagementResourceKeys.FocusPaymentTitle
+            : isAcceptedStatus
+                ? SubmissionManagementResourceKeys.FocusAcceptedTitle
+                : isRejectedStatus
+                    ? SubmissionManagementResourceKeys.FocusRejectedTitle
+                    : SubmissionManagementResourceKeys.FocusTitle;
+    string focusDescriptionKey = isCompletedStatus
+        ? SubmissionManagementResourceKeys.FocusCompletedDescription
+        : isPaymentPendingStatus
+            ? SubmissionManagementResourceKeys.FocusPaymentDescription
+            : isAcceptedStatus
+                ? SubmissionManagementResourceKeys.FocusAcceptedDescription
+                : isRejectedStatus
+                    ? SubmissionManagementResourceKeys.FocusRejectedDescription
+                    : SubmissionManagementResourceKeys.FocusDescription;
+    string focusIconClass = isCompletedStatus || isAcceptedStatus
+        ? "bg-success-100 text-success-600"
+        : isRejectedStatus
+            ? "bg-danger-100 text-danger-600"
+            : isPaymentPendingStatus
+                ? "bg-info-100 text-info-600"
+                : "bg-warning-100 text-warning-600";
+    string focusIcon = isCompletedStatus
+        ? "ri-check-double-line"
+        : isAcceptedStatus
+            ? "ri-checkbox-circle-line"
+            : isRejectedStatus
+                ? "ri-close-circle-line"
+                : isPaymentPendingStatus
+                    ? "ri-bank-card-line"
+                    : "ri-user-star-line";
+    string focusBadgeClass = isCompletedStatus || isAcceptedStatus
+        ? "bg-success-100 text-success-600"
+        : isRejectedStatus
+            ? "bg-danger-100 text-danger-600"
+            : isPaymentPendingStatus
+                ? "bg-info-100 text-info-600"
+                : "bg-warning-100 text-warning-600";
+    string focusBadgeText = isCompletedStatus
+        ? T(SubmissionManagementResourceKeys.FocusCompletedBadge)
+        : isPaymentPendingStatus
+            ? T(SubmissionManagementResourceKeys.FocusPaymentBadge)
+            : isAcceptedStatus
+                ? T(SubmissionManagementResourceKeys.FocusAcceptedBadge)
+                : isRejectedStatus
+                    ? T(SubmissionManagementResourceKeys.FocusRejectedBadge)
+                    : string.Format(T(SubmissionManagementResourceKeys.ReviewCompletionFormat), completedReviewerCount, reviewerCount);
+    string editorStatusTextClass = isCompletedStatus || isAcceptedStatus
+        ? "text-success-600"
+        : isRejectedStatus
+            ? "text-danger-600"
+            : isPaymentPendingStatus
+                ? "text-info-600"
+                : "text-warning-600";
+
+    // Hakem atama workflow transition listesine bağlı olmamalı.
+    // Çünkü editör bu ekrandan değerlendirme öncesinde isterse doğrudan hakem atayabilmelidir.
+    // Sadece final statülerde ve tamamlanmış değerlendirme varken engellenir.
+    bool canAssignReviewer = !hasCompletedEvaluation && !isTerminalStatus;
+    bool canCreateEditorEvaluation = !hasCompletedEvaluation && !isTerminalStatus;
+    bool showReviewerAssignmentTab = canAssignReviewer || detail.Reviewers.Any();
+    bool isExhibitionApplication = detail.IsExhibitionApplication;
+    ManageSubmissionFileDto? exhibitionImageFile = detail.Files.FirstOrDefault(item =>
+        string.Equals(item.FileKind, "ExhibitionImage", StringComparison.OrdinalIgnoreCase) ||
+        (!string.IsNullOrWhiteSpace(item.ContentType) && item.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)));
+    string? exhibitionImagePreviewUrl = exhibitionImageFile is null
+        ? null
+        : Url.Action("PreviewFile", "SubmissionManagementFiles", new { culture = currentCulture, fileId = exhibitionImageFile.Id });
+    string? exhibitionImageDownloadUrl = exhibitionImageFile is null
+        ? null
+        : Url.Action("DownloadFile", "SubmissionManagementFiles", new { culture = currentCulture, fileId = exhibitionImageFile.Id });
+}
+
+<div class="dashboard-main-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-0">@L[SubmissionManagementResourceKeys.PageTitle]</h6>
+            <small class="text-neutral-500">@L[SubmissionManagementResourceKeys.PageSubtitle]</small>
+        </div>
+        <ul class="d-flex align-items-center gap-2 mb-0 list-unstyled">
+            <li class="fw-medium">
+                <a class="d-flex align-items-center gap-1 hover-text-primary text-neutral-600" href="@Url.Action("Index", "Home", new { culture = currentCulture })">
+                    <iconify-icon class="icon text-lg" icon="solar:home-smile-angle-outline"></iconify-icon>
+                    @L[SubmissionManagementResourceKeys.BreadcrumbDashboard]
+                </a>
+            </li>
+            <li>-</li>
+            <li class="fw-medium"><a class="hover-text-primary text-neutral-600" href="@Url.Action("Index", "SubmissionManagement", new { culture = currentCulture })">@L[SubmissionManagementResourceKeys.BreadcrumbIndex]</a></li>
+            <li>-</li>
+            <li class="fw-medium">@L[SubmissionManagementResourceKeys.BreadcrumbDetail]</li>
+        </ul>
+    </div>
+
+    @if (TempData["SuccessMessage"] is not null)
+    {
+        <div data-symplify-toast data-toast-icon="success" data-toast-title="@TempData["SuccessMessage"]"></div>
+    }
+
+    @if (TempData["ErrorMessage"] is not null)
+    {
+        <div data-symplify-toast data-toast-icon="error" data-toast-title="@TempData["ErrorMessage"]"></div>
+    }
+
+    <div class="card border shadow-none radius-16 mb-24">
+        <div class="card-body p-24 p-lg-32">
+            <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-24">
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center flex-wrap gap-2 mb-16">
+                        <span class="badge bg-primary-50 text-primary-600 radius-8 px-12 py-7 fw-semibold">@(string.IsNullOrWhiteSpace(detail.SubmissionNumber) ? $"#{detail.Id.ToString()[..8].ToUpperInvariant()}" : $"#{detail.SubmissionNumber}")</span>
+                        <span class="badge @detail.TransactionStatusBadgeClass radius-8 px-12 py-7 fw-semibold">@transactionStatusName</span>
+                        <span class="badge @detail.PaymentStatusBadgeClass radius-8 px-12 py-7 fw-semibold">@paymentStatusName</span>
+                    </div>
+
+                    <h3 class="mb-16 fw-semibold text-primary-light line-height-1-25">@detail.Title</h3>
+
+                    <div class="d-flex align-items-center flex-wrap gap-3 text-sm text-neutral-600">
+                        <span class="d-inline-flex align-items-center gap-1"><i class="ri-building-4-line text-primary-600"></i> @detail.CongressName</span>
+                        <span class="d-inline-flex align-items-center gap-1"><i class="@(isExhibitionApplication ? "ri-gallery-line" : "ri-presentation-line") text-primary-600"></i> @detail.SubmissionTypeName</span>
+                        <span class="d-inline-flex align-items-center gap-1"><i class="ri-user-star-line text-primary-600"></i> @L[SubmissionManagementResourceKeys.CorrespondingAuthor]: @(correspondingAuthor?.FullName ?? "-")</span>
+                        <span class="d-inline-flex align-items-center gap-1"><i class="ri-calendar-line text-primary-600"></i> @L[SubmissionManagementResourceKeys.SubmittedAt]: @FormatDate(detail.SubmittedAt ?? detail.CreatedDate)</span>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap justify-content-end gap-2 d-print-none">
+                    <a href="@Url.Action("Index", "SubmissionManagement", new { culture = currentCulture })" class="btn btn-outline-neutral-900 radius-8 px-18 py-10 d-inline-flex align-items-center gap-2">
+                        <i class="ri-arrow-left-line"></i> @L[SubmissionManagementResourceKeys.BackToList]
+                    </a>
+                </div>
+            </div>
+
+            <div class="row gy-3">
+                <div class="col-xl-3 col-md-6">
+                    <div class="border border-neutral-200 bg-neutral-50 radius-12 p-18 h-100">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="w-40-px h-40-px rounded-circle bg-primary-50 text-primary-600 d-flex align-items-center justify-content-center flex-shrink-0"><i class="@(isExhibitionApplication ? "ri-gallery-line" : "ri-file-list-3-line")"></i></span>
+                            <div>
+                                <span class="text-sm text-secondary-light d-block mb-4">@L[SubmissionManagementResourceKeys.SubmissionType]</span>
+                                <h6 class="mb-0 fw-semibold text-neutral-900">@detail.SubmissionTypeName</h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="border border-neutral-200 bg-neutral-50 radius-12 p-18 h-100">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="w-40-px h-40-px rounded-circle bg-info-50 text-info-600 d-flex align-items-center justify-content-center flex-shrink-0"><i class="@(isExhibitionApplication ? "ri-ruler-line" : "ri-bookmark-3-line")"></i></span>
+                            <div>
+                                <span class="text-sm text-secondary-light d-block mb-4">@(isExhibitionApplication ? T("BackOffice.Submissions.Management.Editor.Exhibition.Dimensions") : T(SubmissionManagementResourceKeys.Topic))</span>
+                                <h6 class="mb-0 fw-semibold text-neutral-900">@(isExhibitionApplication ? (detail.ExhibitionDetail?.Dimensions ?? "-") : detail.TopicName)</h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="border border-neutral-200 bg-neutral-50 radius-12 p-18 h-100">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="w-40-px h-40-px rounded-circle bg-purple-50 text-purple d-flex align-items-center justify-content-center flex-shrink-0"><i class="@(isExhibitionApplication ? "ri-brush-line" : "ri-team-line")"></i></span>
+                            <div>
+                                <span class="text-sm text-secondary-light d-block mb-4">@(isExhibitionApplication ? T("BackOffice.Submissions.Management.Editor.Exhibition.Technique") : T(SubmissionManagementResourceKeys.StatReviewerStatus))</span>
+                                <h6 class="mb-0 fw-semibold text-neutral-900">@(isExhibitionApplication ? (detail.ExhibitionDetail?.Technique ?? "-") : string.Format(T(SubmissionManagementResourceKeys.ReviewCompletedFormat), completedReviewerCount, reviewerCount))</h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="border border-neutral-200 bg-neutral-50 radius-12 p-18 h-100">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="w-40-px h-40-px rounded-circle bg-success-50 text-success-600 d-flex align-items-center justify-content-center flex-shrink-0"><i class="ri-medal-line"></i></span>
+                            <div>
+                                <span class="text-sm text-secondary-light d-block mb-4">@L[SubmissionManagementResourceKeys.StatAverageScore]</span>
+                                <h6 class="mb-0 fw-semibold text-success-600">@(detail.AverageScore.HasValue ? $"{detail.AverageScore.Value:0.##}" : "-")</h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border shadow-none radius-12 mb-24 d-print-none" id="paymentActions">
+        <div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+                <h6 class="text-md mb-1">@L[SubmissionManagementResourceKeys.FocusTitle]</h6>
+                <span class="text-sm text-neutral-500">@L[focusDescriptionKey]</span>
+            </div>
+            <span class="badge @focusBadgeClass radius-8 px-12 py-7">@focusBadgeText</span>
+        </div>
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-2">
+                @if (canShowApprove)
+                {
+                    <button type="button" class="btn btn-success-600 radius-8 px-16 py-10 d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#approveSubmissionModal" disabled="@(!canApprove)" title="@(canApprove ? null : L.GetStringValue(SubmissionManagementResourceKeys.DecisionEvaluationRequired))">
+                        <i class="ri-check-line"></i> @L[SubmissionManagementResourceKeys.ActionApprove]
+                    </button>
+                }
+                @if (canReject)
+                {
+                    <button type="button" class="btn btn-danger-600 radius-8 px-16 py-10 d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#rejectSubmissionModal">
+                        <i class="ri-close-line"></i> @L[SubmissionManagementResourceKeys.ActionReject]
+                    </button>
+                }
+                @if (canRestartRejectedProcess)
+                {
+                    <button type="button" class="btn btn-warning-600 radius-8 px-16 py-10 d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#restartRejectedProcessModal">
+                        <i class="ri-refresh-line"></i> @L[SubmissionManagementResourceKeys.ActionRestartProcess]
+                    </button>
+                }
+                @if (canAssignReviewer)
+                {
+                    <button type="button" class="btn btn-outline-primary-600 radius-8 px-16 py-10 d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#assignReviewerModal">
+                        <i class="ri-user-add-line"></i> @L[SubmissionManagementResourceKeys.ActionAssignReviewer]
+                    </button>
+                }
+                @if (canCreateEditorEvaluation)
+                {
+                    <a class="btn btn-warning-600 radius-8 px-16 py-10 d-inline-flex align-items-center gap-2" href="@editorEvaluationUrl">
+                        <i class="ri-edit-2-line"></i> @L[SubmissionManagementResourceKeys.ActionEditorEvaluation]
+                    </a>
+                }
+                @if (canCompletePayment)
+                {
+                    <button type="button" class="btn btn-success-600 radius-8 px-16 py-10 d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#paymentSubmissionModal">
+                        <i class="ri-bank-card-line"></i> @L[SubmissionManagementResourceKeys.ActionMarkPaymentCompleted]
+                    </button>
+                }
+                @if (canRevertPayment)
+                {
+                    <button type="button" class="btn btn-warning-600 radius-8 px-16 py-10 d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#revertPaymentSubmissionModal">
+                        <i class="ri-arrow-go-back-line"></i> @L[SubmissionManagementResourceKeys.ActionRevertPayment]
+                    </button>
+                }
+                @if (completeTransition is not null && !isTerminalStatus)
+                {
+                    <button type="button" class="btn btn-success-600 radius-8 px-16 py-10 d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#completeSubmissionModal" disabled="@(!canComplete)">
+                        <i class="ri-check-double-line"></i> @ResolveTransitionActionText(completeTransition)
+                    </button>
+                }
+                <button type="button" class="btn btn-outline-neutral-900 radius-8 px-16 py-10 d-inline-flex align-items-center gap-2" data-submission-tab-target="reviews-tab">
+                    <i class="ri-chat-check-line"></i> @L[SubmissionManagementResourceKeys.ActionViewEvaluations]
+                </button>
+            </div>
+            @if (canShowApprove && !canApprove)
+            {
+                <small class="d-block text-warning-600 mt-2">@L[SubmissionManagementResourceKeys.DecisionEvaluationRequired]</small>
+            }
+            @if (!isTerminalStatus && hasCompletedEvaluation)
+            {
+                <small class="d-block text-neutral-500 mt-2">@L[SubmissionManagementResourceKeys.ReviewerAssignmentDisabledAfterEvaluation]</small>
+            }
+        </div>
+    </div>
+
+    <div class="card border shadow-none radius-16" id="submissionDetailCard">
+        <div class="card-header border-bottom p-0">
+            <ul class="nav nav-pills p-12 gap-2" id="submissionDetailTab" role="tablist">
+                <li class="nav-item" role="presentation"><button class="nav-link active d-flex align-items-center gap-2 px-16 py-10" id="summary-tab" data-bs-toggle="pill" data-bs-target="#summaryTab" type="button" role="tab"><i class="ri-file-list-3-line"></i> @L[SubmissionManagementResourceKeys.TabSummary]</button></li>
+                @if (showReviewerAssignmentTab)
+                {
+                    <li class="nav-item" role="presentation"><button class="nav-link d-flex align-items-center gap-2 px-16 py-10" id="reviewer-tab" data-bs-toggle="pill" data-bs-target="#reviewerTab" type="button" role="tab"><i class="ri-user-add-line"></i> @L[SubmissionManagementResourceKeys.TabReviewerAssignment]</button></li>
+                }
+                <li class="nav-item" role="presentation"><button class="nav-link d-flex align-items-center gap-2 px-16 py-10" id="reviews-tab" data-bs-toggle="pill" data-bs-target="#reviewsTab" type="button" role="tab"><i class="ri-medal-line"></i> @L[SubmissionManagementResourceKeys.TabEvaluations]</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link d-flex align-items-center gap-2 px-16 py-10" id="files-tab" data-bs-toggle="pill" data-bs-target="#filesTab" type="button" role="tab"><i class="ri-folder-2-line"></i> @L[SubmissionManagementResourceKeys.TabFiles]</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link d-flex align-items-center gap-2 px-16 py-10" id="history-tab" data-bs-toggle="pill" data-bs-target="#historyTab" type="button" role="tab"><i class="ri-history-line"></i> @L[SubmissionManagementResourceKeys.TabHistory]</button></li>
+            </ul>
+        </div>
+
+        <div class="card-body p-24">
+            <div class="tab-content" id="submissionDetailTabContent">
+                <div class="tab-pane fade show active" id="summaryTab" role="tabpanel" aria-labelledby="summary-tab" tabindex="0">
+                    @if (isExhibitionApplication)
+                    {
+                        <div class="row gy-4">
+                            <div class="col-xl-7">
+                                <div class="card border shadow-none radius-12 h-100">
+                                    <div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                        <div>
+                                            <h6 class="text-md mb-1">@T("BackOffice.Submissions.Management.Editor.Exhibition.ImageTitle")</h6>
+                                            <span class="text-sm text-neutral-500">@T("BackOffice.Submissions.Management.Editor.Exhibition.ImageDescription")</span>
+                                        </div>
+                                        <span class="badge bg-primary-50 text-primary-600 radius-8 px-12 py-6">@(exhibitionImageFile?.ContentType ?? "-")</span>
+                                    </div>
+                                    <div class="card-body">
+                                        @if (exhibitionImageFile is null || string.IsNullOrWhiteSpace(exhibitionImagePreviewUrl))
+                                        {
+                                            <div class="alert alert-warning mb-0">@L[SubmissionManagementResourceKeys.FilesEmpty]</div>
+                                        }
+                                        else
+                                        {
+                                            <div class="border rounded-3 overflow-hidden bg-neutral-50">
+                                                <div class="ratio ratio-16x9">
+                                                    <img src="@exhibitionImagePreviewUrl" alt='@T("BackOffice.Submissions.Management.Editor.Exhibition.ImageAlt")' class="w-100 h-100 object-fit-cover" />
+                                                </div>
+                                            </div>
+                                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-16">
+                                                <div>
+                                                    <h6 class="text-md mb-1">@exhibitionImageFile.OriginalFileName</h6>
+                                                    <span class="text-sm text-neutral-500">@L[SubmissionManagementResourceKeys.UploadedAt]: @FormatDateTime(exhibitionImageFile.DisplayDate ?? exhibitionImageFile.UploadedAt)</span>
+                                                </div>
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    <button type="button" class="btn btn-outline-primary-600 radius-8 px-14 py-8 d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#exhibitionImagePreviewModal"><i class="ri-eye-line"></i> @T("BackOffice.Submissions.Management.Editor.Exhibition.Preview")</button>
+                                                    <a href="@exhibitionImageDownloadUrl" class="btn btn-primary-600 radius-8 px-14 py-8 d-inline-flex align-items-center gap-1"><i class="ri-download-2-line"></i> @L[SubmissionManagementResourceKeys.Download]</a>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-5">
+                                <div class="card border shadow-none radius-12 h-100">
+                                    <div class="card-header border-bottom">
+                                        <h6 class="text-md mb-1">@T("BackOffice.Submissions.Management.Editor.Exhibition.InfoTitle")</h6>
+                                        <span class="text-sm text-neutral-500">@T("BackOffice.Submissions.Management.Editor.Exhibition.InfoDescription")</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="d-flex flex-column gap-3">
+                                            @ExhibitionInfoItem("BackOffice.Submissions.Management.Editor.Exhibition.WorkName", detail.ExhibitionDetail?.WorkName ?? detail.Title)
+                                            <div class="row gy-3">
+                                                <div class="col-md-6">@ExhibitionInfoItem("BackOffice.Submissions.Management.Editor.Exhibition.Dimensions", detail.ExhibitionDetail?.Dimensions ?? "-")</div>
+                                                <div class="col-md-6">@ExhibitionInfoItem("BackOffice.Submissions.Management.Editor.Exhibition.Technique", detail.ExhibitionDetail?.Technique ?? "-")</div>
+                                            </div>
+                                            @ExhibitionInfoItem("BackOffice.Submissions.Management.Editor.Exhibition.Address", detail.ExhibitionDetail?.Address ?? "-")
+                                            <div class="border rounded-3 p-16 bg-neutral-50">
+                                                <span class="text-sm text-neutral-500 d-block mb-6">@T("BackOffice.Submissions.Management.Editor.Exhibition.Description")</span>
+                                                <div class="symplify-rich-content text-sm text-neutral-700 mb-0">@RenderRichText(detail.ExhibitionDetail?.Description ?? detail.Abstract, "-")</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @RenderAuthors(detail.Authors)
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row gy-4">
+                            <div class="col-12">
+                                <div class="card border shadow-none radius-12 h-100">
+                                    <div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                        <div>
+                                            <h6 class="text-md mb-1">@T("BackOffice.Submissions.Management.Editor.Content.Title")</h6>
+                                            <span class="text-sm text-neutral-500">@T("BackOffice.Submissions.Management.Editor.Content.Description")</span>
+                                        </div>
+                                        <span class="badge bg-primary-50 text-primary-600 radius-8 px-12 py-6">@T("BackOffice.Submissions.Management.Editor.Content.LanguageBadge")</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row gy-4">
+                                            <div class="col-lg-6">
+                                                <div class="border rounded-3 p-20 h-100">
+                                                    <div class="d-flex align-items-center gap-2 mb-16"><span class="w-36-px h-36-px rounded-circle bg-primary-50 text-primary-600 d-flex align-items-center justify-content-center"><i class="ri-translate-2"></i></span><div><h6 class="text-md mb-0">@T("BackOffice.Submissions.Management.Editor.Content.Turkish")</h6><span class="text-sm text-neutral-500">@T("BackOffice.Submissions.Management.Editor.Content.DefaultLanguage")</span></div></div>
+                                                    <span class="text-neutral-500 text-sm">@T("BackOffice.Submissions.Management.Editor.Content.TitleLabel")</span>
+                                                    <h6 class="text-md mt-1 mb-12">@detail.Title</h6>
+                                                    <span class="text-neutral-500 text-sm">@T("BackOffice.Submissions.Management.Editor.Content.AbstractLabel")</span>
+                                                    <div class="symplify-rich-content text-sm text-neutral-700 mt-1 mb-12">@RenderRichText(detail.Abstract, "-")</div>
+                                                    <span class="text-neutral-500 text-sm">@T("BackOffice.Submissions.Management.Editor.Content.KeywordsLabel")</span>
+                                                    <div class="d-flex align-items-center flex-wrap gap-2 mt-2">@foreach (string keyword in SplitKeywords(detail.Keywords)){<span class="badge bg-primary-50 text-primary-600 radius-8 px-10 py-6">@keyword</span>}</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="border rounded-3 p-20 h-100">
+                                                    <div class="d-flex align-items-center gap-2 mb-16"><span class="w-36-px h-36-px rounded-circle bg-info-50 text-info-600 d-flex align-items-center justify-content-center"><i class="ri-translate"></i></span><div><h6 class="text-md mb-0">@T("BackOffice.Submissions.Management.Editor.Content.English")</h6><span class="text-sm text-neutral-500">@T("BackOffice.Submissions.Management.Editor.Content.TranslationFields")</span></div></div>
+                                                    <span class="text-neutral-500 text-sm">@T("BackOffice.Submissions.Management.Editor.Content.TitleLabelEn")</span>
+                                                    <h6 class="text-md mt-1 mb-12">@(string.IsNullOrWhiteSpace(detail.TitleEn) ? "-" : detail.TitleEn)</h6>
+                                                    <span class="text-neutral-500 text-sm">@T("BackOffice.Submissions.Management.Editor.Content.AbstractLabelEn")</span>
+                                                    <div class="symplify-rich-content text-sm text-neutral-700 mt-1 mb-12">@RenderRichText(detail.AbstractEn, "-")</div>
+                                                    <span class="text-neutral-500 text-sm">@T("BackOffice.Submissions.Management.Editor.Content.KeywordsLabelEn")</span>
+                                                    <div class="d-flex align-items-center flex-wrap gap-2 mt-2">@foreach (string keyword in SplitKeywords(detail.KeywordsEn)){<span class="badge bg-info-50 text-info-600 radius-8 px-10 py-6">@keyword</span>}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @RenderAuthors(detail.Authors)
+                        </div>
+                    }
+                </div>
+
+                @if (showReviewerAssignmentTab)
+                {
+                    <div class="tab-pane fade" id="reviewerTab" role="tabpanel" aria-labelledby="reviewer-tab" tabindex="0">
+                        <div class="card border shadow-none radius-12">
+                            <div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2"><div><h6 class="text-md mb-1">@L[SubmissionManagementResourceKeys.AssignedReviewersTitle]</h6><span class="text-sm text-neutral-500">@L[SubmissionManagementResourceKeys.AssignedReviewersDescription]</span></div><span class="badge bg-info-100 text-info-600 radius-8 px-12 py-6">@string.Format(T(SubmissionManagementResourceKeys.ReviewerCountFormat), reviewerCount)</span></div>
+                            <div class="card-body">
+                                @if (hasCompletedEvaluation) { <div class="alert alert-info bg-primary-50 border-primary-100 text-primary-700 mb-16">@L[SubmissionManagementResourceKeys.ReviewerAssignmentDisabledAfterEvaluation]</div> }
+                                @if (!detail.Reviewers.Any()) { <div class="alert alert-warning mb-0">@L[SubmissionManagementResourceKeys.NoAssignedReviewers]</div> }
+                                else
+                                {
+                                    <div class="row gy-3">
+                                        @foreach (ManageSubmissionReviewerDto reviewer in detail.Reviewers)
+                                        {
+                                            <div class="col-lg-6"><div class="border rounded-3 p-18 h-100"><div class="d-flex align-items-start justify-content-between flex-wrap gap-2"><div><h6 class="text-md mb-1">@reviewer.FullName</h6><small class="text-neutral-500 d-block">@(reviewer.Institution ?? T(SubmissionManagementResourceKeys.InstitutionEmpty))</small><small class="text-neutral-500 d-block">@L[SubmissionManagementResourceKeys.AssignedAt]: @FormatDate(reviewer.AssignedAt)</small></div><span class="badge @(reviewer.Evaluation?.CompletedAt is not null ? "bg-success-100 text-success-600" : "bg-warning-100 text-warning-600") radius-8 px-10 py-6">@(reviewer.Evaluation?.CompletedAt is not null ? T(SubmissionManagementResourceKeys.ReviewCompleted) : T(SubmissionManagementResourceKeys.ReviewWaiting))</span></div></div></div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <div class="tab-pane fade" id="reviewsTab" role="tabpanel" aria-labelledby="reviews-tab" tabindex="0">
+                    <div class="card border shadow-none radius-12">
+                        <div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div>
+                                <h6 class="text-md mb-1">@L[SubmissionManagementResourceKeys.EvaluationsInfoTitle]</h6>
+                                <span class="text-sm text-neutral-500">@L[SubmissionManagementResourceKeys.EvaluationsInfoDescription]</span>
+                            </div>
+                            <span class="badge bg-neutral-100 text-neutral-700 radius-8 px-12 py-6">@string.Format(T("BackOffice.Submissions.Management.Editor.Evaluations.CountFormat"), detail.Evaluations.Count)</span>
+                        </div>
+                        <div class="card-body">
+                            @if (!detail.Evaluations.Any())
+                            {
+                                <div class="alert alert-warning mb-3">@L[SubmissionManagementResourceKeys.EvaluationsEmpty]</div>
+                                @if (canCreateEditorEvaluation)
+                                {
+                                    <a class="btn btn-success-600 radius-8 px-16 py-10 d-inline-flex align-items-center gap-2 d-print-none" href="@editorEvaluationUrl">
+                                        <i class="ri-edit-2-line"></i>
+                                        @L[SubmissionManagementResourceKeys.ActionEditorEvaluation]
+                                    </a>
+                                }
+                            }
+                            else
+                            {
+                                <div class="vstack gap-3">
+                                    @foreach (ManageSubmissionEvaluationDto evaluation in detail.Evaluations)
+                                    {
+                                        <div class="border rounded-3 p-16">
+                                            <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+                                                <div>
+                                                    <h6 class="text-md mb-1">@evaluation.ReviewerName</h6>
+                                                    <small class="text-neutral-500">@L[SubmissionManagementResourceKeys.EvaluationDate]: @FormatDateTime(evaluation.CompletedAt ?? evaluation.CreatedDate)</small>
+                                                </div>
+                                                <div class="d-flex flex-wrap justify-content-end gap-2">
+                                                    <span class="badge bg-primary-50 text-primary-600 radius-8 px-12 py-7">@(evaluation.Recommendation ?? T(SubmissionManagementResourceKeys.RecommendationEmpty))</span>
+                                                    <span class="badge bg-success-50 text-success-600 radius-8 px-12 py-7">@string.Format(T("BackOffice.Submissions.Management.Editor.Evaluations.TotalScoreFormat"), evaluation.TotalScore?.ToString("0.##") ?? "-")</span>
+                                                </div>
+                                            </div>
+
+                                            @if (evaluation.Scores.Any())
+                                            {
+                                                <div class="table-responsive mb-3">
+                                                    <table class="table bordered-table mb-0">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>@L[SubmissionManagementResourceKeys.Criterion]</th>
+                                                                <th class="text-end text-nowrap">@L[SubmissionManagementResourceKeys.Score]</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach (ManageSubmissionEvaluationScoreDto score in evaluation.Scores)
+                                                            {
+                                                                <tr>
+                                                                    <td>
+                                                                        <span class="fw-semibold">@score.CriterionName</span>
+                                                                        @if (!string.IsNullOrWhiteSpace(score.Comment))
+                                                                        {
+                                                                            <small class="text-neutral-500 d-block">@score.Comment</small>
+                                                                        }
+                                                                    </td>
+                                                                    <td class="text-end fw-semibold">@score.Score.ToString("0.##")</td>
+                                                                </tr>
+                                                            }
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="alert alert-warning py-10 mb-3">@T("BackOffice.Submissions.Management.Editor.Evaluations.ScoreEmpty")</div>
+                                            }
+
+                                            <div>
+                                                <span class="text-sm text-neutral-500 d-block mb-2 fw-semibold">@T("BackOffice.Submissions.Management.Editor.Evaluations.ReviewerComment")</span>
+                                                <p class="mb-0 text-neutral-600">@(string.IsNullOrWhiteSpace(evaluation.Comment) ? T(SubmissionManagementResourceKeys.CommentEmpty) : evaluation.Comment)</p>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="filesTab" role="tabpanel" aria-labelledby="files-tab" tabindex="0">
+                    <div class="card border shadow-none radius-12"><div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2"><div><h6 class="text-md mb-1">@L[SubmissionManagementResourceKeys.FilesTitle]</h6><span class="text-sm text-neutral-500">@L[SubmissionManagementResourceKeys.FilesDescription]</span></div><span class="badge bg-neutral-100 text-neutral-700 radius-8 px-12 py-6">@string.Format(T(SubmissionManagementResourceKeys.FilesCountFormat), detail.Files.Count)</span></div><div class="card-body">@if (!detail.Files.Any()){<div class="alert alert-warning mb-0">@L[SubmissionManagementResourceKeys.FilesEmpty]</div>}else{<div class="row gy-3">@foreach (ManageSubmissionFileDto file in detail.Files){string? downloadUrl = Url.Action("DownloadFile", "SubmissionManagementFiles", new { culture = currentCulture, fileId = file.Id }); string? previewUrl = IsImageFile(file) ? Url.Action("PreviewFile", "SubmissionManagementFiles", new { culture = currentCulture, fileId = file.Id }) : null;<div class="col-lg-6"><div class="border rounded-3 p-18 h-100"><div class="d-flex gap-3 align-items-start">@if (!string.IsNullOrWhiteSpace(previewUrl)){<div class="w-100-px flex-shrink-0"><div class="ratio ratio-1x1 border rounded-3 overflow-hidden bg-neutral-50"><img src="@previewUrl" alt="@file.OriginalFileName" class="w-100 h-100 object-fit-cover" /></div></div>}else{<span class="w-56-px h-56-px rounded-circle @(IsCertificateFile(file) ? "bg-success-50 text-success-600" : "bg-primary-50 text-primary-600") d-flex align-items-center justify-content-center flex-shrink-0"><i class="@(ResolveFileIcon(file)) text-xl"></i></span>}<div class="flex-grow-1"><div class="d-flex align-items-start justify-content-between gap-2"><div><h6 class="text-md mb-6">@file.OriginalFileName</h6><div class="d-flex flex-wrap gap-2 mb-6"><span class="badge @(IsCertificateFile(file) ? "bg-success-50 text-success-600" : "bg-primary-50 text-primary-600") radius-8 px-10 py-6">@ResolveFileKindLabel(file)</span><span class="badge bg-neutral-100 text-neutral-700 radius-8 px-10 py-6">@ResolveFileExtension(file)</span></div><span class="text-sm text-neutral-500 d-block">@L[SubmissionManagementResourceKeys.UploadedAt]: @FormatDateTime(file.DisplayDate ?? file.UploadedAt)</span></div><a href="@downloadUrl" class="btn btn-outline-primary-600 radius-8 px-14 py-8 d-inline-flex align-items-center gap-1"><i class="ri-download-2-line"></i> @L[SubmissionManagementResourceKeys.Download]</a></div></div></div></div></div>}</div>}</div></div>
+                </div>
+
+                <div class="tab-pane fade" id="historyTab" role="tabpanel" aria-labelledby="history-tab" tabindex="0">
+                    <div class="card border shadow-none radius-12"><div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2"><div><h6 class="text-md mb-1">@L[SubmissionManagementResourceKeys.HistoryTitle]</h6><span class="text-sm text-neutral-500">@L[SubmissionManagementResourceKeys.HistoryDescription]</span></div><span class="badge bg-primary-50 text-primary-600 radius-8 px-12 py-6">@string.Format(T(SubmissionManagementResourceKeys.HistoryCountFormat), detail.Histories.Count)</span></div><div class="card-body">@if (!detail.Histories.Any()){<div class="alert alert-warning mb-0">@L[SubmissionManagementResourceKeys.HistoryEmpty]</div>}else{<div class="d-flex flex-column gap-3">@foreach (ManageSubmissionHistoryDto history in detail.Histories){<div class="border rounded-3 p-18 d-flex align-items-start gap-3"><span class="w-40-px h-40-px rounded-circle @(history.IsAutomatic ? "bg-neutral-100 text-neutral-700" : "bg-primary-50 text-primary-600") d-flex align-items-center justify-content-center flex-shrink-0"><i class="ri-route-line"></i></span><div class="flex-grow-1"><div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-6"><h6 class="text-md mb-0">@ResolveHistoryTitle(history)</h6><span class="badge bg-neutral-100 text-neutral-700 radius-8 px-10 py-6">@FormatDateTime(history.PerformedAt)</span></div><p class="text-sm text-neutral-700 mb-1">@ResolveHistoryDescription(history)</p><small class="text-neutral-500">@L[SubmissionManagementResourceKeys.HistoryPerformedBy]: @history.PerformedByName</small></div></div>}</div>}</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (isExhibitionApplication && exhibitionImageFile is not null && !string.IsNullOrWhiteSpace(exhibitionImagePreviewUrl))
+{
+    <div class="modal fade" id="exhibitionImagePreviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content radius-16">
+                <div class="modal-header border-bottom">
+                    <div><h6 class="modal-title mb-1">@T("BackOffice.Submissions.Management.Editor.Exhibition.ImageTitle")</h6><small class="text-neutral-500">@exhibitionImageFile.OriginalFileName</small></div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label='@L.GetStringValue("Common.Close")'></button>
+                </div>
+                <div class="modal-body p-24"><div class="border rounded-3 overflow-hidden bg-neutral-50"><img src="@exhibitionImagePreviewUrl" alt='@T("BackOffice.Submissions.Management.Editor.Exhibition.ImageAlt")' class="img-fluid w-100" /></div></div>
+                <div class="modal-footer border-top"><button type="button" class="btn btn-outline-neutral-900 radius-8 px-16 py-10" data-bs-dismiss="modal">@L.GetStringValue("Common.Close")</button><a href="@exhibitionImageDownloadUrl" class="btn btn-primary-600 radius-8 px-16 py-10 d-inline-flex align-items-center gap-1"><i class="ri-download-2-line"></i> @L[SubmissionManagementResourceKeys.Download]</a></div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (canShowApprove && approveTransition is not null)
+{
+    <div class="modal fade" id="approveSubmissionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <form asp-controller="SubmissionWorkflow" asp-action="ChangeStatus" asp-route-culture="@currentCulture" method="post" class="js-workflow-form" data-confirm-title="@L[SubmissionManagementResourceKeys.DecisionApproveModalTitle]" data-confirm-text="@L[SubmissionManagementResourceKeys.DecisionConfirmText]" data-confirm-button="@L[SubmissionManagementResourceKeys.DecisionConfirmButton]">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="SubmissionId" value="@detail.Id" />
+                    <input type="hidden" name="TransitionId" value="@approveTransition.TransitionId" />
+                    <div class="modal-header">
+                        <h6 class="modal-title"><i class="ri-check-line me-2"></i>@L[SubmissionManagementResourceKeys.DecisionApproveModalTitle]</h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label='@L.GetStringValue("Common.Close")'></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label fw-semibold">@L[SubmissionManagementResourceKeys.DecisionPublicNote]</label>
+                        <textarea class="form-control mb-3" name="PublicNote" rows="4" placeholder="@L[SubmissionManagementResourceKeys.DecisionPublicNotePlaceholder]"></textarea>
+                        <label class="form-label fw-semibold">@L[SubmissionManagementResourceKeys.DecisionInternalNote]</label>
+                        <textarea class="form-control" name="InternalNote" rows="3" placeholder="@L[SubmissionManagementResourceKeys.DecisionInternalNotePlaceholder]"></textarea>
+                        @if (!canApprove)
+                        {
+                            <div class="alert alert-warning mt-3 mb-0">@L[SubmissionManagementResourceKeys.DecisionEvaluationRequired]</div>
+                        }
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-neutral-600" data-bs-dismiss="modal">@L.GetStringValue("Common.Cancel")</button>
+                        <button type="submit" class="btn btn-success-600" disabled="@(!canApprove)"><i class="ri-check-line me-1"></i>@L[SubmissionManagementResourceKeys.DecisionApproveSubmit]</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@if (canReject)
+{
+    <div class="modal fade" id="rejectSubmissionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <form asp-controller="SubmissionWorkflow" asp-action="Reject" asp-route-culture="@currentCulture" method="post" class="js-workflow-form" data-confirm-title="@L[SubmissionManagementResourceKeys.DecisionRejectModalTitle]" data-confirm-text="@L[SubmissionManagementResourceKeys.DecisionConfirmText]" data-confirm-button="@L[SubmissionManagementResourceKeys.DecisionConfirmButton]">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="SubmissionId" value="@detail.Id" />
+                    <div class="modal-header">
+                        <h6 class="modal-title"><i class="ri-close-line me-2"></i>@L[SubmissionManagementResourceKeys.DecisionRejectModalTitle]</h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label='@L.GetStringValue("Common.Close")'></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label fw-semibold">@L[SubmissionManagementResourceKeys.DecisionPublicNote]</label>
+                        <textarea class="form-control mb-3" name="PublicNote" rows="4" placeholder="@L[SubmissionManagementResourceKeys.DecisionPublicNotePlaceholder]"></textarea>
+                        <label class="form-label fw-semibold">@L[SubmissionManagementResourceKeys.DecisionInternalNote]</label>
+                        <textarea class="form-control" name="InternalNote" rows="3" placeholder="@L[SubmissionManagementResourceKeys.DecisionInternalNotePlaceholder]"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-neutral-600" data-bs-dismiss="modal">@L.GetStringValue("Common.Cancel")</button>
+                        <button type="submit" class="btn btn-danger-600" disabled="@(!canReject)"><i class="ri-close-line me-1"></i>@L[SubmissionManagementResourceKeys.DecisionRejectSubmit]</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@if (canRestartRejectedProcess)
+{
+    <div class="modal fade" id="restartRejectedProcessModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <form asp-controller="SubmissionWorkflow" asp-action="RestartRejectedProcess" asp-route-culture="@currentCulture" method="post" class="js-workflow-form" data-confirm-title="@L[SubmissionManagementResourceKeys.DecisionRestartModalTitle]" data-confirm-text="@L[SubmissionManagementResourceKeys.DecisionRestartModalText]" data-confirm-button="@L[SubmissionManagementResourceKeys.DecisionRestartSubmit]">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="SubmissionId" value="@detail.Id" />
+                    <div class="modal-header">
+                        <h6 class="modal-title"><i class="ri-refresh-line me-2"></i>@L[SubmissionManagementResourceKeys.DecisionRestartModalTitle]</h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label='@L.GetStringValue("Common.Close")'></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning bg-warning-50 border-warning-100 text-warning-700">
+                            @L[SubmissionManagementResourceKeys.DecisionRestartModalText]
+                        </div>
+                        <label class="form-label fw-semibold">@L[SubmissionManagementResourceKeys.DecisionPublicNote]</label>
+                        <textarea class="form-control mb-3" name="PublicNote" rows="4" placeholder="@L[SubmissionManagementResourceKeys.DecisionPublicNotePlaceholder]"></textarea>
+                        <label class="form-label fw-semibold">@L[SubmissionManagementResourceKeys.DecisionInternalNote]</label>
+                        <textarea class="form-control" name="InternalNote" rows="3" placeholder="@L[SubmissionManagementResourceKeys.DecisionInternalNotePlaceholder]"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-neutral-600" data-bs-dismiss="modal">@L.GetStringValue("Common.Cancel")</button>
+                        <button type="submit" class="btn btn-warning-600"><i class="ri-refresh-line me-1"></i>@L[SubmissionManagementResourceKeys.DecisionRestartSubmit]</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@if (canCompletePayment)
+{
+    <div class="modal fade" id="paymentSubmissionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <form asp-controller="SubmissionWorkflow" asp-action="CompletePayment" asp-route-culture="@currentCulture" method="post" class="js-workflow-form" data-confirm-title="@L[SubmissionManagementResourceKeys.ActionMarkPaymentCompleted]" data-confirm-text="@L[SubmissionManagementResourceKeys.DecisionConfirmText]" data-confirm-button="@L[SubmissionManagementResourceKeys.DecisionConfirmButton]">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="SubmissionId" value="@detail.Id" />
+                    <div class="modal-header">
+                        <h6 class="modal-title"><i class="ri-bank-card-line me-2"></i>@L[SubmissionManagementResourceKeys.ActionMarkPaymentCompleted]</h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label='@L.GetStringValue("Common.Close")'></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label fw-semibold">@L[SubmissionManagementResourceKeys.DecisionPublicNote]</label>
+                        <textarea class="form-control mb-3" name="PublicNote" rows="4" placeholder="@L[SubmissionManagementResourceKeys.DecisionPublicNotePlaceholder]"></textarea>
+                        <label class="form-label fw-semibold">@L[SubmissionManagementResourceKeys.DecisionInternalNote]</label>
+                        <textarea class="form-control" name="InternalNote" rows="3" placeholder="@L[SubmissionManagementResourceKeys.DecisionInternalNotePlaceholder]"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-neutral-600" data-bs-dismiss="modal">@L.GetStringValue("Common.Cancel")</button>
+                        <button type="submit" class="btn btn-success-600"><i class="ri-bank-card-line me-1"></i>@L[SubmissionManagementResourceKeys.ActionMarkPaymentCompleted]</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@if (canRevertPayment)
+{
+    <div class="modal fade" id="revertPaymentSubmissionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <form asp-controller="SubmissionWorkflow" asp-action="RevertPayment" asp-route-culture="@currentCulture" method="post" class="js-workflow-form" data-confirm-title="@L[SubmissionManagementResourceKeys.PaymentRevertConfirmTitle]" data-confirm-text="@L[SubmissionManagementResourceKeys.PaymentRevertConfirmDescription]" data-confirm-button="@L[SubmissionManagementResourceKeys.ActionRevertPayment]">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="SubmissionId" value="@detail.Id" />
+                    <div class="modal-header">
+                        <h6 class="modal-title"><i class="ri-arrow-go-back-line me-2"></i>@L[SubmissionManagementResourceKeys.ActionRevertPayment]</h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label='@L.GetStringValue("Common.Close")'></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning bg-warning-50 text-warning-700 border-warning-200 radius-8 mb-3">
+                            @L[SubmissionManagementResourceKeys.PaymentRevertConfirmDescription]
+                        </div>
+                        <label class="form-label fw-semibold">@L[SubmissionManagementResourceKeys.DecisionPublicNote]</label>
+                        <textarea class="form-control mb-3" name="PublicNote" rows="4" placeholder="@L[SubmissionManagementResourceKeys.DecisionPublicNotePlaceholder]"></textarea>
+                        <label class="form-label fw-semibold">@L[SubmissionManagementResourceKeys.DecisionInternalNote]</label>
+                        <textarea class="form-control" name="InternalNote" rows="3" placeholder="@L[SubmissionManagementResourceKeys.DecisionInternalNotePlaceholder]"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-neutral-600" data-bs-dismiss="modal">@L.GetStringValue("Common.Cancel")</button>
+                        <button type="submit" class="btn btn-warning-600"><i class="ri-arrow-go-back-line me-1"></i>@L[SubmissionManagementResourceKeys.ActionRevertPayment]</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@if (completeTransition is not null)
+{
+    <div class="modal fade" id="completeSubmissionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <form asp-controller="SubmissionWorkflow" asp-action="ChangeStatus" asp-route-culture="@currentCulture" method="post" class="js-workflow-form" data-confirm-title="@ResolveTransitionActionText(completeTransition)" data-confirm-text="@L[SubmissionManagementResourceKeys.DecisionConfirmText]" data-confirm-button="@L[SubmissionManagementResourceKeys.DecisionConfirmButton]">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="SubmissionId" value="@detail.Id" />
+                    <input type="hidden" name="TransitionId" value="@completeTransition.TransitionId" />
+                    <div class="modal-header">
+                        <h6 class="modal-title"><i class="ri-check-double-line me-2"></i>@ResolveTransitionActionText(completeTransition)</h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label='@L.GetStringValue("Common.Close")'></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label fw-semibold">@L[SubmissionManagementResourceKeys.DecisionPublicNote]</label>
+                        <textarea class="form-control mb-3" name="PublicNote" rows="4" placeholder="@L[SubmissionManagementResourceKeys.DecisionPublicNotePlaceholder]"></textarea>
+                        <label class="form-label fw-semibold">@L[SubmissionManagementResourceKeys.DecisionInternalNote]</label>
+                        <textarea class="form-control" name="InternalNote" rows="3" placeholder="@L[SubmissionManagementResourceKeys.DecisionInternalNotePlaceholder]"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-neutral-600" data-bs-dismiss="modal">@L.GetStringValue("Common.Cancel")</button>
+                        <button type="submit" class="btn btn-success-600" disabled="@(!canComplete)"><i class="ri-check-double-line me-1"></i>@ResolveTransitionActionText(completeTransition)</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@if (canAssignReviewer)
+{
+<div class="modal fade" id="assignReviewerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title"><i class="ri-user-add-line me-2"></i>@L[SubmissionManagementResourceKeys.NewReviewerTitle]</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label='@L.GetStringValue("Common.Close")'></button>
+            </div>
+            <div class="modal-body">
+                @if (!detail.ReviewerCandidates.Any())
+                {
+                    <div class="alert alert-warning bg-warning-50 border-warning-100 text-warning-700 mb-0">
+                        @L[SubmissionManagementResourceKeys.NoReviewerCandidate]
+                        <a href="@Url.Action("Users", "Reviewers", new { culture = currentCulture })" class="fw-semibold text-primary-600">@L[SubmissionManagementResourceKeys.UserList]</a>
+                    </div>
+                }
+                else
+                {
+                    <form asp-controller="SubmissionReviewers" asp-action="Assign" asp-route-culture="@currentCulture" method="post" class="js-reviewer-assignment-form" id="assignReviewerForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="SubmissionId" value="@detail.Id" />
+                        <div class="mb-16">
+                            <label class="form-label fw-semibold">@L[SubmissionManagementResourceKeys.ReviewerLabel]</label>
+                            <select class="form-select" name="ReviewerId" required>
+                                <option value="">@L[SubmissionManagementResourceKeys.SelectReviewer]</option>
+                                @foreach (ManageSubmissionReviewerCandidateDto candidate in detail.ReviewerCandidates)
+                                {
+                                    <option value="@candidate.ReviewerId">@candidate.FullName - @(candidate.Institution ?? T(SubmissionManagementResourceKeys.InstitutionEmpty)) @(candidate.IsInCongressPool ? "" : $"({T(SubmissionManagementResourceKeys.WillBeAddedToPool)})")</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-16">
+                            <label class="form-label fw-semibold">@L[SubmissionManagementResourceKeys.DueDate]</label>
+                            <input type="date" class="form-control" name="DueDate" />
+                            <small class="text-neutral-500">@L[SubmissionManagementResourceKeys.DueDateHelp]</small>
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label fw-semibold">@L[SubmissionManagementResourceKeys.ReviewerNote]</label>
+                            <textarea class="form-control" name="Note" rows="4" placeholder="@L[SubmissionManagementResourceKeys.ReviewerNotePlaceholder]"></textarea>
+                        </div>
+                    </form>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-neutral-600" data-bs-dismiss="modal">@L.GetStringValue("Common.Cancel")</button>
+                @if (detail.ReviewerCandidates.Any())
+                {
+                    <button type="submit" form="assignReviewerForm" class="btn btn-primary-600"><i class="ri-user-add-line me-1"></i>@L[SubmissionManagementResourceKeys.ActionAssignReviewer]</button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+}
+
+@section Scripts {
+    <script src="~/js/features/submissions/submissions-actions.js" asp-append-version="true"></script>
+    <script>
+        const reviewerRequiredMessage = '@System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(T(SubmissionManagementResourceKeys.ReviewerRequiredMessage))';
+        document.querySelectorAll('.js-reviewer-assignment-form').forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                var select = form.querySelector('select[name="ReviewerId"]');
+                if (!select || !select.value) {
+                    event.preventDefault();
+                    alert(reviewerRequiredMessage);
+                }
+            });
+        });
+
+        function activateSubmissionTabFromHash() {
+            var hash = (window.location.hash || '').replace('#', '');
+            if (!hash) return;
+
+            if (hash === 'paymentActions') {
+                var paymentActions = document.getElementById('paymentActions');
+                if (paymentActions) paymentActions.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+
+            var tabMap = {
+                summaryTab: 'summary-tab',
+                reviewerTab: 'reviewer-tab',
+                reviewsTab: 'reviews-tab',
+                filesTab: 'files-tab',
+                historyTab: 'history-tab'
+            };
+
+            var tabId = tabMap[hash] || hash;
+            var tabButton = document.getElementById(tabId);
+            if (!tabButton || !window.bootstrap) return;
+
+            bootstrap.Tab.getOrCreateInstance(tabButton).show();
+            var detailCard = document.getElementById('submissionDetailCard');
+            if (detailCard) detailCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        document.querySelectorAll('[data-submission-tab-target]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var tabId = button.getAttribute('data-submission-tab-target');
+                var tabButton = document.getElementById(tabId);
+                if (!tabButton) return;
+                bootstrap.Tab.getOrCreateInstance(tabButton).show();
+                var detailCard = document.getElementById('submissionDetailCard');
+                if (detailCard) detailCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+
+        activateSubmissionTabFromHash();
+    </script>
+}
+
+@functions {
+    private string T(string key) => L.GetStringValue(key);
+
+    private static Microsoft.AspNetCore.Html.IHtmlContent RenderRichText(string? html, string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(html))
+            return new Microsoft.AspNetCore.Html.HtmlString(System.Net.WebUtility.HtmlEncode(fallback));
+
+        return new Microsoft.AspNetCore.Html.HtmlString(System.Net.WebUtility.HtmlDecode(html));
+    }
+    private Microsoft.AspNetCore.Html.IHtmlContent TabButton(string id, string target, bool active, string icon, string titleKey, string subtitleKey)
+    {
+        string activeClass = active ? " active" : string.Empty;
+        string selected = active ? "true" : "false";
+        string html = $@"<li class=""nav-item"" role=""presentation""><button class=""nav-link{activeClass}"" id=""{id}"" data-bs-toggle=""tab"" data-bs-target=""#{target}"" type=""button"" role=""tab"" aria-controls=""{target}"" aria-selected=""{selected}""><span class=""d-flex align-items-center gap-2 fw-semibold""><i class=""{icon}""></i> {System.Net.WebUtility.HtmlEncode(T(titleKey))}</span><span class=""d-none d-lg-block text-sm text-neutral-500 mt-1"">{System.Net.WebUtility.HtmlEncode(T(subtitleKey))}</span></button></li>";
+        return new Microsoft.AspNetCore.Html.HtmlString(html);
+    }
+
+    private string ResolveTransitionActionText(AllowedWorkflowTransitionDto transition)
+    {
+        string code = NormalizeCode(transition.ToStatusCode);
+        if (IsCode(code, "ACCEPTED")) return T(SubmissionManagementResourceKeys.TransitionAccept);
+        if (IsCode(code, "REJECTED")) return T(SubmissionManagementResourceKeys.TransitionReject);
+        if (IsCode(code, "REVISION_REQUESTED")) return T(SubmissionManagementResourceKeys.TransitionRevision);
+        if (IsCode(code, "REVIEWER_ASSIGNMENT", "UNDER_REVIEW")) return T(SubmissionManagementResourceKeys.TransitionSendToReview);
+        if (IsCode(code, "PAYMENT_PENDING", "PAYMENT", "PAYMENT_DOCUMENT")) return T(SubmissionManagementResourceKeys.TransitionPayment);
+        if (IsCode(code, "COMPLETED")) return T(SubmissionManagementResourceKeys.TransitionComplete);
+        if (IsCode(code, "WITHDRAWN")) return T(SubmissionManagementResourceKeys.TransitionWithdraw);
+        return string.IsNullOrWhiteSpace(transition.DisplayText) ? T(SubmissionManagementResourceKeys.TransitionDefault) : transition.DisplayText;
+    }
+
+    private string ResolveHistoryTitle(ManageSubmissionHistoryDto history)
+    {
+        string fromCode = NormalizeCode(history.FromStatusCode);
+        string toCode = NormalizeCode(history.ToStatusCode);
+        string sourceAction = NormalizeCode(history.SourceAction);
+        string searchableText = string.Join(" ", new[] { history.Note, history.PublicNote, history.InternalNote }
+            .Where(value => !string.IsNullOrWhiteSpace(value)));
+
+        // Ödeme aksiyonları workflow statüsünü değiştirmediği için önce bunlar çözülmelidir.
+        if (sourceAction == "PAYMENTCOMPLETED" ||
+            (ContainsHistoryText(searchableText, "ödeme") &&
+             ContainsAnyHistoryText(searchableText, "tamamlandı", "onaylandı", "işlemi yapıldı")))
+        {
+            return T(SubmissionManagementResourceKeys.HistoryPaymentCompletedTitle);
+        }
+
+        if (sourceAction == "PAYMENTREVERTED" ||
+            (ContainsHistoryText(searchableText, "ödeme") &&
+             ContainsAnyHistoryText(searchableText, "geri alındı", "yeniden bekleniyor")))
+        {
+            return T(SubmissionManagementResourceKeys.HistoryPaymentRevertedTitle);
+        }
+
+        if (ContainsAnyHistoryText(searchableText, "hakem atandı", "reviewer assigned"))
+            return T(SubmissionManagementResourceKeys.HistoryReviewerAssignedTitle);
+
+        if (ContainsAnyHistoryText(
+                searchableText,
+                "hakem değerlendirmesi tamamlandı",
+                "editör değerlendirmesi tamamlandı",
+                "reviewer evaluation completed",
+                "editor evaluation completed"))
+        {
+            return T(SubmissionManagementResourceKeys.HistoryReviewCompletedTitle);
+        }
+
+        string? statusResourceKey = toCode switch
+        {
+            "DRAFT" => SubmissionManagementResourceKeys.HistoryDraftTitle,
+            "SUBMITTED" => SubmissionManagementResourceKeys.HistorySubmittedTitle,
+            "REVIEWER_ASSIGNMENT" => SubmissionManagementResourceKeys.HistoryReviewAssignmentTitle,
+            "UNDER_REVIEW" => SubmissionManagementResourceKeys.HistoryReviewStartedTitle,
+            "EDITOR_EVALUATION" or "EDITORIAL_REVIEW" or "DECISION_PENDING" => SubmissionManagementResourceKeys.HistoryEditorialDecisionTitle,
+            "ACCEPTED" => SubmissionManagementResourceKeys.HistoryAcceptedTitle,
+            "PAYMENT_PENDING" or "PAYMENT" or "PAYMENT_DOCUMENT" => SubmissionManagementResourceKeys.HistoryPaymentTitle,
+            "COMPLETED" => SubmissionManagementResourceKeys.HistoryCompletedTitle,
+            "REJECTED" => SubmissionManagementResourceKeys.HistoryRejectedTitle,
+            "WITHDRAWN" => SubmissionManagementResourceKeys.HistoryWithdrawnTitle,
+            _ => null
+        };
+
+        if (!string.IsNullOrWhiteSpace(statusResourceKey))
+            return T(statusResourceKey);
+
+        bool hasFrom = !string.IsNullOrWhiteSpace(history.FromStatusName) && history.FromStatusName != "-";
+        bool hasTo = !string.IsNullOrWhiteSpace(history.ToStatusName) && history.ToStatusName != "-";
+        bool isRealStatusTransition = !string.IsNullOrWhiteSpace(fromCode)
+            && !string.IsNullOrWhiteSpace(toCode)
+            && !string.Equals(fromCode, toCode, StringComparison.OrdinalIgnoreCase);
+
+        if (isRealStatusTransition && hasFrom && hasTo)
+            return $"{history.FromStatusName} → {history.ToStatusName}";
+
+        if (hasTo && string.IsNullOrWhiteSpace(fromCode))
+            return history.ToStatusName;
+
+        return T(SubmissionManagementResourceKeys.HistoryGenericTitle);
+    }
+
+    private string ResolveHistoryDescription(ManageSubmissionHistoryDto history)
+    {
+        string? note = !string.IsNullOrWhiteSpace(history.PublicNote)
+            ? history.PublicNote
+            : !string.IsNullOrWhiteSpace(history.Note)
+                ? history.Note
+                : history.InternalNote;
+
+        return string.IsNullOrWhiteSpace(note) ? T(SubmissionManagementResourceKeys.HistoryNoNote) : note;
+    }
+
+    private static bool ContainsHistoryText(string source, string value)
+    {
+        return !string.IsNullOrWhiteSpace(source)
+            && source.Contains(value, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool ContainsAnyHistoryText(string source, params string[] values)
+    {
+        return values.Any(value => ContainsHistoryText(source, value));
+    }
+
+    private static string DisplayAuthorName(ManageSubmissionAuthorDto author)
+    {
+        string title = string.IsNullOrWhiteSpace(author.TitleName) ? string.Empty : author.TitleName.Trim();
+        string name = string.IsNullOrWhiteSpace(author.FullName) ? "-" : author.FullName.Trim();
+        return string.IsNullOrWhiteSpace(title) ? name : $"{title} {name}";
+    }
+
+    private static bool IsPaidPaymentStatusName(string? value)
+    {
+        string normalized = NormalizeCode(value);
+        if (string.IsNullOrWhiteSpace(normalized)) return false;
+        if (normalized.Contains("BEKLIYOR", StringComparison.Ordinal) || normalized.Contains("PENDING", StringComparison.Ordinal)) return false;
+        return normalized.Contains("ODENDI", StringComparison.Ordinal) ||
+               normalized.Contains("ODEMEISLEMIYAPILDI", StringComparison.Ordinal) ||
+               normalized.Contains("ODEMEYAPILDI", StringComparison.Ordinal) ||
+               normalized.Contains("PAID", StringComparison.Ordinal) ||
+               normalized.Contains("COMPLETED", StringComparison.Ordinal) ||
+               normalized.Contains("APPROVED", StringComparison.Ordinal);
+    }
+
+    private static string NormalizeCode(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+        return value.Trim().Replace("-", "_").Replace(" ", "_").ToUpperInvariant();
+    }
+
+    private static bool IsCode(string value, params string[] expected) => expected.Any(item => value.Equals(item, StringComparison.OrdinalIgnoreCase));
+
+    private static IEnumerable<string> SplitKeywords(string? keywords)
+    {
+        if (string.IsNullOrWhiteSpace(keywords)) return Array.Empty<string>();
+        return keywords.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Where(item => !string.IsNullOrWhiteSpace(item));
+    }
+
+    private static string GetInitials(string? fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) return "?";
+        string[] parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length == 1) return parts[0][..Math.Min(2, parts[0].Length)].ToUpperInvariant();
+        return string.Concat(parts.Take(2).Select(part => part[0])).ToUpperInvariant();
+    }
+
+
+
+    private Microsoft.AspNetCore.Html.IHtmlContent ExhibitionInfoItem(string labelKey, string? value)
+    {
+        string html = $@"<div class=""border rounded-3 p-16 h-100""><span class=""text-sm text-neutral-500"">{System.Net.WebUtility.HtmlEncode(T(labelKey))}</span><h6 class=""text-md mb-0 mt-1"">{System.Net.WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(value) ? "-" : value)}</h6></div>";
+        return new Microsoft.AspNetCore.Html.HtmlString(html);
+    }
+
+    private Microsoft.AspNetCore.Html.IHtmlContent RenderAuthors(IEnumerable<ManageSubmissionAuthorDto> authors)
+    {
+        var list = authors?.ToList() ?? new List<ManageSubmissionAuthorDto>();
+        var builder = new System.Text.StringBuilder();
+
+        builder.Append("<div class=\"col-12\"><div class=\"card border shadow-none radius-12\">");
+        builder.Append("<div class=\"card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2\"><div>");
+        builder.Append($"<h6 class=\"text-md mb-1\">{System.Net.WebUtility.HtmlEncode(T(SubmissionManagementResourceKeys.AuthorsTitle))}</h6>");
+        builder.Append($"<span class=\"text-sm text-neutral-500\">{System.Net.WebUtility.HtmlEncode(T(SubmissionManagementResourceKeys.AuthorsDescription))}</span>");
+        builder.Append("</div>");
+        builder.Append($"<span class=\"badge bg-neutral-100 text-neutral-700 radius-8 px-12 py-6\">{System.Net.WebUtility.HtmlEncode(string.Format(T(SubmissionManagementResourceKeys.AuthorCountFormat), list.Count))}</span>");
+        builder.Append("</div><div class=\"card-body\">");
+
+        if (!list.Any())
+        {
+            builder.Append($"<div class=\"alert alert-warning mb-0\">{System.Net.WebUtility.HtmlEncode(T(SubmissionManagementResourceKeys.AuthorsEmpty))}</div>");
+        }
+        else
+        {
+            builder.Append("<div class=\"row gy-3\">");
+            foreach (ManageSubmissionAuthorDto author in list)
+            {
+                string cardClass = author.IsCorrespondingAuthor
+                    ? "border rounded-3 p-18 bg-success-50 border-success-200 h-100"
+                    : "border rounded-3 p-18 h-100";
+                string dotClass = author.IsCorrespondingAuthor ? "bg-success-600" : "bg-neutral-400";
+                string badgeClass = author.IsCorrespondingAuthor
+                    ? "bg-success-100 text-success-700"
+                    : "bg-neutral-100 text-neutral-700";
+                string role = author.IsCorrespondingAuthor
+                    ? T(SubmissionManagementResourceKeys.AuthorBadgeCorresponding)
+                    : T(SubmissionManagementResourceKeys.AuthorBadgeCoAuthor);
+                string email = string.IsNullOrWhiteSpace(author.Email) ? "-" : author.Email.Trim();
+                string institution = string.IsNullOrWhiteSpace(author.Institution) ? "-" : author.Institution.Trim();
+                string orcid = string.IsNullOrWhiteSpace(author.Orcid) ? "-" : author.Orcid.Trim();
+                string mailHref = email == "-" ? "#" : $"mailto:{Uri.EscapeDataString(email)}";
+
+                builder.Append("<div class=\"col-lg-6\"><div class=\"").Append(cardClass).Append("\"><div class=\"d-flex align-items-start justify-content-between flex-wrap gap-2\"><div>");
+                builder.Append("<div class=\"d-flex align-items-center flex-wrap gap-2 mb-10\">");
+                builder.Append($"<span class=\"w-10-px h-10-px rounded-circle {dotClass}\"></span>");
+                builder.Append($"<h6 class=\"text-md mb-0\">{System.Net.WebUtility.HtmlEncode(DisplayAuthorName(author))}</h6>");
+                builder.Append($"<span class=\"badge {badgeClass} radius-8 px-10 py-6\">{System.Net.WebUtility.HtmlEncode(role)}</span>");
+                builder.Append("</div><div class=\"d-flex flex-column gap-1 text-sm text-neutral-700\">");
+                builder.Append($"<span>{System.Net.WebUtility.HtmlEncode(T("BackOffice.Submissions.Management.Editor.Author.Email"))}: {System.Net.WebUtility.HtmlEncode(email)}</span>");
+                builder.Append($"<span>{System.Net.WebUtility.HtmlEncode(T("BackOffice.Submissions.Management.Editor.Author.Institution"))}: {System.Net.WebUtility.HtmlEncode(institution)}</span>");
+                builder.Append($"<span>{System.Net.WebUtility.HtmlEncode(T("BackOffice.Submissions.Management.Editor.Author.Orcid"))}: {System.Net.WebUtility.HtmlEncode(orcid)}</span>");
+                builder.Append("</div></div>");
+                if (email != "-")
+                {
+                    builder.Append($"<a href=\"{mailHref}\" class=\"btn btn-light-100 text-dark radius-8 px-14 py-8\">{System.Net.WebUtility.HtmlEncode(T("BackOffice.Submissions.Management.Editor.Author.Contact"))}</a>");
+                }
+                builder.Append("</div></div></div>");
+            }
+            builder.Append("</div>");
+        }
+
+        builder.Append("</div></div></div>");
+        return new Microsoft.AspNetCore.Html.HtmlString(builder.ToString());
+    }
+
+    private static bool IsImageFile(ManageSubmissionFileDto file)
+        => !string.IsNullOrWhiteSpace(file.ContentType) && file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsCertificateFile(ManageSubmissionFileDto file)
+        => file.IsAcceptanceLetter ||
+           string.Equals(file.FileKind, "ParticipationCertificate", StringComparison.OrdinalIgnoreCase);
+
+    private static string ResolveFileIcon(ManageSubmissionFileDto file)
+    {
+        if (string.Equals(file.FileKind, "ParticipationCertificate", StringComparison.OrdinalIgnoreCase))
+            return "ri-award-line";
+
+        return file.IsAcceptanceLetter ? "ri-file-shield-2-line" : "ri-file-text-line";
+    }
+
+    private string ResolveFileKindLabel(ManageSubmissionFileDto file)
+    {
+        if (string.Equals(file.FileKind, "ExhibitionImage", StringComparison.OrdinalIgnoreCase))
+            return T("BackOffice.Submissions.Management.Editor.Files.Kind.ExhibitionImage");
+
+        if (string.Equals(file.FileKind, "ParticipationCertificate", StringComparison.OrdinalIgnoreCase))
+            return T("BackOffice.Submissions.Management.Editor.Files.Kind.ParticipationCertificate");
+
+        if (file.IsAcceptanceLetter)
+            return T("BackOffice.Submissions.Management.Editor.Files.Kind.AcceptanceLetter");
+
+        return string.IsNullOrWhiteSpace(file.DisplayKind)
+            ? T("BackOffice.Submissions.Management.Editor.Files.Kind.Other")
+            : file.DisplayKind;
+    }
+
+    private static string ResolveFileExtension(ManageSubmissionFileDto file)
+    {
+        string? extension = System.IO.Path.GetExtension(file.OriginalFileName);
+        if (!string.IsNullOrWhiteSpace(extension))
+            return extension.TrimStart('.').ToUpperInvariant();
+
+        if (!string.IsNullOrWhiteSpace(file.ContentType) && file.ContentType.Contains('/'))
+            return file.ContentType[(file.ContentType.LastIndexOf('/') + 1)..].ToUpperInvariant();
+
+        return "FILE";
+    }
+
+    private static string FormatDate(DateTime? value) => IsMeaningfulDate(value) ? value!.Value.ToString("dd.MM.yyyy") : "-";
+    private static string FormatDateTime(DateTime? value) => IsMeaningfulDate(value) ? value!.Value.ToString("dd.MM.yyyy HH:mm") : "-";
+    private static bool IsMeaningfulDate(DateTime? value) => value.HasValue && value.Value.Year >= 1900;
+
+    private static string FormatBytes(long? bytes)
+    {
+        if (!bytes.HasValue || bytes.Value <= 0) return "-";
+        double value = bytes.Value;
+        string[] units = { "B", "KB", "MB", "GB" };
+        int unitIndex = 0;
+        while (value >= 1024 && unitIndex < units.Length - 1) { value /= 1024; unitIndex++; }
+        return $"{value:0.#} {units[unitIndex]}";
+    }
+}

@@ -1,0 +1,95 @@
+@using Symplify.BackOffice.Application.Features.Roles.Dtos
+@using Symplify.BackOffice.WebUI.Localization
+@inject IBackOfficeViewLocalizer L
+@model RoleDetailDto
+@{
+    string T(string key, string fallback = "") {
+        var v = L.GetStringValue(key);
+        return string.IsNullOrWhiteSpace(v) || string.Equals(v, key, StringComparison.OrdinalIgnoreCase) ? (string.IsNullOrWhiteSpace(fallback) ? key : fallback) : v;
+    }
+    ViewData["Title"] = T("BackOffice.Roles.Details.PageTitle", "Rol Detayı");
+    string culture = Context.Request.RouteValues["culture"]?.ToString() ?? "tr-TR";
+    var groupedClaims = Model.AvailableClaims.GroupBy(claim => claim.Module).OrderBy(group => group.Key);
+}
+
+<div class="dashboard-main-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-0">@Model.Name</h6>
+            <small class="text-neutral-500">@T("BackOffice.Roles.Details.PageSubtitle", "Rol yetkilerini claim bazlı yönetin.")</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-controller="Roles" asp-action="Edit" asp-route-culture="@culture" asp-route-id="@Model.Id" class="btn btn-warning-100 text-warning-600 radius-8 px-16 py-10">@T("Common.Edit", "Düzenle")</a>
+            <a asp-controller="Roles" asp-action="Index" asp-route-culture="@culture" class="btn btn-outline-neutral-900 radius-8 px-16 py-10">@T("Common.BackToList", "Listeye Dön")</a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] is not null)
+    {
+        <div class="alert alert-success mb-24">@TempData["SuccessMessage"]</div>
+    }
+
+    <div class="row gy-4">
+        <div class="col-xl-4">
+            <div class="card border shadow-none radius-12">
+                <div class="card-header border-bottom"><h6 class="mb-0">@T("BackOffice.Roles.Details.InfoCard", "Rol Bilgisi")</h6></div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <span class="text-sm text-neutral-500 d-block">@T("BackOffice.Roles.ColumnRole", "Rol")</span>
+                        <span class="fw-semibold">@Model.Name</span>
+                    </div>
+                    <div class="mb-3">
+                        <span class="text-sm text-neutral-500 d-block">@T("Common.Description", "Açıklama")</span>
+                        <span>@(Model.Description ?? "-")</span>
+                    </div>
+                    <div>
+                        <span class="text-sm text-neutral-500 d-block">@T("BackOffice.Roles.Details.AssignedClaims", "Atanmış Yetki")</span>
+                        <span class="fw-semibold">@Model.AssignedClaims.Count</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-8">
+            <form asp-controller="Roles" asp-action="UpdateClaims" asp-route-culture="@culture" method="post" class="card border shadow-none radius-12">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="RoleId" value="@Model.Id" />
+                <div class="card-header border-bottom d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="mb-0">@T("BackOffice.Roles.Details.ClaimsCard", "Rol Yetkileri")</h6>
+                        <small class="text-neutral-500">@T("BackOffice.Roles.Details.ClaimsCardSubtitle", "Bu rolün görebileceği menü ve çalıştırabileceği action'lar buradan belirlenir.")</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary-600 radius-8 px-16 py-10">@T("BackOffice.Roles.SaveClaims", "Yetkileri Kaydet")</button>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="roleClaimAccordion">
+                        @foreach (var group in groupedClaims)
+                        {
+                            string collapseId = $"claims_{group.Key}".Replace(".", "_").Replace(" ", "_");
+                            <div class="accordion-item border rounded-3 mb-3">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId">
+                                        @group.Key
+                                    </button>
+                                </h2>
+                                <div id="@collapseId" class="accordion-collapse collapse" data-bs-parent="#roleClaimAccordion">
+                                    <div class="accordion-body row gy-2">
+                                        @foreach (RoleClaimOptionDto claim in group.OrderBy(c => c.Name))
+                                        {
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" name="ClaimNames" value="@claim.Name" id="claim_@claim.Name.Replace('.', '_')" checked="@claim.IsAssigned" />
+                                                    <label class="form-check-label" for="claim_@claim.Name.Replace('.', '_')">@claim.Name</label>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

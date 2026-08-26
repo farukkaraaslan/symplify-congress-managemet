@@ -1,0 +1,34 @@
+@model Symplify.BackOffice.WebUI.Models.Congresses.ManageCongressViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    string participationCertificatesUrl = Url.Action(
+        "Index",
+        "ParticipationCertificates",
+        new { culture = currentCulture, congressId = Model.Id })
+        ?? $"/{currentCulture}/participation-certificates?congressId={Model.Id}";
+}
+
+<ul class="nav bordered-tab border border-top-0 border-start-0 border-end-0 d-inline-flex nav-pills mb-24 flex-wrap" id="congressManageTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link px-16 py-10 @(Model.ActiveTab == "congress" ? "active" : null)" id="pills-congress-tab" data-bs-target="#pills-congress" data-bs-toggle="pill" type="button" role="tab" aria-controls="pills-congress" aria-selected="@(Model.ActiveTab == "congress" ? "true" : "false")">@L["BackOffice.Congresses.Manage.Tabs.Congress"]</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link px-16 py-10 @(Model.ActiveTab == "slider" ? "active" : null)" id="pills-slider-tab" data-bs-target="#pills-slider" data-bs-toggle="pill" type="button" role="tab" aria-controls="pills-slider" aria-selected="@(Model.ActiveTab == "slider" ? "true" : "false")">@L["BackOffice.Congresses.Manage.Tabs.Slider"]</button>
+    </li>
+    <li class="nav-item" role="presentation"><button class="nav-link px-16 py-10 @(Model.ActiveTab == "sections" ? "active" : null)" id="pills-sections-tab" data-bs-target="#pills-sections" data-bs-toggle="pill" type="button" role="tab" aria-controls="pills-sections" aria-selected="@(Model.ActiveTab == "sections" ? "true" : "false")">@L["BackOffice.Congresses.Manage.Tabs.Sections"]</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link px-16 py-10 @(Model.ActiveTab == "announcements" ? "active" : null)" id="pills-announcements-tab" data-bs-target="#pills-announcements" data-bs-toggle="pill" type="button" role="tab" aria-controls="pills-announcements" aria-selected="@(Model.ActiveTab == "announcements" ? "true" : "false")">@L["BackOffice.Congresses.Manage.Tabs.Announcements"]</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link px-16 py-10 @(Model.ActiveTab == "boards" ? "active" : null)" id="pills-boards-tab" data-bs-target="#pills-boards" data-bs-toggle="pill" type="button" role="tab" aria-controls="pills-boards" aria-selected="@(Model.ActiveTab == "boards" ? "true" : "false")">@L["BackOffice.Congresses.Manage.Tabs.Boards"]</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link px-16 py-10 @(Model.ActiveTab == "important-dates" ? "active" : null)" id="pills-important-dates-tab" data-bs-target="#pills-important-dates" data-bs-toggle="pill" type="button" role="tab" aria-controls="pills-important-dates" aria-selected="@(Model.ActiveTab == "important-dates" ? "true" : "false")">@L["BackOffice.Congresses.Manage.Tabs.ImportantDates"]</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link px-16 py-10 @(Model.ActiveTab == "payment-plans" ? "active" : null)" id="pills-payment-plans-tab" data-bs-target="#pills-payment-plans" data-bs-toggle="pill" type="button" role="tab" aria-controls="pills-payment-plans" aria-selected="@(Model.ActiveTab == "payment-plans" ? "true" : "false")">@L["BackOffice.Congresses.Manage.Tabs.PaymentPlans"]</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link px-16 py-10 @(Model.ActiveTab == "documents" ? "active" : null)" id="pills-documents-tab" data-bs-target="#pills-documents" data-bs-toggle="pill" type="button" role="tab" aria-controls="pills-documents" aria-selected="@(Model.ActiveTab == "documents" ? "true" : "false")">@L["BackOffice.Congresses.Manage.Tabs.Documents"]</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link px-16 py-10 @(Model.ActiveTab == "workflow" ? "active" : null)" id="pills-workflow-tab" data-bs-target="#pills-workflow" data-bs-toggle="pill" type="button" role="tab" aria-controls="pills-workflow" aria-selected="@(Model.ActiveTab == "workflow" ? "true" : "false")">@L["BackOffice.Congresses.Manage.Tabs.Workflow"]</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link px-16 py-10 @(Model.ActiveTab == "topics" ? "active" : null)" id="pills-topics-tab" data-bs-target="#pills-topics" data-bs-toggle="pill" type="button" role="tab" aria-controls="pills-topics" aria-selected="@(Model.ActiveTab == "topics" ? "true" : "false")">@L["BackOffice.Congresses.Manage.Tabs.Topics"]</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link px-16 py-10 @(Model.ActiveTab == "submission-types" ? "active" : null)" id="pills-submission-types-tab" data-bs-target="#pills-submission-types" data-bs-toggle="pill" type="button" role="tab" aria-controls="pills-submission-types" aria-selected="@(Model.ActiveTab == "submission-types" ? "true" : "false")">@L["BackOffice.Congresses.Manage.Tabs.SubmissionTypes"]</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link px-16 py-10" id="pills-evaluation-criteria-tab" data-bs-target="#pills-evaluation-criteria" data-bs-toggle="pill" type="button" role="tab" aria-controls="pills-evaluation-criteria">@L["BackOffice.Congresses.Manage.Tabs.EvaluationCriteria"]</button></li>
+
+    <li class="nav-item" role="presentation">
+        <a class="nav-link px-16 py-10" href="@participationCertificatesUrl">Katılım Belgeleri</a>
+    </li>
+</ul>

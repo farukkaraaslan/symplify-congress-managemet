@@ -1,0 +1,200 @@
+@using System.Globalization
+@using Symplify.BackOffice.WebUI.Localization
+@inject IBackOfficeViewLocalizer L
+
+@model Symplify.BackOffice.WebUI.Models.ExhibitionApplications.CreateExhibitionApplicationViewModel
+
+@{
+    string ResolveCulture()
+    {
+        return Context.Request.RouteValues["culture"]?.ToString()
+               ?? CultureInfo.CurrentUICulture.Name;
+    }
+
+    bool IsEnglishCulture()
+    {
+        return ResolveCulture().StartsWith("en", StringComparison.OrdinalIgnoreCase);
+    }
+
+    string T(string key, string trFallback, string? enFallback = null)
+    {
+        var value = L.GetStringValue(key);
+
+        if (!string.IsNullOrWhiteSpace(value) &&
+            !string.Equals(value, key, StringComparison.OrdinalIgnoreCase))
+            return value;
+
+        return IsEnglishCulture() && !string.IsNullOrWhiteSpace(enFallback)
+            ? enFallback
+            : trFallback;
+    }
+
+    ViewData["Title"] = T("BackOffice.ExhibitionApplications.Create.PageTitle", "Sergi Bildirisi", "Exhibition Application");
+    ViewData["SuppressSidebar"] = true;
+    ViewData["UseAuthorTemplate"] = true;
+    ViewData["ClientResourcePrefixes"] = new[] { "BackOffice.ExhibitionApplications.", "BackOffice.Submissions.", "BackOffice.AuthorTopbar.", "Common." };
+
+    string currentCulture = ResolveCulture();
+    bool hasSubmissionCongress = Model.CongressId != Guid.Empty;
+}
+
+<div class="author-container">
+    <div class="author-page-head">
+        <div>
+            <span class="author-kicker"><i class="ri-gallery-line"></i> @T("BackOffice.ExhibitionApplications.Create.Kicker", "Yeni Sergi Bildirisi", "New Exhibition Application")</span>
+            <h1 class="author-title h4">@T("BackOffice.ExhibitionApplications.Create.HeaderTitle", "Sergi Bildirisi Oluştur", "Create Exhibition Application")</h1>
+            <p class="author-subtitle">@T("BackOffice.ExhibitionApplications.Create.HeaderSubtitle", "Sergi bildirisi için eser bilgilerinizi ve görsel/PDF dosyanızı ekleyin.", "Add your artwork information and image/PDF file for the exhibition application.")</p>
+        </div>
+        <a asp-controller="Submissions"
+           asp-action="Index"
+           asp-route-culture="@currentCulture"
+           class="btn btn-outline-primary-600 radius-10 px-16 py-10">
+            <i class="ri-arrow-left-line me-1"></i>
+            @T("BackOffice.ExhibitionApplications.Create.BackToList", "Listeye Dön", "Back to List")
+        </a>
+    </div>
+
+    <form asp-action="Create" asp-route-culture="@currentCulture" method="post" enctype="multipart/form-data" autocomplete="off" id="exhibitionApplicationCreateForm">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+        <input asp-for="CongressId" type="hidden" />
+        <input asp-for="SubmissionTypeId" type="hidden" />
+
+        <div class="row g-4">
+            <div class="col-xl-8">
+                <section class="card border-0 radius-12 form-section">
+                    <div class="card-header bg-base border-bottom py-16 px-24 d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                        <div>
+                            <h5 class="fw-semibold mb-1">@T("BackOffice.ExhibitionApplications.Create.WorkInfoTitle", "Eser Bilgileri", "Artwork Information")</h5>
+                            <p class="text-sm text-neutral-500 mb-0">@T("BackOffice.ExhibitionApplications.Create.WorkInfoSubtitle", "Eser ve sergileme bilgilerini girin.", "Enter the artwork and exhibition information.")</p>
+                        </div>
+                    </div>
+                    <div class="card-body p-24">
+                        <div class="row g-4">
+                            <div class="col-md-8">
+                                <label class="form-label">@T("BackOffice.Submissions.Create.CongressLabel", "Kongre", "Congress") <span class="required-dot">*</span></label>
+                                <div class="readonly-field">@(string.IsNullOrWhiteSpace(Model.CongressName) ? T("BackOffice.Submissions.Create.CongressMissing", "Kongre üyeliği bulunamadı", "No congress membership found") : Model.CongressName)</div>
+                                <span asp-validation-for="CongressId" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">@T("BackOffice.Submissions.Create.SubmissionTypeLabel", "Bildiri Türü", "Submission Type") <span class="required-dot">*</span></label>
+                                <div class="readonly-field">@(string.IsNullOrWhiteSpace(Model.SubmissionTypeName) ? T("BackOffice.ExhibitionApplications.Create.TypeMissing", "Sergi başvuru türü bulunamadı", "Exhibition application type was not found") : Model.SubmissionTypeName)</div>
+                                <span asp-validation-for="SubmissionTypeId" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-8">
+                                <label class="form-label" asp-for="WorkName">@T("BackOffice.ExhibitionApplications.Create.WorkName", "Eserin Adı", "Artwork Name") <span class="required-dot">*</span></label>
+                                <input class="form-control"
+                                       asp-for="WorkName"
+                                       maxlength="300"
+                                       data-normalize-title-tr="true"
+                                       placeholder='@T("BackOffice.ExhibitionApplications.Create.WorkNamePlaceholder", "Eser adını yazınız", "Enter artwork name")'
+                                       data-val-required='@T("BackOffice.ExhibitionApplications.Create.Validation.WorkNameRequired", "Eser adı zorunludur.", "Artwork name is required.")' />
+                                <span asp-validation-for="WorkName" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label" asp-for="Dimensions">@T("BackOffice.ExhibitionApplications.Create.Dimensions", "Eser Ölçüleri", "Artwork Dimensions")</label>
+                                <input class="form-control"
+                                       asp-for="Dimensions"
+                                       maxlength="200"
+                                       placeholder='@T("BackOffice.ExhibitionApplications.Create.DimensionsPlaceholder", "Genişlik x yükseklik", "Width x height")' />
+                                <span asp-validation-for="Dimensions" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label" asp-for="Technique">@T("BackOffice.ExhibitionApplications.Create.Technique", "Uygulanan Teknik", "Applied Technique") <span class="required-dot">*</span></label>
+                                <input class="form-control"
+                                       asp-for="Technique"
+                                       maxlength="250"
+                                       placeholder='@T("BackOffice.ExhibitionApplications.Create.TechniquePlaceholder", "Uygulanan tekniği yazınız", "Enter the applied technique")'
+                                       data-val-required='@T("BackOffice.ExhibitionApplications.Create.Validation.TechniqueRequired", "Uygulanan teknik zorunludur.", "Applied technique is required.")' />
+                                <span asp-validation-for="Technique" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label" asp-for="Description">@T("BackOffice.ExhibitionApplications.Create.Description", "Açıklama", "Description")</label>
+                                <textarea class="form-control"
+                                          asp-for="Description"
+                                          rows="5"
+                                          maxlength="4000"
+                                          placeholder='@T("BackOffice.ExhibitionApplications.Create.DescriptionPlaceholder", "Eser açıklamasını yazınız", "Enter artwork description")'></textarea>
+                                <span asp-validation-for="Description" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label" asp-for="Address">@T("BackOffice.ExhibitionApplications.Create.Address", "Adresiniz", "Your Address") <span class="required-dot">*</span></label>
+                                <textarea class="form-control"
+                                          asp-for="Address"
+                                          rows="4"
+                                          maxlength="1000"
+                                          placeholder='@T("BackOffice.ExhibitionApplications.Create.AddressPlaceholder", "Açık adresinizi yazınız", "Enter your full address")'
+                                          data-val-required='@T("BackOffice.ExhibitionApplications.Create.Validation.AddressRequired", "Adres zorunludur.", "Address is required.")'></textarea>
+                                <span asp-validation-for="Address" class="text-danger"></span>
+                                <div class="field-help"><i class="ri-information-line"></i> @T("BackOffice.ExhibitionApplications.Create.AddressHelp", "Fiziksel teslimat gerekmese bile iletişim için adres istenir.", "An address is requested for communication even if physical delivery is not required.")</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="col-xl-4">
+                <aside class="help-panel">
+                    <section class="card border-0 radius-12">
+                        <div class="card-header bg-base border-bottom py-16 px-24 d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                            <h5 class="fw-semibold mb-1">@T("BackOffice.ExhibitionApplications.Create.FileTitle", "Dosya Yükle", "File Upload")</h5>
+                        </div>
+                        <div class="card-body p-24">
+                            <label class="upload-zone d-block" for="ExhibitionFile">
+                                <span class="upload-zone__icon"><i class="ri-upload-cloud-2-line text-3xl"></i></span>
+                                <span class="d-block fw-bold text-primary-light mb-2">@T("BackOffice.ExhibitionApplications.Create.FileDropTitle", "Eser görselini veya PDF dosyanı seç", "Select your artwork image or PDF file")</span>
+                                <span class="d-block text-neutral-500 text-sm">@T("BackOffice.ExhibitionApplications.Create.FileHelp", "JPG, PNG, WEBP veya PDF yükleyebilirsin.", "You can upload JPG, PNG, WEBP, or PDF.")</span>
+                                <input asp-for="ExhibitionFile"
+                                       id="ExhibitionFile"
+                                       class="d-none"
+                                       type="file"
+                                       accept=".jpg,.jpeg,.png,.webp,.pdf"
+                                       data-file-input="#exhibitionFileName"
+                                       data-val-required='@T("BackOffice.ExhibitionApplications.Create.Validation.FileRequired", "Sergi görseli yüklenmelidir.", "The exhibition file is required.")' />
+                                <span id="exhibitionFileName" class="upload-file-name d-block">@T("BackOffice.ExhibitionApplications.Create.FileNotSelected", "Henüz dosya seçilmedi.", "No file selected.")</span>
+                            </label>
+                            <span asp-validation-for="ExhibitionFile" class="text-danger d-block mt-2"></span>
+                        </div>
+                    </section>
+
+                    <div class="help-box help-box--primary">
+                        <h6 class="mb-2"><i class="ri-lightbulb-line me-1"></i> @T("BackOffice.ExhibitionApplications.Create.NotesTitle", "Bildiri Notları", "Submission Notes")</h6>
+                        <ul class="help-list">
+                            <li>@T("BackOffice.ExhibitionApplications.Create.Note.WorkName", "Eser adı net olmalı.", "The artwork name should be clear.")</li>
+                            <li>@T("BackOffice.ExhibitionApplications.Create.Note.Technique", "Uygulanan tekniği açık yazın.", "Write the applied technique clearly.")</li>
+                            <li>@T("BackOffice.ExhibitionApplications.Create.Note.FileQuality", "Dosya okunabilir kalitede olmalı.", "The file should be readable quality.")</li>
+                            <li>@T("BackOffice.ExhibitionApplications.Create.Note.Address", "Adres alanı eksiksiz girilmeli.", "The address field should be completed.")</li>
+                        </ul>
+                    </div>
+                </aside>
+            </div>
+        </div>
+
+        <div class="sticky-submit-bar mt-24 d-flex align-items-center justify-content-between gap-3 flex-wrap">
+            <div>
+                <h6 class="mb-1 text-sm">@T("BackOffice.ExhibitionApplications.Create.SubmitQuestion", "Sergi bildirisini gönder", "Submit exhibition submission")</h6>
+                <p class="text-neutral-500 text-xs mb-0">@T("BackOffice.Submissions.Create.Submit.Hint", "Bildiriniz gönderildikten sonra değerlendirme süreci başlar.", "The evaluation process starts after your submission is sent.")</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <a asp-controller="Submissions" asp-action="Index" asp-route-culture="@currentCulture" class="btn btn-outline-neutral-500 radius-10 px-18 py-11">
+                    @T("Common.Cancel", "Vazgeç", "Cancel")
+                </a>
+                <button type="submit" class="btn btn-primary-600 radius-10 px-20 py-11" disabled="@(!hasSubmissionCongress)">
+                    <i class="ri-send-plane-line me-1"></i>
+                    @T("BackOffice.ExhibitionApplications.Create.SubmitButton", "Başvuruyu Gönder", "Submit Application")
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_LocalizationScripts")
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/common/text-normalizer.js" asp-append-version="true"></script>
+}

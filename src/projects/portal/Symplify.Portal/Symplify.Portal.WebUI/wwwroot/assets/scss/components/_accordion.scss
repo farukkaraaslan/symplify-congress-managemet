@@ -1,0 +1,33 @@
+.accordion {
+  .accordion-item {
+    border: 1px solid color-mix(in srgb, var(--default-color), transparent 88%);
+    border-radius: var(--bs-border-radius-xl);
+    overflow: hidden;
+    margin-bottom: 1rem;
+    background: var(--surface-color);
+  }
+
+  .accordion-button {
+    font-weight: 800;
+    padding: 1rem 1.25rem;
+    background: var(--surface-color);
+    color: var(--heading-color);
+    box-shadow: none;
+  }
+
+  .accordion-button:not(.collapsed) {
+    background: color-mix(in srgb, var(--accent-color), transparent 92%);
+    color: var(--heading-color);
+  }
+
+  .accordion-button:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--accent-color), transparent 80%);
+  }
+
+  .accordion-body {
+    padding: 1.25rem;
+    color: var(--default-color);
+    line-height: 1.6;
+  }
+}

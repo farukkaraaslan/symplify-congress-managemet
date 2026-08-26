@@ -1,0 +1,522 @@
+@using Symplify.Portal.WebUI.Models.PublicSite
+@{
+    var shell = ViewData["Shell"] as PublicSiteBootstrapResponse ?? new PublicSiteBootstrapResponse();
+    string activeMenu = ViewData["ActiveMenu"] as string ?? "home";
+    string currentCulture = ViewData["CurrentCulture"] as string ?? "tr-TR";
+    string languageCode = currentCulture.Length >= 2 ? currentCulture.Substring(0, 2) : "tr";
+    string selectedFlag = ToFlagCode(currentCulture);
+    string bodyClass = ViewData["BodyClass"] as string ?? string.Empty;
+    string cultureQuery = "?culture=" + Uri.EscapeDataString(currentCulture);
+    var documentTypeNames = ViewData["DocumentTypeNames"] as IReadOnlyList<string> ?? Array.Empty<string>();
+
+    string? FirstNonEmpty(params string?[] values)
+    {
+        foreach (string? value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+        }
+
+        return null;
+    }
+
+    string siteName = FirstNonEmpty(shell.Organization.ShortName, shell.Organization.Code, shell.Organization.Name, shell.Congress.Name, shell.Congress.Title, T("Portal.Site.DefaultName"))!;
+    string logoLight = FirstNonEmpty(
+        shell.Congress.LogoLightUrl,
+        shell.Congress.LogoDarkUrl,
+        shell.Organization.LogoLightUrl,
+        shell.Organization.LogoDarkUrl,
+        Url.Content("~/assets/img/brand/symplify-logo-horizontal-light.svg"))!;
+    string logoDark = FirstNonEmpty(
+        shell.Congress.LogoDarkUrl,
+        shell.Congress.LogoLightUrl,
+        shell.Organization.LogoDarkUrl,
+        shell.Organization.LogoLightUrl,
+        Url.Content("~/assets/img/brand/symplify-logo-horizontal-dark.svg"))!;
+    bool hasFooterLogo = !string.IsNullOrWhiteSpace(shell.Congress.LogoDarkUrl)
+        || !string.IsNullOrWhiteSpace(shell.Congress.LogoLightUrl)
+        || !string.IsNullOrWhiteSpace(shell.Organization.LogoDarkUrl)
+        || !string.IsNullOrWhiteSpace(shell.Organization.LogoLightUrl);
+    string footerLogoDark = FirstNonEmpty(
+        shell.Congress.LogoDarkUrl,
+        shell.Congress.LogoLightUrl,
+        shell.Organization.LogoDarkUrl,
+        shell.Organization.LogoLightUrl) ?? string.Empty;
+    string footerLogoLight = FirstNonEmpty(
+        shell.Congress.LogoLightUrl,
+        shell.Congress.LogoDarkUrl,
+        shell.Organization.LogoLightUrl,
+        shell.Organization.LogoDarkUrl) ?? string.Empty;
+    string footerTextLogo = FirstNonEmpty(shell.Organization.ShortName, shell.Organization.Name, siteName)!;
+
+    string congressLocationText = string.Join(" / ", new[]
+    {
+        shell.Congress.StateName,
+        shell.Congress.CountryName
+    }.Where(value => !string.IsNullOrWhiteSpace(value)));
+
+    string contactLocationText = string.Join(" / ", new[]
+    {
+        shell.Contact.StateName,
+        shell.Contact.CountryName
+    }.Where(value => !string.IsNullOrWhiteSpace(value)));
+
+    string footerContactAddress = FirstNonEmpty(shell.Contact.ContactAddress, contactLocationText) ?? string.Empty;
+    string sidebarTitle = FirstNonEmpty(shell.Congress.Title, shell.Congress.Name, shell.Organization.Name, siteName)!;
+    string sidebarSubtitle = FirstNonEmpty(shell.Congress.Subtitle, shell.Congress.ShortDescription) ?? string.Empty;
+    string sidebarContactPhone = shell.Contact.ContactPhone ?? string.Empty;
+    string sidebarContactPhoneHref = new string(sidebarContactPhone.Where(ch => char.IsDigit(ch) || ch == '+').ToArray());
+
+    List<PublicContactEmailResponse> visibleContactEmails = shell.Contact.ContactEmails
+        .Where(item => item.IsVisibleOnPortal && !string.IsNullOrWhiteSpace(item.Email))
+        .OrderByDescending(item => item.IsPrimary)
+        .ThenBy(item => item.Order)
+        .ThenBy(item => item.Email)
+        .ToList();
+
+    // Eski API yalnızca ContactEmail döndürüyorsa portal kırılmadan tek adresi göstermeye devam eder.
+    if (visibleContactEmails.Count == 0 && !string.IsNullOrWhiteSpace(shell.Contact.ContactEmail))
+    {
+        visibleContactEmails.Add(new PublicContactEmailResponse
+        {
+            Email = shell.Contact.ContactEmail.Trim(),
+            IsPrimary = true,
+            IsVisibleOnPortal = true
+        });
+    }
+
+    string sidebarContactAddress = footerContactAddress;
+    bool hasSidebarContact = !string.IsNullOrWhiteSpace(sidebarContactPhone)
+        || visibleContactEmails.Count > 0
+        || !string.IsNullOrWhiteSpace(sidebarContactAddress);
+    bool isEnglish = currentCulture.StartsWith("en", StringComparison.OrdinalIgnoreCase);
+    string L(string tr, string en) => isEnglish ? en : tr;
+    string Active(string key) => string.Equals(activeMenu, key, StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty;
+    string T(string key, string? fallback = null)
+    {
+        string value = Html.Text(key);
+        return string.Equals(value, key, StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(fallback)
+            ? fallback
+            : value;
+    }
+
+    string? FindDocumentType(params string[] tokens)
+    {
+        return documentTypeNames.FirstOrDefault(documentTypeName =>
+            tokens.Any(token => documentTypeName.Contains(token, StringComparison.CurrentCultureIgnoreCase)));
+    }
+
+    string programDocumentType = FindDocumentType("program") ?? L("Program Kitapları", "Program Books");
+    string fullTextDocumentType = FindDocumentType("tam metin", "full text", "proceedings") ?? L("Tam Metin Kitapları", "Full Text Books");
+    string abstractBookDocumentType = FindDocumentType("özet", "abstract") ?? L("Özet Kitapları", "Abstract Books");
+    string selectedDocumentType = Context.Request.Query["type"].ToString().Trim();
+
+    bool IsSelectedDocumentType(string documentType, params string[] tokens)
+    {
+        if (string.Equals(selectedDocumentType, documentType, StringComparison.CurrentCultureIgnoreCase))
+        {
+            return true;
+        }
+
+        return !string.IsNullOrWhiteSpace(selectedDocumentType)
+            && tokens.Any(token => selectedDocumentType.Contains(token, StringComparison.CurrentCultureIgnoreCase));
+    }
+
+    bool programSelected = IsSelectedDocumentType(programDocumentType, "program");
+    bool fullTextSelected = IsSelectedDocumentType(fullTextDocumentType, "tam metin", "full text", "proceedings");
+    bool abstractBookSelected = IsSelectedDocumentType(abstractBookDocumentType, "özet", "abstract");
+    bool isDocumentsPage = string.Equals(activeMenu, "documents", StringComparison.OrdinalIgnoreCase);
+
+    string closeLabel = T("Portal.Common.Close");
+    string sidebarNavigationLabel = T("Portal.Navigation.Menu");
+
+    string homeActive = Active("home");
+    string boardsActive = Active("boards");
+    string sectionsActive = Active("sections");
+    string paymentActive = Active("payment");
+    string programActive = isDocumentsPage && programSelected ? "active" : string.Empty;
+    string fullTextActive = isDocumentsPage && fullTextSelected ? "active" : string.Empty;
+    string abstractBookActive = isDocumentsPage && abstractBookSelected ? "active" : string.Empty;
+    string documentsActive = isDocumentsPage && !programSelected && !fullTextSelected && !abstractBookSelected ? "active" : string.Empty;
+    string contactActive = Active("contact");
+    string ToDocumentTypeUrl(string documentType)
+    {
+        string prefix = string.IsNullOrWhiteSpace(cultureQuery) ? "?" : cultureQuery + "&";
+        return "/documents" + prefix + "type=" + Uri.EscapeDataString(documentType);
+    }
+    string ToFlagCode(string culture)
+    {
+        if (culture.StartsWith("tr", StringComparison.OrdinalIgnoreCase)) return "tr";
+        if (culture.StartsWith("en", StringComparison.OrdinalIgnoreCase)) return "gb";
+        if (culture.StartsWith("ru", StringComparison.OrdinalIgnoreCase)) return "ru";
+        if (culture.StartsWith("ar", StringComparison.OrdinalIgnoreCase)) return "sa";
+        if (culture.StartsWith("de", StringComparison.OrdinalIgnoreCase)) return "de";
+        if (culture.StartsWith("fr", StringComparison.OrdinalIgnoreCase)) return "fr";
+        if (culture.StartsWith("es", StringComparison.OrdinalIgnoreCase)) return "es";
+        return culture.Length >= 2 ? culture.Substring(0, 2).ToLowerInvariant() : "tr";
+    }
+    var availableLanguages = shell.Languages.Count > 0
+        ? shell.Languages.OrderByDescending(language => language.IsDefault).ThenBy(language => language.Order).ToArray()
+        : new[]
+        {
+            new PublicLanguageResponse
+            {
+                Culture = currentCulture,
+                TwoLetterIsoCode = languageCode,
+                DisplayName = currentCulture,
+                IsDefault = true,
+                Order = 1
+            }
+        };
+
+    cultureQuery = PortalSeoHelper.BuildCultureQuery(currentCulture, availableLanguages);
+    string ToCultureUrl(string culture) => PortalSeoHelper.BuildLanguageSwitchUrl(Context, culture);
+
+    var seo = PortalSeoHelper.BuildMetadata(
+        Context,
+        ViewData,
+        shell,
+        currentCulture,
+        availableLanguages,
+        logoLight,
+        logoDark,
+        Url.Content("~/assets/img/favicon.ico"),
+        Url.Content("~/assets/img/apple-touch-icon.png"),
+        activeMenu);
+}
+<!DOCTYPE html>
+<html lang="@languageCode">
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>@seo.Title</title>
+    <meta name="description" content="@seo.Description">
+    <meta name="keywords" content="@seo.Keywords">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="@seo.BrandColor">
+    <link rel="canonical" href="@seo.CanonicalUrl">
+    @foreach (var alternateLanguage in seo.AlternateLanguages)
+    {
+        <link rel="alternate" hreflang="@alternateLanguage.Hreflang" href="@alternateLanguage.Url">
+    }
+
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="@seo.OpenGraphLocale">
+    <meta property="og:site_name" content="@seo.SiteName">
+    <meta property="og:title" content="@seo.Title">
+    <meta property="og:description" content="@seo.Description">
+    <meta property="og:url" content="@seo.CanonicalUrl">
+    <meta property="og:image" content="@seo.SocialImageUrl">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@seo.Title">
+    <meta name="twitter:description" content="@seo.Description">
+    <meta name="twitter:image" content="@seo.SocialImageUrl">
+
+    <link rel="icon" href="@seo.FaviconLightUrl" media="(prefers-color-scheme: light)">
+    <link rel="icon" href="@seo.FaviconDarkUrl" media="(prefers-color-scheme: dark)">
+    <link rel="shortcut icon" href="@seo.FaviconLightUrl">
+    <link rel="apple-touch-icon" href="@seo.AppleTouchIconUrl">
+
+    @foreach (string jsonLdBlock in seo.JsonLdBlocks)
+    {
+        <script type="application/ld+json">@Html.Raw(jsonLdBlock)</script>
+    }
+
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link href="~/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="~/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+    <link href="~/assets/vendor/aos/aos.css" rel="stylesheet">
+    <link href="~/assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css" />
+    <link href="~/assets/css/main.css" rel="stylesheet" asp-append-version="true">
+</head>
+<body class="@bodyClass">
+<header id="header" class="header sticky-top">
+    <div class="header-topbar">
+        <div class="container-fluid container-xl d-flex align-items-center justify-content-end">
+            <div class="topbar-right d-flex align-items-center">
+                <div class="topbar-controls d-flex align-items-center">
+                    <div class="dropdown ms-2 language-dropdown">
+                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle language-dropdown-toggle" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label='@T("Portal.Language.Selected")'>
+                            <span class="fi fi-@selectedFlag selected-language-flag"></span>
+                            <span class="selected-language-code">@languageCode.ToUpperInvariant()</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm language-dropdown-menu" aria-labelledby="languageDropdown">
+                            @foreach (var language in availableLanguages)
+                            {
+                                string languageActive = string.Equals(currentCulture, language.Culture, StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty;
+                                string flagCode = ToFlagCode(language.Culture);
+                                string displayName = !string.IsNullOrWhiteSpace(language.DisplayName) ? language.DisplayName : language.Culture;
+                                <li>
+                                    <a class="dropdown-item language-option @languageActive" href="@ToCultureUrl(language.Culture)">
+                                        <span class="fi fi-@flagCode"></span>
+                                        <span>@displayName</span>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-mainbar">
+        <div class="container-fluid container-xl position-relative d-flex align-items-center">
+            <a href="/@(cultureQuery)" class="logo d-flex align-items-center me-auto">
+                <img src="@logoLight" data-logo-light="@logoLight" data-logo-dark="@logoDark" alt="@siteName" />
+                <h1 class="sitename visually-hidden">@(shell.Organization.ShortName ?? shell.Organization.Name)</h1>
+            </a>
+
+            <nav id="navmenu" class="navmenu">
+                <ul>
+                    <li><a href="/@(cultureQuery)" class="@homeActive">@T("Portal.Navigation.Home")</a></li>
+                    <li><a href="/boards@(cultureQuery)" class="@boardsActive">@T("Portal.Navigation.Boards")</a></li>
+                    <li><a href="/sections@(cultureQuery)" class="@sectionsActive">@T("Portal.Navigation.GeneralInformation")</a></li>
+                    <li><a href="/payment@(cultureQuery)" class="@paymentActive">@T("Portal.Navigation.Payment", L("Ödeme", "Payment"))</a></li>
+                    <li><a href="@ToDocumentTypeUrl(programDocumentType)" class="@programActive">@T("Portal.Navigation.Program", L("Program", "Program"))</a></li>
+                    <li><a href="@ToDocumentTypeUrl(fullTextDocumentType)" class="@fullTextActive">@T("Portal.Navigation.FullTextBook", L("Tam Metin Kitabı", "Full Text Book"))</a></li>
+                    <li><a href="@ToDocumentTypeUrl(abstractBookDocumentType)" class="@abstractBookActive">@T("Portal.Navigation.AbstractBook", L("Özet Kitabı", "Abstract Book"))</a></li>
+                    @if (documentTypeNames.Count > 0)
+                    {
+                        <li class="dropdown">
+                            <a href="/documents@(cultureQuery)" class="@documentsActive">
+                                <span>@T("Portal.Navigation.Documents")</span> <i class="bi bi-chevron-down toggle-dropdown"></i>
+                            </a>
+                            <ul>
+                                <li><a href="/documents@(cultureQuery)">@T("Portal.Navigation.AllDocuments")</a></li>
+                                @foreach (string documentTypeName in documentTypeNames)
+                                {
+                                    <li><a href="@ToDocumentTypeUrl(documentTypeName)">@documentTypeName</a></li>
+                                }
+                            </ul>
+                        </li>
+                    }
+                    else
+                    {
+                        <li><a href="/documents@(cultureQuery)" class="@documentsActive">@T("Portal.Navigation.Documents")</a></li>
+                    }
+                    <li><a href="/contact@(cultureQuery)" class="@contactActive">@T("Portal.Navigation.Contact")</a></li>
+                </ul>
+                <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+            </nav>
+        </div>
+    </div>
+</header>
+
+<main class="main">
+    @RenderBody()
+</main>
+
+<footer id="footer" class="footer accent-background">
+    <div class="container footer-top">
+        <div class="row gy-4">
+            <div class="col-lg-4 col-md-6 footer-about">
+                <a href="/@(cultureQuery)" class="logo d-flex align-items-center">
+                    @if (hasFooterLogo)
+                    {
+                        <img src="@footerLogoDark"
+                             data-logo-light="@footerLogoLight"
+                             data-logo-dark="@footerLogoDark"
+                             alt="@footerTextLogo" />
+                        <span class="sitename visually-hidden">@footerTextLogo</span>
+                    }
+                    else
+                    {
+                        <span class="sitename">@footerTextLogo</span>
+                    }
+                </a>
+                <div class="footer-contact pt-3">
+                    @if (!string.IsNullOrWhiteSpace(shell.Congress.Title))
+                    {
+                        <p>@shell.Congress.Title</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(congressLocationText))
+                    {
+                        <p>@congressLocationText</p>
+                    }
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6 footer-links">
+                <h4>@T("Portal.Footer.QuickAccess")</h4>
+                <ul>
+                    <li><i class="bi bi-chevron-right"></i><a href="/@(cultureQuery)">@T("Portal.Navigation.Home")</a></li>
+                    <li><i class="bi bi-chevron-right"></i><a href="/boards@(cultureQuery)">@T("Portal.Navigation.Boards")</a></li>
+                    <li><i class="bi bi-chevron-right"></i><a href="/sections@(cultureQuery)">@T("Portal.Navigation.GeneralInformation")</a></li>
+                    <li><i class="bi bi-chevron-right"></i><a href="/payment@(cultureQuery)">@T("Portal.Navigation.Payment", L("Ödeme", "Payment"))</a></li>
+                    <li><i class="bi bi-chevron-right"></i><a href="/documents@(cultureQuery)">@T("Portal.Navigation.Documents")</a></li>
+                    <li><i class="bi bi-chevron-right"></i><a href="/contact@(cultureQuery)">@T("Portal.Navigation.Contact")</a></li>
+                </ul>
+            </div>
+
+            <div class="col-lg-4 col-md-12 footer-contact">
+                <h4>@T("Portal.Navigation.Contact")</h4>
+                <ul class="footer-contact-list">
+                    @if (!string.IsNullOrWhiteSpace(shell.Contact.ContactName) || !string.IsNullOrWhiteSpace(shell.Contact.ContactTitle))
+                    {
+                        <li>
+                            <i class="bi bi-person"></i>
+                            <span>
+                                @if (!string.IsNullOrWhiteSpace(shell.Contact.ContactName))
+                                {
+                                    @shell.Contact.ContactName
+                                }
+                                @if (!string.IsNullOrWhiteSpace(shell.Contact.ContactTitle))
+                                {
+                                    <small class="d-block">@shell.Contact.ContactTitle</small>
+                                }
+                            </span>
+                        </li>
+                    }
+                    @foreach (PublicContactEmailResponse email in visibleContactEmails)
+                    {
+                        <li>
+                            <i class="bi bi-envelope"></i>
+                            <span>
+                                <a href="mailto:@email.Email">@email.Email</a>
+                                @if (!string.IsNullOrWhiteSpace(email.Label))
+                                {
+                                    <small class="d-block">@email.Label</small>
+                                }
+                            </span>
+                        </li>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(shell.Contact.ContactPhone))
+                    {
+                        <li><i class="bi bi-telephone"></i><a href="tel:@shell.Contact.ContactPhone">@shell.Contact.ContactPhone</a></li>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(footerContactAddress))
+                    {
+                        <li><i class="bi bi-geo-alt"></i><span>@footerContactAddress</span></li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="container footer-bottom">
+        <div class="row align-items-center gy-3">
+            <div class="col-md-6 footer-bottom__copyright">
+                © @DateTime.Now.Year <strong>@footerTextLogo</strong>. @T("Portal.Footer.Copyright")
+            </div>
+            <div class="col-md-6 footer-bottom__links">
+                <a href="/documents@(cultureQuery)">@T("Portal.Navigation.Documents")</a>
+                <span class="footer-bottom__sep">•</span>
+                <a href="/contact@(cultureQuery)">@T("Portal.Navigation.Contact")</a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<div class="offcanvas offcanvas-end site-sidebar" tabindex="-1" id="siteSidebar" aria-labelledby="siteSidebarTitle">
+    <div class="offcanvas-header">
+        <button type="button" class="site-sidebar-close" data-bs-dismiss="offcanvas" aria-label="@closeLabel">
+            <i class="bi bi-x"></i>
+        </button>
+    </div>
+    <div class="offcanvas-body">
+        <a class="site-sidebar-brand" href="/@(cultureQuery)" aria-label="@siteName">
+            <img src="@logoLight"
+                 data-logo-light="@logoLight"
+                 data-logo-dark="@logoDark"
+                 alt="@siteName" />
+        </a>
+        <div id="siteSidebarTitle" class="site-sidebar-slogan">
+            @if (!string.IsNullOrWhiteSpace(sidebarSubtitle))
+            {
+                <span class="site-sidebar-slogan__title">@sidebarTitle</span>
+                <span class="site-sidebar-slogan__subtitle">@sidebarSubtitle</span>
+            }
+            else
+            {
+                @sidebarTitle
+            }
+        </div>
+        <div class="site-sidebar-controls"></div>
+        <nav class="site-sidebar-nav" aria-label="@sidebarNavigationLabel">
+            <ul class="site-sidebar-menu">
+                <li><a href="/@(cultureQuery)" class="@homeActive">@T("Portal.Navigation.Home")</a></li>
+                <li><a href="/boards@(cultureQuery)" class="@boardsActive">@T("Portal.Navigation.Boards")</a></li>
+                <li><a href="/sections@(cultureQuery)" class="@sectionsActive">@T("Portal.Navigation.GeneralInformation")</a></li>
+                <li><a href="/payment@(cultureQuery)" class="@paymentActive">@T("Portal.Navigation.Payment", L("Ödeme", "Payment"))</a></li>
+                <li><a href="@ToDocumentTypeUrl(programDocumentType)" class="@programActive">@T("Portal.Navigation.Program", L("Program", "Program"))</a></li>
+                <li><a href="@ToDocumentTypeUrl(fullTextDocumentType)" class="@fullTextActive">@T("Portal.Navigation.FullTextBook", L("Tam Metin Kitabı", "Full Text Book"))</a></li>
+                <li><a href="@ToDocumentTypeUrl(abstractBookDocumentType)" class="@abstractBookActive">@T("Portal.Navigation.AbstractBook", L("Özet Kitabı", "Abstract Book"))</a></li>
+                @if (documentTypeNames.Count > 0)
+                {
+                    <li class="dropdown">
+                        <a href="/documents@(cultureQuery)" class="@documentsActive">
+                            <span>@T("Portal.Navigation.Documents")</span> <i class="bi bi-chevron-down toggle-dropdown"></i>
+                        </a>
+                        <ul>
+                            <li><a href="/documents@(cultureQuery)">@T("Portal.Navigation.AllDocuments")</a></li>
+                            @foreach (string documentTypeName in documentTypeNames)
+                            {
+                                <li><a href="@ToDocumentTypeUrl(documentTypeName)">@documentTypeName</a></li>
+                            }
+                        </ul>
+                    </li>
+                }
+                else
+                {
+                    <li><a href="/documents@(cultureQuery)" class="@documentsActive">@T("Portal.Navigation.Documents")</a></li>
+                }
+                <li><a href="/contact@(cultureQuery)" class="@contactActive">@T("Portal.Navigation.Contact")</a></li>
+            </ul>
+        </nav>
+        @if (hasSidebarContact)
+        {
+            <div class="site-sidebar-contact">
+                <div class="site-sidebar-contact-title">@T("Portal.Navigation.Contact")</div>
+                <div class="site-sidebar-contact-list">
+                    @if (!string.IsNullOrWhiteSpace(sidebarContactPhone))
+                    {
+                        <a class="site-sidebar-contact-item" href="tel:@sidebarContactPhoneHref">
+                            <i class="bi bi-telephone"></i>
+                            <span>@sidebarContactPhone</span>
+                        </a>
+                    }
+                    @foreach (PublicContactEmailResponse email in visibleContactEmails)
+                    {
+                        <a class="site-sidebar-contact-item" href="mailto:@email.Email">
+                            <i class="bi bi-envelope"></i>
+                            <span>
+                                <span class="d-block">@email.Email</span>
+                                @if (!string.IsNullOrWhiteSpace(email.Label))
+                                {
+                                    <small class="d-block fw-normal">@email.Label</small>
+                                }
+                            </span>
+                        </a>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(sidebarContactAddress))
+                    {
+                        <div class="site-sidebar-contact-item">
+                            <i class="bi bi-geo-alt"></i>
+                            <span>@sidebarContactAddress</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+<div id="preloader"></div>
+
+<script src="~/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="~/assets/vendor/aos/aos.js"></script>
+<script src="~/assets/vendor/purecounter/purecounter_vanilla.js"></script>
+<script src="~/assets/vendor/swiper/swiper-bundle.min.js"></script>
+<script src="~/assets/js/main.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

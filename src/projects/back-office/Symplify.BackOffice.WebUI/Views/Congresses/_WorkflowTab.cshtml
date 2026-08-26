@@ -1,0 +1,155 @@
+@model Symplify.BackOffice.WebUI.Models.Congresses.ManageCongressViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+
+    string getUrl = Url.Action("Get", "CongressWorkflows", new { culture = currentCulture, congressId = Model.Id })
+        ?? $"/{currentCulture}/CongressWorkflows/Get?congressId={Model.Id}";
+
+    string applyUrl = Url.Action("ApplyTemplate", "CongressWorkflows", new { culture = currentCulture })
+        ?? $"/{currentCulture}/CongressWorkflows/ApplyTemplate";
+
+    string templateRequiredMessage = T("BackOffice.CongressWorkflows.Validation.TemplateRequired", "Workflow şablonu seçimi zorunludur.");
+    string loadingText = T("Common.Loading", "Yükleniyor...");
+    string emptyTemplateText = T("BackOffice.CongressWorkflows.Messages.NoTemplates", "Aktif workflow şablonu bulunamadı. Önce Workflow Şablonları ekranından şablon oluşturun.");
+    string noWorkflowText = T("BackOffice.CongressWorkflows.Messages.NoWorkflow", "Bu kongreye henüz workflow şablonu uygulanmamış.");
+    string emptyTransitionText = T("BackOffice.CongressWorkflows.Messages.NoTransitions", "Bu kongre için workflow geçişi bulunamadı.");
+    string applyConfirmTitle = T("BackOffice.CongressWorkflows.Messages.ApplyConfirmTitle", "Workflow şablonu uygulansın mı?");
+    string applyConfirmText = T("BackOffice.CongressWorkflows.Messages.ApplyConfirmText", "Mevcut geçişler seçilen şablona göre güncellenecek.");
+    string applyConfirmButton = T("BackOffice.CongressWorkflows.Buttons.ApplyTemplate", "Şablonu Uygula");
+    string successTitle = T("Common.Success", "Başarılı");
+    string errorTitle = T("Common.Error", "Hata");
+}
+
+<div class="card border shadow-none mb-4"
+     id="congressWorkflowPanel"
+     data-congress-id="@Model.Id"
+     data-source-url="@getUrl"
+     data-apply-url="@applyUrl"
+     data-template-required-message="@templateRequiredMessage"
+     data-loading-text="@loadingText"
+     data-empty-template-text="@emptyTemplateText"
+     data-no-workflow-text="@noWorkflowText"
+     data-empty-transition-text="@emptyTransitionText"
+     data-apply-confirm-title="@applyConfirmTitle"
+     data-apply-confirm-text="@applyConfirmText"
+     data-apply-confirm-button="@applyConfirmButton"
+     data-success-title="@successTitle"
+     data-error-title="@errorTitle">
+
+    @Html.AntiForgeryToken()
+
+    <div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <h6 class="text-md mb-0">@T("BackOffice.CongressWorkflows.ListTitle", "Kongre Workflow")</h6>
+            <small class="text-neutral-500">@T("BackOffice.CongressWorkflows.ListDescription", "Bu kongrede kullanılacak workflow şablonunu ve geçişlerini yönetin.")</small>
+        </div>
+        <button class="btn btn-outline-neutral-900 radius-8 px-16 py-10 d-flex align-items-center gap-2 js-congress-workflow-refresh" type="button">
+            <i class="ri-refresh-line"></i>
+            @T("Common.Refresh", "Yenile")
+        </button>
+    </div>
+
+    <div class="card-body">
+        <div class="alert alert-info bg-primary-50 border-primary-100 text-primary-700 d-flex align-items-start gap-2 mb-24">
+            <i class="ri-information-line text-lg mt-1"></i>
+            <div>
+                @T("BackOffice.CongressWorkflows.Help", "Workflow şablonları sistem genelinde tanımlanır; kongreye uygulandığında geçişler kongreye özel olarak kopyalanır. Submission akışı bu kongreye bağlı workflow ayarını kullanır.")
+            </div>
+        </div>
+
+        <div class="row gy-4 mb-24">
+            <div class="col-xl-5">
+                <div class="card border shadow-none h-100">
+                    <div class="card-header border-bottom">
+                        <h6 class="text-md mb-0">@T("BackOffice.CongressWorkflows.ApplyTemplateTitle", "Workflow Şablonu Uygula")</h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="applyCongressWorkflowTemplateForm" novalidate>
+                            <input type="hidden" name="CongressId" value="@Model.Id" />
+                            <input type="hidden" name="ReplaceExistingTransitions" value="true" />
+
+                            <div class="mb-16">
+                                <label class="form-label" for="congressWorkflowTemplateSelect">
+                                    @T("BackOffice.CongressWorkflows.Fields.WorkflowTemplate", "Workflow Şablonu")
+                                    <required-mark></required-mark>
+                                </label>
+                                <select class="form-control form-select" id="congressWorkflowTemplateSelect" name="WorkflowTemplateId" data-val="true" data-val-required="@templateRequiredMessage">
+                                    <option value="">@T("BackOffice.CongressWorkflows.Placeholders.WorkflowTemplate", "workflow şablonu seçiniz")</option>
+                                </select>
+                                <span class="text-danger field-validation-valid" data-valmsg-for="WorkflowTemplateId" data-valmsg-replace="true"></span>
+                            </div>
+
+                            <div class="form-check form-switch d-flex align-items-center gap-2 mb-20">
+                                <input class="form-check-input" type="checkbox" id="replaceExistingTransitionsSwitch" checked />
+                                <label class="form-check-label" for="replaceExistingTransitionsSwitch">
+                                    @T("BackOffice.CongressWorkflows.Fields.ReplaceExistingTransitions", "Mevcut geçişleri şablonla değiştir")
+                                </label>
+                            </div>
+
+                            <button class="btn btn-primary-600 radius-8 px-20 py-11 d-flex align-items-center gap-2" type="submit">
+                                <i class="ri-flow-chart"></i>
+                                @applyConfirmButton
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-7">
+                <div class="card border shadow-none h-100">
+                    <div class="card-header border-bottom">
+                        <h6 class="text-md mb-0">@T("BackOffice.CongressWorkflows.CurrentWorkflowTitle", "Geçerli Workflow")</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="js-current-workflow-empty text-neutral-500 d-none"></div>
+                        <div class="js-current-workflow-summary d-none">
+                            <div class="d-flex align-items-center flex-wrap gap-2 mb-12">
+                                <span class="badge bg-primary-50 text-primary-700 border border-primary-100 js-current-workflow-template"></span>
+                                <span class="badge bg-success-focus text-success-main js-current-workflow-active"></span>
+                            </div>
+                            <div class="row gy-3">
+                                <div class="col-md-6">
+                                    <small class="text-neutral-500 d-block">@T("BackOffice.CongressWorkflows.Fields.InitialTransactionStatus", "Başlangıç Durumu")</small>
+                                    <span class="fw-semibold js-current-workflow-initial-status">-</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-neutral-500 d-block">@T("BackOffice.CongressWorkflows.Fields.TransitionCount", "Geçiş Sayısı")</small>
+                                    <span class="fw-semibold js-current-workflow-transition-count">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table bordered-table mb-0" id="congressWorkflowTransitionsTable">
+                <thead>
+                    <tr>
+                        <th class="text-nowrap">@T("BackOffice.CongressWorkflows.Fields.Order", "Sıra")</th>
+                        <th>@T("BackOffice.CongressWorkflows.Fields.Transition", "Geçiş")</th>
+                        <th>@T("BackOffice.CongressWorkflows.Fields.FromStatus", "Kaynak Durum")</th>
+                        <th>@T("BackOffice.CongressWorkflows.Fields.ToStatus", "Hedef Durum")</th>
+                        <th class="text-nowrap">@T("BackOffice.CongressWorkflows.Fields.IsActive", "Aktif")</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="js-workflow-transition-empty-row">
+                        <td colspan="5" class="text-center text-neutral-500 py-24">@emptyTransitionText</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string T(string key, string fallback)
+    {
+        string value = L.GetStringValue(key);
+        return string.IsNullOrWhiteSpace(value) || string.Equals(value, key, StringComparison.OrdinalIgnoreCase) ? fallback : value;
+    }
+}

@@ -1,0 +1,40 @@
+@model SectionDetailViewModel
+@{
+    string currentCulture = ViewData["CurrentCulture"] as string ?? "tr-TR";
+    string T(string key) => Html.Text(key);
+    string cultureQuery = "?culture=" + Uri.EscapeDataString(currentCulture);
+}
+
+<div class="page-title">
+    <div class="container">
+        <h1>@Model.Section.Title</h1>
+        <nav class="breadcrumbs">
+            <ol>
+                <li><a href="/@(cultureQuery)">@T("Portal.Navigation.Home")</a></li>
+                <li><a href="/sections@(cultureQuery)">@T("Portal.Sections.PageTitle")</a></li>
+                <li class="current">@Model.Section.Title</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container" data-aos="fade-up">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <article class="card border-0 shadow-sm">
+                    <div class="card-body p-4 p-lg-5">
+                        @if (!string.IsNullOrWhiteSpace(Model.Section.Content))
+                        {
+                            @Html.Raw(Model.Section.Content)
+                        }
+                        else
+                        {
+                            <p>@T("Portal.Sections.DetailEmptyDescription")</p>
+                        }
+                    </div>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>

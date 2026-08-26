@@ -1,0 +1,6 @@
+@Symplify.Api.WebAPI_HostAddress = http://localhost:5200
+
+GET {{Symplify.Api.WebAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,1 @@
+namespace Symplify.BackOffice.WebUI.Models.OrganizationApiKeys; public sealed class OrganizationApiKeysIndexViewModel { public Guid OrganizationId { get; set; } public string OrganizationName { get; set; }=string.Empty; public string OrganizationCode { get; set; }=string.Empty; public bool IsOrganizationActive { get; set; } public string? OneTimePlainTextKey { get; set; } }

@@ -1,0 +1,105 @@
+@model Symplify.BackOffice.WebUI.Models.Organizations.OrganizationsIndexViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+
+    ViewData["Title"] = L.GetStringValue("BackOffice.Organizations.PageTitle");
+
+    string homeUrl = Url.Action("Index", "Home", new { culture = currentCulture })
+        ?? $"/{currentCulture}/home/index";
+
+    string getListUrl = Url.Action("GetList", "Organizations", new { culture = currentCulture })
+        ?? $"/{currentCulture}/organizations/getlist";
+
+    string createUrl = Url.Action("Create", "Organizations", new { culture = currentCulture })
+        ?? $"/{currentCulture}/organizations/create";
+
+    string editUrl = Url.Action("Edit", "Organizations", new { culture = currentCulture })
+        ?? $"/{currentCulture}/organizations/edit";
+
+    string apiUrl = Url.Action("Index", "OrganizationApiKeys", new { culture = currentCulture })
+        ?? $"/{currentCulture}/organizationapikeys/index";
+
+    string deleteUrl = Url.Action("Delete", "Organizations", new { culture = currentCulture })
+        ?? $"/{currentCulture}/organizations/delete";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="dashboard-main-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-0">@L["BackOffice.Organizations.PageTitle"]</h6>
+            <small class="text-neutral-500">@L["BackOffice.Organizations.PageDescription"]</small>
+        </div>
+
+        <ul class="d-flex align-items-center gap-2">
+            <li class="fw-medium">
+                <a href="@homeUrl" class="d-flex align-items-center gap-1 hover-text-primary text-neutral-600">
+                    <iconify-icon icon="solar:home-smile-angle-outline" class="icon text-lg"></iconify-icon>
+                    @L["Common.Panel"]
+                </a>
+            </li>
+            <li>-</li>
+            <li class="fw-medium">@L["BackOffice.Organizations.PageTitle"]</li>
+        </ul>
+    </div>
+<div class="alert alert-info bg-primary-50 border-primary-100 text-primary-700 d-flex align-items-start gap-3 mb-24">
+        <i class="ri-information-line text-xl mt-1"></i>
+        <div>
+            <h6 class="text-md mb-1">@L["BackOffice.Organizations.ManagementTitle"]</h6>
+            <p class="mb-0">@L["BackOffice.Organizations.ManagementDescription"]</p>
+        </div>
+    </div>
+
+    <div class="card border shadow-none radius-12">
+        <div class="card-header border-bottom d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+                <h6 class="mb-1">@L["BackOffice.Organizations.ListTitle"]</h6>
+                <small class="text-neutral-500">@L["BackOffice.Organizations.ListDescription"]</small>
+            </div>
+
+            <a href="@createUrl" class="btn btn-primary-600 radius-8 px-20 py-11 d-flex align-items-center gap-2">
+                <i class="ri-add-line"></i>
+                @L["BackOffice.Organizations.CreateButton"]
+            </a>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table bordered-table mb-0"
+                       id="organizationsTable"
+                       data-source-url="@getListUrl"
+                       data-edit-base-url="@editUrl"
+                       data-api-keys-base-url="@apiUrl"
+                       data-delete-url="@deleteUrl">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>@L["BackOffice.Organizations.Fields.Organization"]</th>
+                            <th>@L["BackOffice.Organizations.Fields.Code"]</th>
+                            <th>@L["BackOffice.Organizations.Fields.BrandColor"]</th>
+                            <th>@L["BackOffice.Organizations.Fields.IsActive"]</th>
+                            <th>@L["BackOffice.Organizations.Fields.ApiKeyStatus"]</th>
+                            <th>@L["BackOffice.Organizations.Fields.LastUpdatedAt"]</th>
+                            <th class="text-end">@L["Common.Actions"]</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form id="deleteOrganizationForm" action="@deleteUrl" method="post">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    @await Html.PartialAsync("_LocalizationScripts")
+
+    <script src="~/js/shared/ajax/symplify.ajax.js" asp-append-version="true"></script>
+    <script src="~/js/features/organizations/organizations.index.js" asp-append-version="true"></script>
+}

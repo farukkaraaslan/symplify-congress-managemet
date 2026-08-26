@@ -1,0 +1,23 @@
+@model ErrorViewModel
+@{
+    string T(string key) => Html.Text(key);
+    ViewData["Title"] = T("Portal.Error.PageTitle");
+}
+
+<h1 class="text-danger">@T("Portal.Error.PageTitle")</h1>
+<h2 class="text-danger">@T("Portal.Error.GenericDescription")</h2>
+
+@if (Model.ShowRequestId)
+{
+    <p>
+        <strong>@T("Portal.Error.RequestId"):</strong> <code>@Model.RequestId</code>
+    </p>
+}
+
+@if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+{
+    <h3>@T("Portal.Error.DevelopmentModeTitle")</h3>
+    <p>
+        @T("Portal.Error.DevelopmentModeDescription")
+    </p>
+}

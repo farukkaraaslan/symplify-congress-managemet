@@ -1,0 +1,7 @@
+@use "../abstracts" as a;
+
+@include a.mq-down(md) {
+  [data-aos-delay] {
+    transition-delay: 0 !important;
+  }
+}

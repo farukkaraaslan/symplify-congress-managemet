@@ -1,0 +1,126 @@
+@model Symplify.BackOffice.Application.Features.MailDeliveries.Queries.GetDetail.GetMailDeliveryDetailResponse
+@using Symplify.BackOffice.Domain.Enums
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string culture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    bool isEnglish = culture.StartsWith("en", StringComparison.OrdinalIgnoreCase);
+    string T(string key, string tr, string en)
+    {
+        string value = L.GetStringValue(key);
+        if (!string.IsNullOrWhiteSpace(value) && !string.Equals(value, key, StringComparison.Ordinal)) return value;
+        return isEnglish ? en : tr;
+    }
+    string MailTypeText(MailMessageType value) => value switch
+    {
+        MailMessageType.EmailConfirmation => T("BackOffice.MailDeliveries.MailType.EmailConfirmation", "E-posta Doğrulama", "Email Confirmation"),
+        MailMessageType.PasswordReset => T("BackOffice.MailDeliveries.MailType.PasswordReset", "Şifre Sıfırlama", "Password Reset"),
+        MailMessageType.OrganizationMailTest => T("BackOffice.MailDeliveries.MailType.OrganizationMailTest", "Mail Ayarı Testi", "Mail Configuration Test"),
+        MailMessageType.SubmissionSentToReview => T("BackOffice.MailDeliveries.MailType.SubmissionSentToReview", "Hakem Süreci", "Sent to Review"),
+        MailMessageType.SubmissionPaymentPending => T("BackOffice.MailDeliveries.MailType.SubmissionPaymentPending", "Ödeme Bekleniyor", "Payment Pending"),
+        MailMessageType.SubmissionPaymentApproved => T("BackOffice.MailDeliveries.MailType.SubmissionPaymentApproved", "Ödeme Onaylandı", "Payment Approved"),
+        MailMessageType.SubmissionAccepted => T("BackOffice.MailDeliveries.MailType.SubmissionAccepted", "Bildiri Kabul", "Submission Accepted"),
+        MailMessageType.AcceptanceLetter => T("BackOffice.MailDeliveries.MailType.AcceptanceLetter", "Kabul Belgesi", "Acceptance Letter"),
+        MailMessageType.ParticipationCertificate => T("BackOffice.MailDeliveries.MailType.ParticipationCertificate", "Katılım Belgesi", "Participation Certificate"),
+        MailMessageType.BulkEmail => T("BackOffice.MailDeliveries.MailType.BulkEmail", "Toplu E-posta", "Bulk Email"),
+        MailMessageType.OtherSystem => T("BackOffice.MailDeliveries.MailType.OtherSystem", "Sistem E-postası", "System Email"),
+        _ => T("BackOffice.MailDeliveries.MailType.Unknown", "Bilinmiyor", "Unknown")
+    };
+    string EventText(MailDeliveryEventType value) => value switch
+    {
+        MailDeliveryEventType.Send => "SEND",
+        MailDeliveryEventType.Delivery => "DELIVERY",
+        MailDeliveryEventType.DeliveryDelay => "DELIVERY DELAY",
+        MailDeliveryEventType.Bounce => "BOUNCE",
+        MailDeliveryEventType.Reject => "REJECT",
+        MailDeliveryEventType.Complaint => "COMPLAINT",
+        MailDeliveryEventType.RenderingFailure => "RENDERING FAILURE",
+        _ => "UNKNOWN"
+    };
+}
+
+<div class="modal-header">
+    <div>
+        <h6 class="modal-title mb-1">@T("BackOffice.MailDeliveries.Detail.Title", "E-posta Gönderim Detayı", "Email Delivery Detail")</h6>
+        <div class="text-secondary-light text-sm">@MailTypeText(Model.MailType) · @Model.RecipientEmail</div>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body p-24">
+    <div class="row gy-16">
+        <div class="col-lg-6">
+            <div class="border radius-8 p-20 h-100">
+                <h6 class="mb-16">@T("BackOffice.MailDeliveries.Detail.Message", "Mesaj", "Message")</h6>
+                <dl class="row mb-0 gy-2">
+                    <dt class="col-sm-4">@T("BackOffice.MailDeliveries.Columns.Type", "Tür", "Type")</dt><dd class="col-sm-8">@MailTypeText(Model.MailType)</dd>
+                    <dt class="col-sm-4">@T("BackOffice.MailDeliveries.Detail.Recipient", "Alıcı", "Recipient")</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.RecipientName) ? "-" : Model.RecipientName)<br/><span class="text-secondary-light">@Model.RecipientEmail</span></dd>
+                    <dt class="col-sm-4">@T("BackOffice.MailDeliveries.Columns.Subject", "Konu", "Subject")</dt><dd class="col-sm-8 text-break">@Model.Subject</dd>
+                    <dt class="col-sm-4">@T("BackOffice.MailDeliveries.Filters.Organization", "Organizasyon", "Organization")</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.OrganizationName) ? "-" : Model.OrganizationName)</dd>
+                    <dt class="col-sm-4">@T("BackOffice.MailDeliveries.Filters.Congress", "Kongre", "Congress")</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.CongressName) ? "-" : Model.CongressName)</dd>
+                    <dt class="col-sm-4">@T("BackOffice.MailDeliveries.Detail.Submission", "Bildiri", "Submission")</dt><dd class="col-sm-8">@(Model.SubmissionNumber ?? "-")</dd>
+                    <dt class="col-sm-4">@T("BackOffice.MailDeliveries.Detail.AcceptanceLetter", "Kabul Belgesi", "Acceptance Letter")</dt><dd class="col-sm-8">@(Model.AcceptanceLetterNumber ?? "-")</dd>
+                    <dt class="col-sm-4">@T("BackOffice.MailDeliveries.Detail.Certificate", "Katılım Belgesi", "Participation Certificate")</dt><dd class="col-sm-8 text-break">@(Model.ParticipationCertificateFileName ?? "-")</dd>
+                </dl>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="border radius-8 p-20 h-100">
+                <h6 class="mb-16">@T("BackOffice.MailDeliveries.Detail.Delivery", "Gönderim / Teslimat", "Transport / Delivery")</h6>
+                <dl class="row mb-0 gy-2">
+                    <dt class="col-sm-4">@T("BackOffice.MailDeliveries.Detail.TransportStatus", "Gönderim", "Transport")</dt><dd class="col-sm-8">@Model.Status</dd>
+                    <dt class="col-sm-4">@T("BackOffice.MailDeliveries.Detail.DeliveryStatus", "Teslimat", "Delivery")</dt><dd class="col-sm-8">@Model.DeliveryStatus</dd>
+                    <dt class="col-sm-4">@T("BackOffice.MailDeliveries.Detail.Provider", "Sağlayıcı", "Provider")</dt><dd class="col-sm-8">@(Model.Provider ?? "-")</dd>
+                    <dt class="col-sm-4">SES Message ID</dt><dd class="col-sm-8 text-break">@(Model.ProviderMessageId ?? "-")</dd>
+                    <dt class="col-sm-4">@T("BackOffice.MailDeliveries.Detail.CreatedAt", "Kuyruğa Alınma", "Queued At")</dt><dd class="col-sm-8">@Model.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss")</dd>
+                    <dt class="col-sm-4">@T("BackOffice.MailDeliveries.Detail.SentAt", "Gönderilme", "Sent At")</dt><dd class="col-sm-8">@(Model.SentAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss") ?? "-")</dd>
+                    <dt class="col-sm-4">@T("BackOffice.MailDeliveries.Detail.DeliveredAt", "Teslim", "Delivered At")</dt><dd class="col-sm-8">@(Model.DeliveredAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss") ?? "-")</dd>
+                    <dt class="col-sm-4">@T("BackOffice.MailDeliveries.Detail.Attempts", "Deneme", "Attempts")</dt><dd class="col-sm-8">@Model.AttemptCount</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.LastError) || !string.IsNullOrWhiteSpace(Model.DeliveryDiagnosticCode) || !string.IsNullOrWhiteSpace(Model.DeliverySmtpResponse) || !string.IsNullOrWhiteSpace(Model.BounceType))
+    {
+        <div class="alert alert-danger radius-8 mt-20 mb-0">
+            <h6 class="text-danger-main mb-12">@T("BackOffice.MailDeliveries.Detail.Error", "Hata / Sağlayıcı Cevabı", "Error / Provider Response")</h6>
+            @if (!string.IsNullOrWhiteSpace(Model.BounceType)) { <div><strong>Bounce:</strong> @Model.BounceType / @(Model.BounceSubType ?? "-")</div> }
+            @if (!string.IsNullOrWhiteSpace(Model.DeliveryStatusCode)) { <div><strong>Status:</strong> @Model.DeliveryStatusCode</div> }
+            @if (!string.IsNullOrWhiteSpace(Model.DeliveryDiagnosticCode)) { <div class="text-break"><strong>Diagnostic:</strong> @Model.DeliveryDiagnosticCode</div> }
+            @if (!string.IsNullOrWhiteSpace(Model.DeliverySmtpResponse)) { <div class="text-break"><strong>SMTP:</strong> @Model.DeliverySmtpResponse</div> }
+            @if (!string.IsNullOrWhiteSpace(Model.LastError)) { <div class="text-break"><strong>Application:</strong> @Model.LastError</div> }
+        </div>
+    }
+
+    <div class="border radius-8 mt-20">
+        <div class="p-16 border-bottom"><h6 class="mb-0">@T("BackOffice.MailDeliveries.Detail.Timeline", "SES Olay Geçmişi", "SES Event Timeline")</h6></div>
+        <div class="p-20">
+            @if (Model.Events.Count == 0)
+            {
+                <div class="text-secondary-light">@T("BackOffice.MailDeliveries.Detail.NoEvents", "Henüz sağlayıcı teslimat olayı alınmadı.", "No provider delivery event has been received yet.")</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table bordered-table mb-0 align-middle">
+                        <thead><tr><th>@T("BackOffice.MailDeliveries.Columns.CreatedAt", "Tarih", "Date")</th><th>Event</th><th>Status</th><th>@T("BackOffice.MailDeliveries.Detail.ProviderResponse", "Sağlayıcı Cevabı", "Provider Response")</th></tr></thead>
+                        <tbody>
+                        @foreach (var evt in Model.Events)
+                        {
+                            <tr>
+                                <td class="text-nowrap">@evt.OccurredAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss")</td>
+                                <td><span class="badge bg-neutral-200 text-neutral-700">@EventText(evt.EventType)</span></td>
+                                <td>@(evt.StatusCode ?? "-")</td>
+                                <td class="text-break">@(evt.DiagnosticCode ?? evt.SmtpResponse ?? evt.Detail ?? "-")</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-outline-neutral-400 radius-8" data-bs-dismiss="modal">@T("Common.Close", "Kapat", "Close")</button>
+</div>

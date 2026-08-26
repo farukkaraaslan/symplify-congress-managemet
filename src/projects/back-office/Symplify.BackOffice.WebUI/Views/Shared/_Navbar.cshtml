@@ -1,0 +1,130 @@
+@using Symplify.BackOffice.WebUI.Localization
+@inject IBackOfficeViewLocalizer L
+@{
+    bool suppressSidebar = ViewData["SuppressSidebar"] as bool? == true;
+    bool useAuthorTemplate = ViewData["UseAuthorTemplate"] as bool? == true;
+    string culture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    string homeUrl = Url.Action("Index", "Home", new { culture }) ?? $"/{culture}/Home/Index";
+    string submissionsUrl = Url.Action("Index", "Submissions", new { culture }) ?? $"/{culture}/submissions";
+
+    string T(string key, string fallback)
+    {
+        var value = L.GetStringValue(key);
+        return !string.IsNullOrWhiteSpace(value) && !string.Equals(value, key, StringComparison.OrdinalIgnoreCase)
+            ? value
+            : fallback;
+    }
+}
+@if (useAuthorTemplate)
+{
+    <header class="author-topbar">
+        <div class="author-topbar__inner">
+            @await Component.InvokeAsync("OrganizationBrand")
+
+            <div class="author-topbar__actions">
+                <a href="@homeUrl" class="btn btn-sm btn-outline-primary-600 radius-8 d-none d-lg-inline-flex align-items-center gap-2">
+                    <i class="ri-home-5-line"></i>
+                    @T("BackOffice.AuthorTopbar.Home", "Panel")
+                </a>
+                <a href="@submissionsUrl" class="btn btn-sm btn-outline-primary-600 radius-8 d-none d-lg-inline-flex align-items-center gap-2">
+                    <i class="ri-file-list-3-line"></i>
+                    @T("BackOffice.AuthorTopbar.MySubmissions", "Bildirilerim")
+                </a>
+                <button type="button" data-theme-toggle class="author-icon-btn" aria-label='@T("BackOffice.AuthorTopbar.ThemeToggle", "Tema değiştir")'></button>
+                @await Component.InvokeAsync("LanguageSwitcher", new { displayMode = "AuthorTopbar" })
+                <button type="button" class="author-icon-btn" aria-label='@T("BackOffice.AuthorTopbar.Notifications", "Bildirimler")'>
+                    <i class="ri-notification-3-line text-lg"></i>
+                </button>
+                @await Component.InvokeAsync("UserMenu", new { displayMode = "AuthorTopbar" })
+            </div>
+        </div>
+    </header>
+}
+else
+{
+    <div class="navbar-header symplify-navbar">
+        <div class="navbar-responsive-row @(suppressSidebar ? "justify-content-between" : string.Empty)">
+            @if (suppressSidebar)
+            {
+                <a href="@homeUrl" class="d-flex align-items-center gap-2">
+                    <img src="/assets/images/logo/symplify-logo-horizontal-light.svg" alt="Symplify" class="h-40-px light-logo" />
+                    <img src="/assets/images/logo/symplify-logo-horizontal-dark.svg" alt="Symplify" class="h-40-px dark-logo" />
+                </a>
+            }
+            else
+            {
+                <div class="navbar-left-controls">
+                    <button type="button" class="sidebar-toggle" aria-label='@T("BackOffice.Navbar.ToggleSidebar", "Sidebar aç/kapat")'>
+                        <iconify-icon icon="heroicons:bars-3-solid" class="icon text-2xl non-active"></iconify-icon>
+                        <iconify-icon icon="iconoir:arrow-right" class="icon text-2xl active"></iconify-icon>
+                    </button>
+
+                    <button type="button" class="sidebar-mobile-toggle" aria-label='@T("BackOffice.Navbar.OpenMobileMenu", "Mobil menüyü aç")'>
+                        <iconify-icon icon="heroicons:bars-3-solid" class="icon text-2xl"></iconify-icon>
+                    </button>
+                </div>
+            }
+
+            <div class="navbar-right-actions">
+                <button type="button"
+                        data-theme-toggle
+                        class="navbar-action-btn w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center"
+                        aria-label='@T("BackOffice.AuthorTopbar.ThemeToggle", "Tema değiştir")'>
+                    <iconify-icon icon="solar:sun-2-outline" class="text-primary-light text-xl"></iconify-icon>
+                </button>
+
+                @await Component.InvokeAsync("LanguageSwitcher")
+
+                <div class="dropdown">
+                    <button class="navbar-action-btn w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center"
+                            type="button"
+                            data-bs-toggle="dropdown"
+                            aria-label='@T("BackOffice.Navbar.Messages", "Mesajlar")'>
+                        <iconify-icon icon="mage:email" class="text-primary-light text-xl"></iconify-icon>
+                    </button>
+
+                    <div class="dropdown-menu dropdown-menu-lg p-0">
+                        <div class="m-16 py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2">
+                            <div>
+                                <h6 class="text-lg text-primary-light fw-semibold mb-0">@T("BackOffice.Navbar.Messages", "Mesajlar")</h6>
+                                <small class="text-secondary-light">@T("BackOffice.Navbar.MessagesDescription", "Kişisel mesajlarınız burada gösterilecek.")</small>
+                            </div>
+                            <span class="text-primary-600 fw-semibold text-lg w-40-px h-40-px rounded-circle bg-base d-flex justify-content-center align-items-center">0</span>
+                        </div>
+
+                        <div class="px-24 py-24 text-center text-secondary-light">
+                            <iconify-icon icon="tabler:message-circle-off" class="text-3xl d-block mb-8"></iconify-icon>
+                            @T("BackOffice.Navbar.NoUnreadMessages", "Henüz okunmamış mesaj yok.")
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dropdown">
+                    <button class="navbar-action-btn w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center"
+                            type="button"
+                            data-bs-toggle="dropdown"
+                            aria-label='@T("BackOffice.AuthorTopbar.Notifications", "Bildirimler")'>
+                        <iconify-icon icon="iconoir:bell" class="text-primary-light text-xl"></iconify-icon>
+                    </button>
+
+                    <div class="dropdown-menu dropdown-menu-lg p-0">
+                        <div class="m-16 py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2">
+                            <div>
+                                <h6 class="text-lg text-primary-light fw-semibold mb-0">@T("BackOffice.AuthorTopbar.Notifications", "Bildirimler")</h6>
+                                <small class="text-secondary-light">@T("BackOffice.Navbar.NotificationsDescription", "Sistem bildirimleri burada gösterilecek.")</small>
+                            </div>
+                            <span class="text-primary-600 fw-semibold text-lg w-40-px h-40-px rounded-circle bg-base d-flex justify-content-center align-items-center">0</span>
+                        </div>
+
+                        <div class="px-24 py-24 text-center text-secondary-light">
+                            <iconify-icon icon="solar:bell-off-linear" class="text-3xl d-block mb-8"></iconify-icon>
+                            @T("BackOffice.Navbar.NoNotifications", "Şu anda yeni bildiriminiz yok.")
+                        </div>
+                    </div>
+                </div>
+
+                @await Component.InvokeAsync("UserMenu")
+            </div>
+        </div>
+    </div>
+}

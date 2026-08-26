@@ -1,0 +1,68 @@
+@model Symplify.BackOffice.WebUI.Models.Congresses.ManageCongressViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    string getListUrl = Url.Action("GetList", "CongressAnnouncements", new { culture = currentCulture }) ?? $"/{currentCulture}/CongressAnnouncements/GetList";
+    string createModalUrl = Url.Action("CreateModal", "CongressAnnouncements", new { culture = currentCulture, congressId = Model.Id }) ?? $"/{currentCulture}/CongressAnnouncements/CreateModal";
+    string editModalUrl = Url.Action("EditModal", "CongressAnnouncements", new { culture = currentCulture }) ?? $"/{currentCulture}/CongressAnnouncements/EditModal";
+    string deleteUrl = Url.Action("Delete", "CongressAnnouncements", new { culture = currentCulture }) ?? $"/{currentCulture}/CongressAnnouncements/Delete";
+    string reorderUrl = Url.Action("Reorder", "CongressAnnouncements", new { culture = currentCulture, congressId = Model.Id }) ?? $"/{currentCulture}/CongressAnnouncements/Reorder?congressId={Model.Id}";
+}
+
+<div class="card border shadow-none mb-4"
+     id="congressAnnouncementPanel"
+     data-congress-id="@Model.Id"
+     data-source-url="@getListUrl"
+     data-reorder-url="@reorderUrl"
+     data-create-modal-url="@createModalUrl"
+     data-edit-modal-url="@editModalUrl"
+     data-delete-url="@deleteUrl">
+
+    @Html.AntiForgeryToken()
+
+    <div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <h6 class="text-md mb-0">@L.GetStringValue("BackOffice.CongressAnnouncements.ListTitle")</h6>
+            <small class="text-neutral-500">@L.GetStringValue("BackOffice.CongressAnnouncements.ListDescription")</small>
+        </div>
+
+        <button id="openCreateAnnouncementModalButton"
+                class="btn btn-primary-600 radius-8 px-20 py-11 d-flex align-items-center gap-2"
+                type="button">
+            <i class="ri-add-line me-1"></i>
+            @L.GetStringValue("BackOffice.CongressAnnouncements.Buttons.New")
+        </button>
+    </div>
+
+    <div class="card-body">
+        <div class="alert alert-info bg-info-50 text-info-700 border-info-100 mb-3">
+            @L.GetStringValue("BackOffice.CongressAnnouncements.Reorder.Help")
+        </div>
+
+        <div class="table-responsive">
+            <table class="table bordered-table mb-0" id="congressAnnouncementsTable" data-reorder-url="@reorderUrl">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th></th>
+                        <th>@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.Order")</th>
+                        <th>@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.Title")</th>
+                        <th>@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.Summary")</th>
+                        <th>@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.Type")</th>
+                        <th>@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.Status")</th>
+                        <th>@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.PublishStartDate")</th>
+                        <th>@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.PublishEndDate")</th>
+                        <th>@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.Flags")</th>
+                        <th>@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.IsActive")</th>
+                        <th class="text-end">@L.GetStringValue("Common.Actions")</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="congressAnnouncementModalContainer"></div>
+

@@ -1,0 +1,228 @@
+@model Symplify.BackOffice.WebUI.Models.CongressSliders.CreateCongressSliderViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    string formActionUrl = Url.Action("Create", "CongressSliders", new { culture = currentCulture }) ?? $"/{currentCulture}/congresssliders/create";
+    string defaultLanguageLabel = L.GetStringValue("Common.Default");
+    if (string.IsNullOrWhiteSpace(defaultLanguageLabel) || string.Equals(defaultLanguageLabel, "Common.Default", StringComparison.OrdinalIgnoreCase))
+    {
+        defaultLanguageLabel = "Varsayılan";
+    }
+}
+
+<div aria-hidden="true" class="modal fade congress-slider-modal" id="createSliderModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+
+        <form id="createCongressSliderForm"
+              class="modal-content"
+              action="@formActionUrl"
+              method="post"
+              enctype="multipart/form-data"
+              autocomplete="off">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" asp-for="CongressId" />
+
+            <div class="modal-header">
+                <div>
+                    <h6 class="modal-title">
+                        @L["BackOffice.CongressSliders.Create.Title"]
+                    </h6>
+
+                    <small class="text-neutral-500 d-block mt-1">
+                        @L["BackOffice.CongressSliders.Create.Description"]
+                    </small>
+                </div>
+
+                <button aria-label="@(L["Common.Close"])"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        type="button">
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div asp-validation-summary="ModelOnly"
+                     class="alert alert-danger d-none js-slider-validation-summary">
+                </div>
+
+                <div class="card border shadow-none mb-4">
+                    <div class="card-header border-bottom">
+                        <h6 class="text-md mb-0">
+                            @L["BackOffice.CongressSliders.BasicInfo"]
+                        </h6>
+                    </div>
+
+                    <div class="card-body row gy-4">
+                        <div class="col-12 d-flex align-items-end">
+                            <div class="form-switch switch-primary d-flex align-items-center gap-3">
+                                <input class="form-check-input js-slider-status-switch"
+                                       asp-for="IsActive"
+                                       type="checkbox"
+                                       role="switch" />
+
+                                <label class="form-check-label" asp-for="IsActive">
+                                    @L["BackOffice.CongressSliders.Fields.IsActive"]
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label text-sm fw-medium" asp-for="ImageFile">
+                                @L["BackOffice.CongressSliders.Fields.Image"]
+                                <required-mark></required-mark>
+                            </label>
+
+                            <label for="createSliderImageFile"
+                                   class="border border-neutral-200 rounded-3 p-40 d-flex flex-column align-items-center justify-content-center text-center bg-neutral-50 cursor-pointer js-slider-image-dropzone"
+                                   data-symplify-dropzone
+                                   data-dropzone-file-name-target=".js-slider-image-file-name"
+                                   data-dropzone-preview-target=".js-slider-image-preview"
+                                   data-dropzone-error-target=".js-slider-image-error"
+                                   data-dropzone-max-size-mb="5">
+                                <img alt=""
+                                     class="d-none w-160-px h-90-px rounded-2 object-fit-cover mb-3 js-slider-image-preview"
+                                     data-dropzone-preview />
+
+                                <i class="ri-image-add-line text-4xl text-neutral-400 mb-2"></i>
+
+                                <span class="btn btn-outline-primary-600 radius-8 px-20 py-11 d-inline-flex align-items-center gap-2 mt-2">
+                                    @L["BackOffice.CongressSliders.Buttons.SelectImage"]
+                                </span>
+
+                                <span class="text-xs text-neutral-500 mt-2 js-slider-image-file-name" data-dropzone-file-name>
+                                    @L["BackOffice.CongressSliders.Help.Image"]
+                                </span>
+
+                                <span class="text-danger d-none mt-2 js-slider-image-error" data-dropzone-error></span>
+                            </label>
+
+                            <input id="createSliderImageFile"
+                                   class="visually-hidden js-slider-image-input"
+                                   asp-for="ImageFile"
+                                   type="file"
+                                   accept=".jpg,.jpeg,.png,.webp,.svg,image/jpeg,image/png,image/webp,image/svg+xml" />
+
+                            <span asp-validation-for="ImageFile" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border shadow-none">
+                    <div class="card-header border-bottom">
+                        <h6 class="text-md mb-0">
+                            @L.GetStringValue("Common.Translations")
+                        </h6>
+                    </div>
+
+                    <div class="card-body">
+                        <ul class="nav nav-pills mb-3" role="tablist">
+                            @for (int i = 0; i < Model.Translations.Count; i++)
+                            {
+                                string tabId = $"createSliderTranslation-{Model.Translations[i].Culture}".Replace(".", "-");
+
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link @(i == 0 ? "active" : string.Empty)"
+                                            id="@tabId-tab"
+                                            data-bs-toggle="pill"
+                                            data-bs-target="#@tabId"
+                                            type="button"
+                                            role="tab"
+                                            aria-controls="@tabId"
+                                            aria-selected="@(i == 0 ? "true" : "false")">
+                                        <span class="d-inline-flex align-items-center gap-2">
+                                            <span>@Model.Translations[i].LanguageName</span>
+                                            @if (Model.Translations[i].IsDefault)
+                                            {
+                                                <span class="badge bg-primary-50 text-primary-600 rounded-pill">@defaultLanguageLabel</span>
+                                            }
+                                        </span>
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+
+                        <div class="tab-content">
+                            @for (int i = 0; i < Model.Translations.Count; i++)
+                            {
+                                string tabId = $"createSliderTranslation-{Model.Translations[i].Culture}".Replace(".", "-");
+
+                                <div class="tab-pane fade @(i == 0 ? "show active" : null)"
+                                     id="@tabId"
+                                     role="tabpanel"
+                                     aria-labelledby="@tabId-tab"
+                                     tabindex="0">
+
+                                    <input type="hidden" asp-for="Translations[i].LanguageId" />
+                                    <input type="hidden" asp-for="Translations[i].Culture" />
+                                    <input type="hidden" asp-for="Translations[i].LanguageName" />
+                                    <input type="hidden" asp-for="Translations[i].IsDefault" />
+
+                                    <div class="row gy-4">
+                                        <div class="col-12">
+                                            <label class="form-label" asp-for="Translations[i].Title">
+                                                @L["BackOffice.CongressSliders.Fields.Title"]
+                                            </label>
+
+                                            <input class="form-control" asp-for="Translations[i].Title" />
+
+                                            <span asp-validation-for="Translations[i].Title" class="text-danger"></span>
+                                        </div>
+
+                                        <div class="col-12">
+                                            <label class="form-label" asp-for="Translations[i].Subtitle">
+                                                @L["BackOffice.CongressSliders.Fields.Subtitle"]
+                                            </label>
+
+                                            <textarea class="form-control"
+                                                      asp-for="Translations[i].Subtitle"
+                                                      rows="3"></textarea>
+
+                                            <span asp-validation-for="Translations[i].Subtitle" class="text-danger"></span>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label" asp-for="Translations[i].ButtonText">
+                                                @L["BackOffice.CongressSliders.Fields.ButtonText"]
+                                            </label>
+
+                                            <input class="form-control" asp-for="Translations[i].ButtonText" />
+
+                                            <span asp-validation-for="Translations[i].ButtonText" class="text-danger"></span>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label" asp-for="Translations[i].ButtonUrl">
+                                                @L["BackOffice.CongressSliders.Fields.ButtonUrl"]
+                                            </label>
+
+                                            <input class="form-control" asp-for="Translations[i].ButtonUrl" />
+
+                                            <span asp-validation-for="Translations[i].ButtonUrl" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-light-100 text-dark radius-8 px-20 py-11 d-flex align-items-center gap-2"
+                        data-bs-dismiss="modal"
+                        type="button">
+                    @L["Common.Cancel"]
+                </button>
+
+                <button class="btn btn-primary-600 radius-8 px-20 py-11 d-flex align-items-center gap-2"
+                        type="submit">
+                    @L["BackOffice.CongressSliders.Buttons.Save"]
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>

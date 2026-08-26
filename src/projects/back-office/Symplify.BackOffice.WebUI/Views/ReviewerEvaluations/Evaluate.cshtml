@@ -1,0 +1,387 @@
+@using Symplify.BackOffice.Application.Features.ReviewerEvaluations.Constants
+@using Symplify.BackOffice.WebUI.Localization
+@model Symplify.BackOffice.Application.Features.ReviewerEvaluations.Queries.GetForm.GetReviewerEvaluationFormResponse
+@inject IBackOfficeViewLocalizer L
+
+@{
+    ViewData["Title"] = L.GetStringValue(ReviewerEvaluationResourceKeys.EvaluatePageTitle);
+    ViewData["ClientResourcePrefixes"] = new[] { "BackOffice.ReviewerEvaluations." };
+    string? currentCulture = Context.Request.RouteValues["culture"]?.ToString();
+    string formController = ViewData["EvaluationFormController"]?.ToString() ?? "ReviewerEvaluations";
+    string formAction = ViewData["EvaluationFormAction"]?.ToString() ?? "Evaluate";
+    object formRouteId = ViewData["EvaluationFormRouteId"] ?? Model.EvaluationId;
+    string? backUrl = ViewData["EvaluationBackUrl"]?.ToString() ?? Url.Action("Index", "ReviewerEvaluations", new { culture = currentCulture });
+    string backText = ViewData["EvaluationBackText"]?.ToString() ?? L.GetStringValue(ReviewerEvaluationResourceKeys.BackToList);
+    string? pageTitleOverride = ViewData["EvaluationPageTitleOverride"]?.ToString();
+    int scoredCriteriaCount = Model.Criteria.Count(item => item.Score.HasValue);
+    int criteriaCount = Model.Criteria.Count;
+    decimal currentScore = Model.Criteria.Where(item => item.Score.HasValue).Sum(item => item.Score!.Value);
+    decimal maxScore = Model.MaxScore <= 0 ? criteriaCount * 10m : Model.MaxScore;
+}
+
+<div class="dashboard-main-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <a class="btn btn-outline-primary-600 radius-8 px-16 py-8 d-inline-flex align-items-center gap-2 mb-16" href="@backUrl">
+                <i class="ri-arrow-left-line"></i>
+                @backText
+            </a>
+            <h6 class="fw-semibold mb-0">@(string.IsNullOrWhiteSpace(pageTitleOverride) ? L.GetStringValue(ReviewerEvaluationResourceKeys.EvaluateTitle) : pageTitleOverride)</h6>
+            <small class="text-neutral-500">@L[ReviewerEvaluationResourceKeys.EvaluateSubtitle]</small>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="badge @Model.StatusBadgeClass rounded-pill px-12 py-8">@T(Model.StatusText)</span>
+            <span class="badge bg-danger-100 text-danger-600 rounded-pill px-12 py-8">@Model.DueDate.ToString("dd.MM.yyyy")</span>
+            <span class="badge bg-primary-50 text-primary-600 rounded-pill px-12 py-8"><span id="scoreTotal">@currentScore</span> / @maxScore</span>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] is not null)
+    {
+        <div class="alert alert-success border-success-100 text-success-700 mb-24">@T(TempData["SuccessMessage"]?.ToString())</div>
+    }
+
+    @if (TempData["ErrorMessage"] is not null)
+    {
+        <div class="alert alert-danger border-danger-100 text-danger-700 mb-24">@T(TempData["ErrorMessage"]?.ToString())</div>
+    }
+
+    <form asp-action="@formAction" asp-controller="@formController" asp-route-culture="@currentCulture" asp-route-id="@formRouteId" method="post" id="reviewerEvaluationForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="EvaluationId" value="@Model.EvaluationId" />
+        <input type="hidden" name="SubmitEvaluation" id="SubmitEvaluation" value="true" />
+
+        <div class="row gy-4 align-items-start">
+            <div class="col-xl-7">
+                <div class="card border shadow-none mb-4">
+                    <div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div>
+                            <h6 class="text-md mb-0">@L[ReviewerEvaluationResourceKeys.SubmissionInfoTitle]</h6>
+                            <small class="text-neutral-500">@L[ReviewerEvaluationResourceKeys.SubmissionInfoDescription]</small>
+                        </div>
+                        <span class="badge bg-primary-50 text-primary-600 rounded-pill px-12 py-8">@L[ReviewerEvaluationResourceKeys.BlindEvaluation]</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row gy-3">
+                            <div class="col-sm-6 col-lg-4">
+                                <span class="text-sm text-neutral-500 d-block mb-1">@L[ReviewerEvaluationResourceKeys.SubmissionNumber]</span>
+                                <span class="fw-semibold text-primary-light">@Model.SubmissionNumber</span>
+                            </div>
+                            <div class="col-sm-6 col-lg-4">
+                                <span class="text-sm text-neutral-500 d-block mb-1">@L[ReviewerEvaluationResourceKeys.SubmissionType]</span>
+                                <span class="fw-semibold text-primary-light">@Model.SubmissionTypeName</span>
+                            </div>
+                            <div class="col-sm-6 col-lg-4">
+                                <span class="text-sm text-neutral-500 d-block mb-1">@L[ReviewerEvaluationResourceKeys.Topic]</span>
+                                <span class="fw-semibold text-primary-light">@Model.TopicName</span>
+                            </div>
+                            <div class="col-sm-6 col-lg-4">
+                                <span class="text-sm text-neutral-500 d-block mb-1">@L[ReviewerEvaluationResourceKeys.AssignedDate]</span>
+                                <span class="fw-semibold text-primary-light">@Model.AssignedDate.ToString("dd.MM.yyyy")</span>
+                            </div>
+                            <div class="col-sm-6 col-lg-4">
+                                <span class="text-sm text-neutral-500 d-block mb-1">@L[ReviewerEvaluationResourceKeys.DueDate]</span>
+                                <span class="fw-semibold text-danger">@Model.DueDate.ToString("dd.MM.yyyy")</span>
+                            </div>
+                            <div class="col-sm-6 col-lg-4">
+                                <span class="text-sm text-neutral-500 d-block mb-1">@L[ReviewerEvaluationResourceKeys.SummaryScore]</span>
+                                <span class="fw-semibold text-primary-light"><span id="scoreTotalInline">@currentScore</span> / @maxScore</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border shadow-none mb-4">
+                    <div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div>
+                            <h6 class="text-md mb-0">@L[ReviewerEvaluationResourceKeys.ContentTitle]</h6>
+                            <small class="text-neutral-500">@L[ReviewerEvaluationResourceKeys.SubmissionInfoDescription]</small>
+                        </div>
+                        <ul class="nav nav-pills" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" data-bs-target="#paperTr" data-bs-toggle="pill" role="tab" type="button">@L[ReviewerEvaluationResourceKeys.Turkish]</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" data-bs-target="#paperEn" data-bs-toggle="pill" role="tab" type="button">@L[ReviewerEvaluationResourceKeys.English]</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="paperTr" role="tabpanel" tabindex="0">
+                                <div class="mb-4">
+                                    <span class="text-sm text-neutral-500 d-block mb-1">@L[ReviewerEvaluationResourceKeys.TitleLabel]</span>
+                                    <h6 class="text-md mb-0">@SafeText(Model.Title)</h6>
+                                </div>
+                                <div class="mb-4">
+                                    <span class="text-sm text-neutral-500 d-block mb-2">@L[ReviewerEvaluationResourceKeys.KeywordsLabel]</span>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach (string keyword in SplitKeywords(Model.Keywords))
+                                        {
+                                            <span class="badge bg-primary-50 text-primary-600 rounded-pill px-12 py-8">@keyword</span>
+                                        }
+                                    </div>
+                                </div>
+                                <div>
+                                    <span class="text-sm text-neutral-500 d-block mb-2">@L[ReviewerEvaluationResourceKeys.AbstractLabel]</span>
+                                    <div class="border rounded-3 p-16 bg-neutral-50">
+                                        @if (string.IsNullOrWhiteSpace(Model.Abstract))
+                                        {
+                                            <p class="mb-0 text-secondary-light">-</p>
+                                        }
+                                        else
+                                        {
+                                            <div class="text-secondary-light">@Html.Raw(Model.Abstract)</div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="paperEn" role="tabpanel" tabindex="0">
+                                <div class="mb-4">
+                                    <span class="text-sm text-neutral-500 d-block mb-1">@L[ReviewerEvaluationResourceKeys.TitleLabel]</span>
+                                    <h6 class="text-md mb-0">@SafeText(Model.TitleEn)</h6>
+                                </div>
+                                <div class="mb-4">
+                                    <span class="text-sm text-neutral-500 d-block mb-2">@L[ReviewerEvaluationResourceKeys.KeywordsLabel]</span>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach (string keyword in SplitKeywords(Model.KeywordsEn))
+                                        {
+                                            <span class="badge bg-primary-50 text-primary-600 rounded-pill px-12 py-8">@keyword</span>
+                                        }
+                                    </div>
+                                </div>
+                                <div>
+                                    <span class="text-sm text-neutral-500 d-block mb-2">@L[ReviewerEvaluationResourceKeys.AbstractLabel]</span>
+                                    <div class="border rounded-3 p-16 bg-neutral-50">
+                                        @if (string.IsNullOrWhiteSpace(Model.AbstractEn))
+                                        {
+                                            <p class="mb-0 text-secondary-light">-</p>
+                                        }
+                                        else
+                                        {
+                                            <div class="text-secondary-light">@Html.Raw(Model.AbstractEn)</div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border shadow-none">
+                    <div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div>
+                            <h6 class="text-md mb-0">@L[ReviewerEvaluationResourceKeys.FilesTitle]</h6>
+                            <small class="text-neutral-500">@L[ReviewerEvaluationResourceKeys.FilesDescription]</small>
+                        </div>
+                        <span class="badge bg-neutral-100 text-neutral-700 rounded-pill px-12 py-8">@Model.Files.Count @L[ReviewerEvaluationResourceKeys.FilesTitle]</span>
+                    </div>
+                    <div class="card-body">
+                        @if (!Model.Files.Any())
+                        {
+                            <div class="alert alert-warning mb-0">@L[ReviewerEvaluationResourceKeys.FilesEmpty]</div>
+                        }
+                        else
+                        {
+                            <div class="row gy-3">
+                                @foreach (var file in Model.Files)
+                                {
+                                    <div class="col-md-6">
+                                        <div class="border rounded-3 p-16 h-100 d-flex align-items-center justify-content-between gap-3">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <span class="w-44-px h-44-px rounded-circle bg-primary-50 text-primary-600 d-flex align-items-center justify-content-center text-xl"><i class="ri-file-word-2-line"></i></span>
+                                                <div>
+                                                    <h6 class="text-sm mb-1">@file.FileName</h6>
+                                                    <small class="text-neutral-500">@file.CreatedDate.ToString("dd.MM.yyyy HH:mm") · @FormatFileSize(file.FileSize)</small>
+                                                </div>
+                                            </div>
+                                            @if (!string.IsNullOrWhiteSpace(file.FileUrl))
+                                            {
+                                                <a class="btn btn-primary-100 text-primary-600 radius-8 px-12 py-8 w-40-px h-40-px d-flex align-items-center justify-content-center" href="@file.FileUrl" target="_blank" aria-label="@L[ReviewerEvaluationResourceKeys.DownloadFile]">
+                                                    <i class="ri-download-line"></i>
+                                                </a>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-5">
+                <div class="card border shadow-none sticky-top">
+                    <div class="card-header border-bottom">
+                        <div class="d-flex align-items-start justify-content-between gap-3">
+                            <div>
+                                <h6 class="text-md mb-0">@L[ReviewerEvaluationResourceKeys.EvaluateTitle]</h6>
+                                <small class="text-neutral-500">@L[ReviewerEvaluationResourceKeys.CriteriaDescription]</small>
+                            </div>
+                            <span class="badge bg-primary-50 text-primary-600 rounded-pill px-12 py-8">
+                                <span id="scoredCriteriaCount">@scoredCriteriaCount</span> / <span id="criteriaTotal">@criteriaCount</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info bg-primary-50 border-primary-100 text-primary-700 d-flex align-items-start gap-3 mb-4">
+                            <i class="ri-information-line text-xl mt-1"></i>
+                            <div>
+                                <h6 class="text-md mb-1">@L[ReviewerEvaluationResourceKeys.BlindReviewTitle]</h6>
+                                <p class="mb-0">@L[ReviewerEvaluationResourceKeys.BlindReviewDescription]</p>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+                            <span class="text-sm text-neutral-500">@L[ReviewerEvaluationResourceKeys.SummaryStatus]</span>
+                            <span class="badge @Model.StatusBadgeClass rounded-pill">@T(Model.StatusText)</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between gap-3 mb-4">
+                            <span class="text-sm text-neutral-500">@L[ReviewerEvaluationResourceKeys.SummaryScore]</span>
+                            <span class="fw-semibold text-primary-light"><span id="scoreTotalSidebar">@currentScore</span> / @maxScore</span>
+                        </div>
+
+                        <div class="border rounded-3 p-16 mb-4">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                                <div>
+                                    <h6 class="text-md mb-0">@L[ReviewerEvaluationResourceKeys.CriteriaTitle]</h6>
+                                    <small class="text-neutral-500">@L[ReviewerEvaluationResourceKeys.CriteriaDescription]</small>
+                                </div>
+                            </div>
+
+                            @for (int i = 0; i < Model.Criteria.Count; i++)
+                            {
+                                var criterion = Model.Criteria[i];
+                                <div class="border rounded-3 p-12 mb-3">
+                                    <div class="row gy-2 align-items-center">
+                                        <div class="col-md-8">
+                                            <h6 class="text-sm mb-1">@criterion.Name</h6>
+                                            <small class="text-neutral-500">@SafeText(criterion.Description)</small>
+                                            <input type="hidden" name="Scores[@i].EvaluationCriterionId" value="@criterion.EvaluationCriterionId" />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label text-sm mb-1">@L[ReviewerEvaluationResourceKeys.ScoreColumn]</label>
+                                            <select class="form-control form-select js-score-select" name="Scores[@i].Score" @(Model.IsCompleted ? "disabled" : null)>
+                                                <option value="">@L[ReviewerEvaluationResourceKeys.SelectScore]</option>
+                                                @for (int score = Math.Max(criterion.MaxScore, 0); score >= 0; score--)
+                                                {
+                                                    <option value="@score" selected="@(criterion.Score == score)">@score</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="border rounded-3 p-16 mb-4">
+                            <h6 class="text-md mb-3">@L[ReviewerEvaluationResourceKeys.RecommendationTitle]</h6>
+
+                            <div class="mb-3">
+                                <label class="form-label">@L[ReviewerEvaluationResourceKeys.RecommendationLabel] <span class="text-danger">*</span></label>
+                                <select class="form-control form-select js-recommendation-select" name="Recommendation" @(Model.IsCompleted ? "disabled" : null)>
+                                    <option value="">@L[ReviewerEvaluationResourceKeys.RecommendationPlaceholder]</option>
+                                    @foreach (var recommendation in RecommendationOptions())
+                                    {
+                                        <option value="@recommendation.Value" selected="@(string.Equals(Model.Recommendation, recommendation.Value, StringComparison.OrdinalIgnoreCase))">@T(recommendation.TextKey)</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">@L[ReviewerEvaluationResourceKeys.AuthorCommentTitle]</label>
+                                <textarea class="form-control" name="Comment" placeholder="@L[ReviewerEvaluationResourceKeys.AuthorCommentPlaceholder]" rows="5" @(Model.IsCompleted ? "disabled" : null)>@Model.Comment</textarea>
+                                <small class="text-neutral-500">@L[ReviewerEvaluationResourceKeys.AuthorCommentDescription]</small>
+                            </div>
+
+                            <div class="mb-0">
+                                <label class="form-label">@L[ReviewerEvaluationResourceKeys.EditorCommentTitle]</label>
+                                <textarea class="form-control" name="EditorComment" placeholder="@L[ReviewerEvaluationResourceKeys.EditorCommentPlaceholder]" rows="4" @(Model.IsCompleted ? "disabled" : null)>@Model.EditorComment</textarea>
+                                <small class="text-neutral-500">@L[ReviewerEvaluationResourceKeys.EditorCommentDescription]</small>
+                            </div>
+                        </div>
+
+                        @if (!Model.IsCompleted)
+                        {
+                            <div class="alert alert-warning bg-warning-100 border-warning-200 text-warning-700 d-flex align-items-start gap-2 mb-3" id="evaluationFormWarning">
+                                <i class="ri-error-warning-line text-lg mt-1"></i>
+                                <div>@L[ReviewerEvaluationResourceKeys.RecommendationWarning]</div>
+                            </div>
+                        }
+
+                        <div class="d-grid gap-2">
+                            @if (!Model.IsCompleted)
+                            {
+                                <button class="btn btn-success-600 radius-8 px-20 py-11 d-flex align-items-center justify-content-center gap-2" type="submit" data-submit-mode="submit" id="submitEvaluationButton">
+                                    <i class="ri-send-plane-fill"></i>
+                                    @L[ReviewerEvaluationResourceKeys.SubmitEvaluation]
+                                </button>
+                            }
+                            <a class="btn btn-outline-neutral-900 radius-8 px-20 py-11 d-flex align-items-center justify-content-center gap-2" href="@backUrl">
+                                <i class="ri-arrow-left-line"></i>
+                                @backText
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_LocalizationScripts")
+    <script src="~/js/features/reviewer-evaluations/reviewer-evaluation-form.js" asp-append-version="true"></script>
+}
+
+@functions {
+    private string T(string? key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+            return string.Empty;
+
+        return L.GetStringValue(key);
+    }
+
+    private static IEnumerable<string> SplitKeywords(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return new[] { "-" };
+
+        return value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    }
+
+    private static string SafeText(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "-" : value;
+    }
+
+    private static string FormatFileSize(long? size)
+    {
+        if (!size.HasValue || size.Value <= 0)
+            return "-";
+
+        double value = size.Value;
+        string[] units = { "B", "KB", "MB", "GB" };
+        int unit = 0;
+
+        while (value >= 1024 && unit < units.Length - 1)
+        {
+            value /= 1024;
+            unit++;
+        }
+
+        return $"{value:0.#} {units[unit]}";
+    }
+
+    private static IReadOnlyList<(string Value, string TextKey)> RecommendationOptions()
+    {
+        return new List<(string Value, string TextKey)>
+        {
+            ("Kabul", ReviewerEvaluationResourceKeys.RecommendationAccept),
+            ("Küçük Revizyon", ReviewerEvaluationResourceKeys.RecommendationMinorRevision),
+            ("Büyük Revizyon", ReviewerEvaluationResourceKeys.RecommendationMajorRevision),
+            ("Ret", ReviewerEvaluationResourceKeys.RecommendationReject)
+        };
+    }
+}

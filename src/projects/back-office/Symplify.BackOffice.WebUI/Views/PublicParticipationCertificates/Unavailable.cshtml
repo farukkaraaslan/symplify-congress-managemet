@@ -1,0 +1,32 @@
+@model Symplify.BackOffice.WebUI.Models.ParticipationCertificates.PublicParticipationCertificateViewModel
+@{
+    Layout = null;
+}
+<!doctype html>
+<html lang="tr" data-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+    <title>@Model.Title</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/remixicon/fonts/remixicon.min.css" />
+    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
+</head>
+<body class="min-vh-100 bg-neutral-50 d-flex align-items-center justify-content-center p-24">
+    <main class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-9 col-lg-7 col-xl-6">
+                <section class="card border-0 radius-16 shadow-sm text-center p-40">
+                    <div class="w-72-px h-72-px rounded-circle bg-danger-50 text-danger-600 d-inline-flex align-items-center justify-content-center mx-auto mb-20 text-2xl fw-bold">
+                        @Model.StatusCode
+                    </div>
+                    <h1 class="h3 fw-bold mb-12">@Model.Title</h1>
+                    <p class="text-neutral-600 text-lg lh-lg mb-0">@Model.Message</p>
+                    <small class="d-block mt-24 text-neutral-400">Katılım Belgesi Doğrulama Sistemi</small>
+                </section>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

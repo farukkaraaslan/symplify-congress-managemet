@@ -1,0 +1,284 @@
+@model SectionsIndexViewModel
+@{
+    string currentCulture = ViewData["CurrentCulture"] as string ?? "tr-TR";
+    string T(string key) => Html.Text(key);
+    string cultureQuery = "?culture=" + Uri.EscapeDataString(currentCulture);
+
+    var topics = Model.Contents.Topics
+        .OrderBy(topic => topic.Order)
+        .ThenBy(topic => topic.Name)
+        .ToList();
+
+    var categorizedTopicGroups = topics
+        .Where(topic => topic.CategoryId.HasValue && !string.IsNullOrWhiteSpace(topic.CategoryName))
+        .GroupBy(topic => new
+        {
+            topic.CategoryId,
+            topic.CategoryName,
+            topic.CategoryOrder
+        })
+        .OrderBy(group => group.Key.CategoryOrder ?? int.MaxValue)
+        .ThenBy(group => group.Key.CategoryName)
+        .ToList();
+
+    var uncategorizedTopics = topics
+        .Where(topic => !topic.CategoryId.HasValue || string.IsNullOrWhiteSpace(topic.CategoryName))
+        .OrderBy(topic => topic.Order)
+        .ThenBy(topic => topic.Name)
+        .ToList();
+
+    bool hasTopicCategories = categorizedTopicGroups.Count > 0;
+
+    var submissionTypes = Model.Contents.SubmissionTypes
+        .OrderBy(submissionType => submissionType.Order)
+        .ThenBy(submissionType => submissionType.Name)
+        .ToList();
+
+    var sections = Model.Data.Sections
+        .OrderBy(contentSection => contentSection.Order)
+        .ThenBy(contentSection => contentSection.Title)
+        .ToList();
+}
+
+@functions
+{
+    private static string BuildDomId(string? value, Guid fallbackId, int index, string prefix)
+    {
+        string source = !string.IsNullOrWhiteSpace(value)
+            ? value
+            : fallbackId != Guid.Empty
+                ? fallbackId.ToString("N")
+                : $"{prefix}-{index}";
+
+        var chars = new List<char>();
+
+        foreach (char current in source.ToLowerInvariant())
+        {
+            if ((current >= 'a' && current <= 'z') || (current >= '0' && current <= '9'))
+            {
+                chars.Add(current);
+            }
+            else if (current is '-' or '_' or ' ')
+            {
+                chars.Add('-');
+            }
+        }
+
+        string normalized = new string(chars.ToArray()).Trim('-');
+        return string.IsNullOrWhiteSpace(normalized)
+            ? $"{prefix}-{index}"
+            : normalized;
+    }
+}
+
+<div class="page-title light-background">
+    <div class="container d-lg-flex justify-content-between align-items-center">
+        <h1 class="mb-2 mb-lg-0">@T("Portal.Sections.PageTitle")</h1>
+        <nav class="breadcrumbs">
+            <ol>
+                <li><a href="/@(cultureQuery)">@T("Portal.Navigation.Home")</a></li>
+                <li class="current">@T("Portal.Sections.PageTitle")</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="row g-4">
+            <div class="col-lg-4 col-xl-3">
+                <div class="tabs">
+                    <div id="sectionsNav" class="tabs__nav nav nav-pills flex-lg-column" role="tablist" aria-label='@T("Portal.Sections.PageTitle")'>
+                        <button class="nav-link active"
+                                id="sections-tab-topics"
+                                data-bs-toggle="pill"
+                                data-bs-target="#sections-pane-topics"
+                                type="button"
+                                role="tab"
+                                aria-controls="sections-pane-topics"
+                                aria-selected="true">
+                            <span class="tabs__num">1</span>
+                            <span class="tabs__label">@T("Portal.Sections.Topics")</span>
+                        </button>
+
+                        <button class="nav-link"
+                                id="sections-tab-submission-types"
+                                data-bs-toggle="pill"
+                                data-bs-target="#sections-pane-submission-types"
+                                type="button"
+                                role="tab"
+                                aria-controls="sections-pane-submission-types"
+                                aria-selected="false">
+                            <span class="tabs__num">2</span>
+                            <span class="tabs__label">@T("Portal.Sections.SubmissionTypes")</span>
+                        </button>
+
+                        @for (int i = 0; i < sections.Count; i++)
+                        {
+                            var contentSection = sections[i];
+                            int displayOrder = i + 3;
+                            string sectionDomId = BuildDomId(contentSection.BindingKey, contentSection.Id, displayOrder, "section");
+                            string tabId = $"sections-tab-{sectionDomId}";
+                            string paneId = $"sections-pane-{sectionDomId}";
+
+                            <button class="nav-link"
+                                    id="@tabId"
+                                    data-bs-toggle="pill"
+                                    data-bs-target="#@paneId"
+                                    type="button"
+                                    role="tab"
+                                    aria-controls="@paneId"
+                                    aria-selected="false">
+                                <span class="tabs__num">@displayOrder</span>
+                                <span class="tabs__label">@contentSection.Title</span>
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-8 col-xl-9">
+                <div class="tabs__content tab-content">
+                    <div class="tab-pane fade show active" id="sections-pane-topics" role="tabpanel" aria-labelledby="sections-tab-topics" tabindex="0">
+                        <h2 class="h5 fw-bold mb-3">@T("Portal.Sections.Topics")</h2>
+                        @if (topics.Count == 0)
+                        {
+                            <div class="card card--note">
+                                <div class="card__body">
+                                    <div class="card__title mb-1">@T("Portal.Sections.TopicsEmpty")</div>
+                                    <div class="card__desc mb-0">@T("Portal.Sections.TopicsEmptyDescription")</div>
+                                </div>
+                            </div>
+                        }
+                        else if (!hasTopicCategories)
+                        {
+                            <div class="row g-3">
+                                @foreach (var topic in topics)
+                                {
+                                    <div class="col-md-6 col-lg-4">
+                                        <div class="card card--flat h-100">
+                                            <div class="card__body">
+                                                <div class="card__title mb-1">@topic.Name</div>
+                                                @if (!string.IsNullOrWhiteSpace(topic.Description))
+                                                {
+                                                    <div class="card__desc mb-0">@Html.Raw(topic.Description)</div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            @foreach (var topicGroup in categorizedTopicGroups)
+                            {
+                                <div class="mb-4">
+                                    <h3 class="h6 fw-bold mb-3">@topicGroup.Key.CategoryName</h3>
+                                    <div class="row g-3">
+                                        @foreach (var topic in topicGroup.OrderBy(item => item.Order).ThenBy(item => item.Name))
+                                        {
+                                            <div class="col-md-6 col-lg-4">
+                                                <div class="card card--flat h-100">
+                                                    <div class="card__body">
+                                                        <div class="card__title mb-1">@topic.Name</div>
+                                                        @if (!string.IsNullOrWhiteSpace(topic.Description))
+                                                        {
+                                                            <div class="card__desc mb-0">@Html.Raw(topic.Description)</div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            @if (uncategorizedTopics.Count > 0)
+                            {
+                                <div>
+                                    <h3 class="h6 fw-bold mb-3">@T("Portal.Sections.OtherTopics")</h3>
+                                    <div class="row g-3">
+                                        @foreach (var topic in uncategorizedTopics)
+                                        {
+                                            <div class="col-md-6 col-lg-4">
+                                                <div class="card card--flat h-100">
+                                                    <div class="card__body">
+                                                        <div class="card__title mb-1">@topic.Name</div>
+                                                        @if (!string.IsNullOrWhiteSpace(topic.Description))
+                                                        {
+                                                            <div class="card__desc mb-0">@Html.Raw(topic.Description)</div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    <div class="tab-pane fade" id="sections-pane-submission-types" role="tabpanel" aria-labelledby="sections-tab-submission-types" tabindex="0">
+                        <h2 class="h5 fw-bold mb-3">@T("Portal.Sections.SubmissionTypes")</h2>
+                        @if (submissionTypes.Count == 0)
+                        {
+                            <div class="card card--note">
+                                <div class="card__body">
+                                    <div class="card__title mb-1">@T("Portal.Sections.SubmissionTypesEmpty")</div>
+                                    <div class="card__desc mb-0">@T("Portal.Sections.SubmissionTypesEmptyDescription")</div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="row g-3">
+                                @foreach (var submissionType in submissionTypes)
+                                {
+                                    <div class="col-md-6 col-lg-4">
+                                        <div class="card card--flat h-100">
+                                            <div class="card__body">
+                                                <div class="card__title mb-1">@submissionType.Name</div>
+                                                @if (!string.IsNullOrWhiteSpace(submissionType.Description))
+                                                {
+                                                    <div class="card__desc mb-0">@Html.Raw(submissionType.Description)</div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    @for (int i = 0; i < sections.Count; i++)
+                    {
+                        var contentSection = sections[i];
+                        int displayOrder = i + 3;
+                        string sectionDomId = BuildDomId(contentSection.BindingKey, contentSection.Id, displayOrder, "section");
+                        string tabId = $"sections-tab-{sectionDomId}";
+                        string paneId = $"sections-pane-{sectionDomId}";
+
+                        <div class="tab-pane fade" id="@paneId" role="tabpanel" aria-labelledby="@tabId" tabindex="0">
+                            <h2 class="h5 fw-bold mb-3">@contentSection.Title</h2>
+                            <div class="card card--flat">
+                                <div class="card__body">
+                                    @if (!string.IsNullOrWhiteSpace(contentSection.Content))
+                                    {
+                                        <div class="card__desc">
+                                            @Html.Raw(contentSection.Content)
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="card__desc mb-0">@T("Portal.Sections.DetailEmptyDescription")</div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

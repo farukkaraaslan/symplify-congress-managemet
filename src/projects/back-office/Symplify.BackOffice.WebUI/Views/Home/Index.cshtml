@@ -1,0 +1,131 @@
+@using System.Globalization
+@using Symplify.BackOffice.WebUI.Localization
+@inject IBackOfficeViewLocalizer L
+@model Symplify.BackOffice.WebUI.Models.Home.HomeIndexViewModel
+
+@{
+    string T(string key, string fallback)
+    {
+        var value = L.GetStringValue(key);
+
+        return string.IsNullOrWhiteSpace(value) ||
+               string.Equals(value, key, StringComparison.OrdinalIgnoreCase)
+            ? fallback
+            : value;
+    }
+
+    bool isAuthor = User.IsInRole("Author");
+    bool hasManagementRole = User.IsInRole("Admin") ||
+                             User.IsInRole("SuperAdmin") ||
+                             User.IsInRole("Editor") ||
+                             User.IsInRole("CongressEditor") ||
+                             User.IsInRole("OrganizationAdmin") ||
+                             User.IsInRole("Reviewer");
+    bool useAuthorLanding = isAuthor && !hasManagementRole;
+
+    ViewData["Title"] = T("BackOffice.Home.PageTitle", "Ana Sayfa");
+    ViewData["SuppressSidebar"] = useAuthorLanding;
+    ViewData["UseAuthorTemplate"] = useAuthorLanding;
+
+    string displayName = string.IsNullOrWhiteSpace(Model.DisplayName)
+        ? T("BackOffice.Home.DefaultUserName", "Kullanıcı")
+        : Model.DisplayName;
+
+    string titleFormat = T("BackOffice.Home.HeroTitleWithName", "Hoş geldin, {0}");
+    string welcomeTitle = string.Format(CultureInfo.CurrentCulture, titleFormat, displayName);
+
+    string congressName = Model.ActiveCongress?.Name ?? T("BackOffice.Home.Author.ActiveCongress.Empty", "Aktif kongre bilgisi bulunamadı");
+    string congressDate = FormatCongressDate(Model.ActiveCongress?.StartDate, Model.ActiveCongress?.EndDate);
+    string congressVenue = string.IsNullOrWhiteSpace(Model.ActiveCongress?.VenueName)
+        ? T("BackOffice.Home.Author.ActiveCongress.VenueFallback", "Online / Ankara")
+        : Model.ActiveCongress!.VenueName!;
+
+    string culture = ViewContext.RouteData.Values["culture"]?.ToString() ?? CultureInfo.CurrentUICulture.Name;
+    string submissionsUrl = Url.Action("Index", "Submissions", new { culture }) ?? $"/{culture}/submissions";
+}
+
+@if (useAuthorLanding)
+{
+    <div class="author-container">
+        <section class="card border-0 radius-12 author-hero mb-24">
+            <div class="row g-0 align-items-stretch">
+                <div class="col-xl-8">
+                    <div class="author-hero__body">
+                        <span class="author-kicker"><i class="ri-user-smile-line"></i> @T("BackOffice.Home.Author.Badge", "Yazar Bildiri Paneli")</span>
+                        <h1 class="author-title h3">@T("BackOffice.Home.Author.WelcomeTitle", "Hoş geldiniz")</h1>
+                        <p class="author-subtitle">
+                            @T("BackOffice.Home.Author.Description", "Sözlü bildiri, poster bildiri veya sergi bildirisi oluşturabilir; bildirilerinizi ve belgelerinizi aynı panelden takip edebilirsiniz.")
+                        </p>
+                        <div class="d-flex align-items-center gap-2 flex-wrap mt-24">
+                            <a href="@submissionsUrl" class="btn btn-outline-primary-600 radius-10 px-20 py-12 d-inline-flex align-items-center gap-2">
+                                <i class="ri-file-list-3-line"></i>
+                                @T("BackOffice.Home.Author.MySubmissionsButton", "Bildirilerimi Gör")
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-4">
+                    <div class="author-hero__side">
+                        <span class="easy-action-card__icon"><i class="ri-calendar-event-line text-2xl"></i></span>
+                        <h6 class="mb-2 text-primary-light">@T("BackOffice.Home.Author.ActiveCongress.Title", "Aktif Kongre")</h6>
+                        <p class="fw-bold text-primary-light mb-16">@congressName</p>
+                        <div class="d-grid gap-2 text-sm text-neutral-600">
+                            <span><i class="ri-calendar-line text-primary-600 me-2"></i>@congressDate</span>
+                            <span><i class="ri-map-pin-line text-primary-600 me-2"></i>@congressVenue</span>
+                            <span><i class="ri-translate-2 text-primary-600 me-2"></i>@T("BackOffice.Home.Author.ActiveCongress.LanguageSupport", "Türkçe ve İngilizce destekli")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        @await Component.InvokeAsync("SubmissionEntryMenu", new { displayMode = "AuthorHome" })
+    </div>
+}
+else
+{
+    <div class="dashboard-main-body">
+        <div class="card border-0 radius-16 overflow-hidden">
+            <div class="card-body p-24 p-md-40">
+                <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center justify-content-between gap-4">
+                    <div>
+                        <span class="badge bg-primary-50 text-primary-600 border border-primary-100 px-12 py-6 radius-8 mb-16">
+                            <i class="ri-home-5-line me-1"></i>
+                            @T("BackOffice.Home.HeroBadge", "Symplify")
+                        </span>
+
+                        <h3 class="mb-12 fw-semibold">@welcomeTitle</h3>
+
+                        <p class="text-secondary-light text-lg mb-0">
+                            @T("BackOffice.Home.HeroSubtitle", "Bildirilerinizi ve size tanımlanan işlemleri sol menüden takip edebilirsiniz.")
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @await Component.InvokeAsync("SubmissionEntryMenu", new { displayMode = "Home" })
+    </div>
+}
+
+@functions {
+    private string FormatCongressDate(DateTime? startDate, DateTime? endDate)
+    {
+        if (!startDate.HasValue && !endDate.HasValue)
+            return "-";
+
+        if (startDate.HasValue && endDate.HasValue)
+        {
+            if (startDate.Value.Date == endDate.Value.Date)
+                return startDate.Value.ToString("dd MMMM yyyy", CultureInfo.CurrentCulture);
+
+            return string.Format(
+                CultureInfo.CurrentCulture,
+                "{0} - {1}",
+                startDate.Value.ToString("dd MMMM yyyy", CultureInfo.CurrentCulture),
+                endDate.Value.ToString("dd MMMM yyyy", CultureInfo.CurrentCulture));
+        }
+
+        return (startDate ?? endDate)!.Value.ToString("dd MMMM yyyy", CultureInfo.CurrentCulture);
+    }
+}

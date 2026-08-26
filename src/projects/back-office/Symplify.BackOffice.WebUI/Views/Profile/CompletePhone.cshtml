@@ -1,0 +1,65 @@
+@using Symplify.BackOffice.Application.Features.UserProfiles.Constants
+@using Symplify.BackOffice.WebUI.Localization
+@model Symplify.BackOffice.WebUI.Models.Profile.CompletePhoneViewModel
+@inject IBackOfficeViewLocalizer L
+@{
+    ViewData["Title"] = L[ProfileResourceKeys.CompletePhonePageTitle];
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/css/intlTelInput.css" />
+}
+
+<div class="dashboard-main-body">
+    <div class="card border-0 radius-16 shadow-sm mx-auto col-12 col-lg-9 col-xl-7">
+        <div class="card-body p-24 p-md-32">
+            <div class="d-flex align-items-start gap-3 mb-24">
+                <div class="w-48-px h-48-px rounded-circle bg-primary-50 text-primary-600 d-flex align-items-center justify-content-center flex-shrink-0">
+                    <iconify-icon icon="solar:phone-bold-duotone" class="text-2xl"></iconify-icon>
+                </div>
+                <div>
+                    <h4 class="mb-6">@L[ProfileResourceKeys.CompletePhoneTitle]</h4>
+                    <p class="text-secondary-light mb-0">
+                        @L[ProfileResourceKeys.CompletePhoneDescription]
+                    </p>
+                </div>
+            </div>
+
+            <form asp-action="CompletePhone" asp-controller="Profile" method="post" class="needs-validation" id="complete-phone-form" novalidate>
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="ReturnUrl" />
+                <input type="hidden" asp-for="PhoneNumber" id="PhoneNumber" />
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-16"></div>
+
+                <div class="mb-20">
+                    <label asp-for="PhoneNumberDisplay" class="form-label fw-semibold">@L[ProfileResourceKeys.CompletePhoneFieldPhone]</label>
+                    <input asp-for="PhoneNumberDisplay"
+                           id="PhoneNumberDisplay"
+                           type="tel"
+                           class="form-control"
+                           autocomplete="tel-national"
+                           placeholder="5413900441"
+                           data-phone-hidden-input="#PhoneNumber" />
+                    <span asp-validation-for="PhoneNumber" class="text-danger text-sm"></span>
+                    <div class="form-text">
+                        @L[ProfileResourceKeys.CompletePhoneHelpText]
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-end gap-2">
+                    <button type="submit" class="btn btn-primary px-24">
+                        @L[ProfileResourceKeys.CompletePhoneSubmit]
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/js/intlTelInput.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/js/utils.js"></script>
+    <script src="~/js/features/profile/complete-phone.js" asp-append-version="true"></script>
+}

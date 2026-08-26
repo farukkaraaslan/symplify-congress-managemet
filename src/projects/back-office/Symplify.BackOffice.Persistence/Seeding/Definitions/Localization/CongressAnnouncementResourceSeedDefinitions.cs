@@ -1,0 +1,103 @@
+namespace Symplify.BackOffice.Persistence.Seeding.Definitions.Localization;
+
+public static class CongressAnnouncementResourceSeedDefinitions
+{
+    public static IReadOnlyCollection<ResourceSeedDefinition> All { get; } = new List<ResourceSeedDefinition>
+    {
+        new("BackOffice", "BackOffice.CongressAnnouncements.ListTitle", "Duyuru Listesi", "Announcement List"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.ListDescription", "Kongre sayfasında gösterilecek duyurular.", "Announcements displayed on the congress page."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.BasicInfo", "Temel Bilgiler", "Basic Information"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.DisplayOptions", "Yayın ve Görünürlük", "Publication and Visibility"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Translations", "Çeviriler", "Translations"),
+
+        new("BackOffice", "BackOffice.CongressAnnouncements.Create.Title", "Yeni Duyuru", "New Announcement"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Create.Description", "Duyuru bilgileri ve çevirileri tek seferde kaydedilir.", "Announcement information and translations are saved together."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Update.Title", "Duyuru Düzenle", "Edit Announcement"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Update.Description", "Seçili duyuru kaydının bilgileri ve çevirileri güncellenir.", "Update the selected announcement information and translations."),
+
+        new("BackOffice", "BackOffice.CongressAnnouncements.Fields.Order", "Sıra No", "Order"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Fields.Title", "Başlık", "Title"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Fields.Summary", "Özet", "Summary"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Fields.Content", "İçerik", "Content"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Fields.SeoTitle", "SEO Başlığı", "SEO Title"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Fields.SeoDescription", "SEO Açıklaması", "SEO Description"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Fields.Type", "Duyuru Tipi", "Announcement Type"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Fields.Status", "Yayın Durumu", "Publication Status"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Fields.PublishStartDate", "Yayın Başlangıç", "Publish Start"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Fields.PublishEndDate", "Yayın Bitiş", "Publish End"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Fields.IsPinned", "Sabitlensin mi?", "Pinned?"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Fields.ShowOnHomePage", "Ana Sayfada Göster", "Show on Home Page"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Fields.ShowInTicker", "Kayan Duyuruda Göster", "Show in Ticker"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Fields.ExternalUrl", "Harici Link", "External URL"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Fields.AttachmentPath", "Ek Dosya Yolu", "Attachment Path"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Fields.IsActive", "Aktif mi?", "Is Active?"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Fields.Language", "Dil", "Language"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Fields.Flags", "Seçenekler", "Flags"),
+
+        new("BackOffice", "BackOffice.CongressAnnouncements.Types.General", "Genel", "General"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Types.Important", "Önemli", "Important"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Types.Program", "Program", "Program"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Types.Submission", "Bildiri", "Submission"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Types.Payment", "Ödeme", "Payment"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Types.Publication", "Yayın", "Publication"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Types.System", "Sistem", "System"),
+
+        new("BackOffice", "BackOffice.CongressAnnouncements.Statuses.Draft", "Taslak", "Draft"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Statuses.Published", "Yayında", "Published"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Statuses.Scheduled", "Zamanlanmış", "Scheduled"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Statuses.Archived", "Arşiv", "Archived"),
+
+        new("BackOffice", "BackOffice.CongressAnnouncements.Placeholders.Title", "Duyuru başlığı", "Announcement title"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Placeholders.Summary", "Duyuru kısa özeti", "Short announcement summary"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Placeholders.Content", "Duyuru içeriği", "Announcement content"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Placeholders.ExternalUrl", "https://...", "https://..."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Placeholders.AttachmentPath", "/uploads/...", "/uploads/..."),
+
+        new("BackOffice", "BackOffice.CongressAnnouncements.Buttons.New", "Yeni Duyuru", "New Announcement"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Buttons.Save", "Duyuruyu Kaydet", "Save Announcement"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Buttons.Update", "Duyuruyu Güncelle", "Update Announcement"),
+
+        new("BackOffice", "BackOffice.CongressAnnouncements.Help.Content", "Duyuru içeriği TinyMCE editörü ile hazırlanır.", "Announcement content is prepared with the TinyMCE editor."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Reorder.Help", "Sıralamayı değiştirmek için satırları sürükleyip bırakabilirsiniz.", "Drag and drop rows to change the order."),
+
+        new("BackOffice", "BackOffice.CongressAnnouncements.Messages.Created", "Duyuru başarıyla oluşturuldu.", "Announcement created successfully."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Messages.Updated", "Duyuru başarıyla güncellendi.", "Announcement updated successfully."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Messages.Deleted", "Duyuru başarıyla silindi.", "Announcement deleted successfully."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Messages.Reordered", "Duyuru sıralaması güncellendi.", "Announcement order updated successfully."),
+
+        new("BackOffice", "BackOffice.CongressAnnouncements.Validation.EntityNotFound", "Duyuru bulunamadı.", "Announcement was not found."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Validation.CongressNotFound", "Kongre bulunamadı.", "Congress was not found."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Validation.TranslationNotFound", "Duyuru çevirisi bulunamadı.", "Announcement translation was not found."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Validation.CongressRequired", "Kongre bilgisi zorunludur.", "Congress is required."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Validation.TitleRequired", "Varsayılan dilde duyuru başlığı zorunludur.", "Announcement title is required in the default language."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Validation.TranslationTitleRequired", "Bu dil için herhangi bir içerik girildiyse duyuru başlığı da zorunludur.", "If any content is entered for this language, announcement title is also required."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Validation.DefaultTranslationCannotBeDeleted", "Varsayılan dil çevirisi silinemez.", "Default language translation cannot be deleted."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Validation.PublishDateRangeInvalid", "Yayın bitiş tarihi yayın başlangıç tarihinden önce olamaz.", "Publish end date cannot be before publish start date."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Validation.OrderInvalid", "Sıralama değeri sıfırdan küçük olamaz.", "Order cannot be lower than zero."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Validation.ExternalUrlTooLong", "Harici link en fazla 1000 karakter olabilir.", "External URL can be at most 1000 characters."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Validation.AttachmentPathTooLong", "Ek dosya yolu en fazla 1000 karakter olabilir.", "Attachment path can be at most 1000 characters."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Validation.ReorderRequired", "Sıralanacak duyuru bulunamadı.", "No announcement was found to reorder."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Validation.InvalidReorderList", "Sıralama listesi geçersiz.", "Reorder list is invalid."),
+
+        new("BackOffice", "BackOffice.CongressAnnouncements.Js.active", "Aktif", "Active"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Js.passive", "Pasif", "Passive"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Js.pinned", "Sabit", "Pinned"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Js.home", "Ana sayfa", "Home"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Js.ticker", "Kayan duyuru", "Ticker"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Js.publishedNow", "Yayında", "Published now"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Js.notPublishedNow", "Yayında değil", "Not published now"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Js.edit", "Düzenle", "Edit"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Js.delete", "Sil", "Delete"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Js.fallback", "Fallback", "Fallback"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Js.saved", "Kayıt kaydedildi.", "Record saved."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Js.deleted", "Kayıt silindi.", "Record deleted."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Js.reordered", "Sıralama güncellendi.", "Order updated."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Js.genericError", "İşlem sırasında bir hata oluştu.", "An error occurred during the operation."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Js.deleteConfirmTitle", "Emin misiniz?", "Are you sure?"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Js.deleteConfirmText", "Bu duyuru silinecek.", "This announcement will be deleted."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Js.deleteConfirmButton", "Sil", "Delete"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Js.dragHandle", "Sırayı değiştirmek için sürükleyin", "Drag to reorder"),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Js.reorderNotAllowed", "Sıralama yapmak için arama boş olmalı ve tablo Sıra No kolonuna göre artan sıralanmalıdır.", "To reorder, search must be empty and the table must be sorted by Order ascending."),
+        new("BackOffice", "BackOffice.CongressAnnouncements.Js.reorderEndpointMissing", "Sıralama endpoint adresi bulunamadı.", "Reorder endpoint was not found.")
+    };
+}

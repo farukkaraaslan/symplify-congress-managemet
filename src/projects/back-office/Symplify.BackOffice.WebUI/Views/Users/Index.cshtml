@@ -1,0 +1,264 @@
+@using Core.Application.Responses
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using Symplify.BackOffice.Application.Features.Users.Dtos
+@using Symplify.BackOffice.WebUI.Localization
+@inject IBackOfficeViewLocalizer L
+@model GetListResponse<UserListItemDto>
+
+@{
+    string T(string key, string fallback = "")
+    {
+        var value = L.GetStringValue(key);
+        return string.IsNullOrWhiteSpace(value) || string.Equals(value, key, StringComparison.OrdinalIgnoreCase)
+            ? (string.IsNullOrWhiteSpace(fallback) ? key : fallback)
+            : value;
+    }
+
+    ViewData["Title"] = T("BackOffice.Users.PageTitle", "Kullanıcılar");
+    string culture = Context.Request.RouteValues["culture"]?.ToString() ?? "tr-TR";
+
+    List<SelectListItem> organizationOptions = ViewBag.OrganizationFilterOptions as List<SelectListItem> ?? new();
+    List<SelectListItem> congressOptions = ViewBag.CongressFilterOptions as List<SelectListItem> ?? new();
+    List<SelectListItem> countryOptions = ViewBag.CountryFilterOptions as List<SelectListItem> ?? new();
+    List<SelectListItem> stateOptions = ViewBag.StateFilterOptions as List<SelectListItem> ?? new();
+    List<SelectListItem> roleOptions = ViewBag.RoleFilterOptions as List<SelectListItem> ?? new();
+
+    Guid routeTemplateId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+    string routeTemplateToken = routeTemplateId.ToString();
+    string getListUrl = Url.Action("GetList", "Users", new { culture }) ?? $"/{culture}/users/get-list";
+    string detailsUrlTemplate = (Url.Action("Details", "Users", new { culture, id = routeTemplateId })
+        ?? $"/{culture}/users/details/{routeTemplateToken}")
+        .Replace(routeTemplateToken, "__id__");
+    string editUrlTemplate = (Url.Action("Edit", "Users", new { culture, id = routeTemplateId })
+        ?? $"/{culture}/users/edit/{routeTemplateToken}")
+        .Replace(routeTemplateToken, "__id__");
+    string congressOptionsUrl = Url.Action("GetCongressOptions", "Users", new { culture })
+        ?? $"/{culture}/users/options/congresses";
+    string stateOptionsUrl = Url.Action("GetStateOptions", "Users", new { culture })
+        ?? $"/{culture}/users/options/states";
+}
+
+<div class="dashboard-main-body">
+    @Html.AntiForgeryToken()
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-0">@T("BackOffice.Users.PageTitle", "Kullanıcılar")</h6>
+            <small class="text-neutral-500">
+                @T("BackOffice.Users.PageSubtitle", "Kullanıcıları, iletişim bilgilerini, kongre erişimlerini ve güvenlik durumlarını yönetin.")
+            </small>
+        </div>
+
+        <a asp-action="Create"
+           asp-route-culture="@culture"
+           class="btn btn-primary-600 radius-8 px-16 py-10 d-inline-flex align-items-center gap-2">
+            <i class="ri-user-add-line"></i>
+            @T("BackOffice.Users.NewUser", "Yeni Kullanıcı")
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] is not null)
+    {
+        <div class="alert alert-success border-success-100 text-success-700 mb-24">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    <div class="card mb-24" id="usersFilters">
+        <div class="card-header border-bottom bg-base py-20">
+            <h5 class="mb-0">@T("Common.Filters", "Filtreler")</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="row gy-3">
+                <div class="col-md-6 col-xl-3">
+                    <label class="form-label" for="usersOrganizationId">
+                        @T("BackOffice.Users.Organization", "Organizasyon")
+                    </label>
+                    <select id="usersOrganizationId"
+                            name="organizationId"
+                            class="form-select js-users-filter js-users-select2"
+                            data-placeholder="@T("BackOffice.Users.AllOrganizations", "Tüm organizasyonlar")"
+                            data-congress-url="@congressOptionsUrl">
+                        <option value="">@T("BackOffice.Users.AllOrganizations", "Tüm organizasyonlar")</option>
+                        @foreach (SelectListItem option in organizationOptions)
+                        {
+                            <option value="@option.Value">@option.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <label class="form-label" for="usersCongressId">
+                        @T("BackOffice.Users.Congress", "Kongre")
+                    </label>
+                    <select id="usersCongressId"
+                            name="congressId"
+                            class="form-select js-users-filter js-users-select2"
+                            data-placeholder="@T("BackOffice.Users.AllCongresses", "Tüm kongreler")">
+                        <option value="">@T("BackOffice.Users.AllCongresses", "Tüm kongreler")</option>
+                        @foreach (SelectListItem option in congressOptions)
+                        {
+                            <option value="@option.Value">@option.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <label class="form-label" for="usersRoleName">
+                        @T("BackOffice.Users.Role", "Rol")
+                    </label>
+                    <select id="usersRoleName"
+                            name="roleName"
+                            class="form-select js-users-filter js-users-select2"
+                            data-placeholder="@T("BackOffice.Users.AllRoles", "Tüm roller")">
+                        <option value="">@T("BackOffice.Users.AllRoles", "Tüm roller")</option>
+                        @foreach (SelectListItem option in roleOptions)
+                        {
+                            <option value="@option.Value">@option.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <label class="form-label" for="usersEmailConfirmed">
+                        @T("BackOffice.Users.EmailConfirmation", "E-posta Onayı")
+                    </label>
+                    <select id="usersEmailConfirmed"
+                            name="emailConfirmed"
+                            class="form-select js-users-filter js-users-select2"
+                            data-placeholder="@T("Common.All", "Tümü")">
+                        <option value="">@T("Common.All", "Tümü")</option>
+                        <option value="true">@T("BackOffice.Users.EmailConfirmedBadge", "Onaylı")</option>
+                        <option value="false">@T("BackOffice.Users.EmailUnconfirmed", "Onaysız")</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <label class="form-label" for="usersCountryId">
+                        @T("BackOffice.Users.Country", "Ülke")
+                    </label>
+                    <select id="usersCountryId"
+                            name="countryId"
+                            class="form-select js-users-filter js-users-select2"
+                            data-placeholder="@T("BackOffice.Users.AllCountries", "Tüm ülkeler")"
+                            data-state-url="@stateOptionsUrl">
+                        <option value="">@T("BackOffice.Users.AllCountries", "Tüm ülkeler")</option>
+                        @foreach (SelectListItem option in countryOptions)
+                        {
+                            <option value="@option.Value">@option.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <label class="form-label" for="usersStateId">
+                        @T("BackOffice.Users.City", "Şehir / İl")
+                    </label>
+                    <select id="usersStateId"
+                            name="stateId"
+                            class="form-select js-users-filter js-users-select2"
+                            data-placeholder="@T("BackOffice.Users.AllCities", "Tüm şehirler")">
+                        <option value="">@T("BackOffice.Users.AllCities", "Tüm şehirler")</option>
+                        @foreach (SelectListItem option in stateOptions)
+                        {
+                            <option value="@option.Value">@option.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <label class="form-label" for="usersAccountStatus">
+                        @T("Common.Status", "Durum")
+                    </label>
+                    <select id="usersAccountStatus"
+                            name="accountStatus"
+                            class="form-select js-users-filter js-users-select2"
+                            data-placeholder="@T("Common.All", "Tümü")">
+                        <option value="">@T("Common.All", "Tümü")</option>
+                        <option value="active">@T("Common.Active", "Aktif")</option>
+                        <option value="locked">@T("BackOffice.Users.Locked", "Kilitli")</option>
+                        <option value="blacklisted">@T("BackOffice.Users.BlacklistBadge", "Kara Liste")</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-end gap-2 mt-24">
+                <button id="usersResetFilters"
+                        class="btn btn-outline-neutral-500 radius-8"
+                        type="button">
+                    <i class="ri-refresh-line me-1"></i>
+                    @T("Common.ClearFilters", "Filtreleri Temizle")
+                </button>
+
+                <button id="usersApplyFilters"
+                        class="btn btn-primary-600 radius-8"
+                        type="button">
+                    <i class="ri-filter-3-line me-1"></i>
+                    @T("Common.Filter", "Filtrele")
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card basic-data-table">
+        <div class="card-header border-bottom bg-base py-20">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <h5 class="mb-0">@T("BackOffice.Users.UserList", "Kullanıcı Listesi")</h5>
+
+                <span class="badge bg-primary-50 text-primary-600 rounded-pill">
+                    <i class="ri-user-3-line me-1"></i>
+                    <span data-users-list-count>0</span>
+                    @T("Common.Records", "kayıt")
+                </span>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table bordered-table table-sm mb-0 align-middle w-100 js-users-data-table"
+                       id="usersTable"
+                       data-source-url="@getListUrl"
+                       data-filters-container="#usersFilters"
+                       data-details-url-template="@detailsUrlTemplate"
+                       data-edit-url-template="@editUrlTemplate"
+                       data-details-text="@T("Common.Details", "Detay")"
+                       data-edit-text="@T("Common.Edit", "Düzenle")"
+                       data-active-text="@T("Common.Active", "Aktif")"
+                       data-locked-text="@T("BackOffice.Users.Locked", "Kilitli")"
+                       data-blacklisted-text="@T("BackOffice.Users.BlacklistBadge", "Kara Liste")"
+                       data-email-confirmed-text="@T("BackOffice.Users.EmailConfirmedBadge", "E-posta Onaylı")"
+                       data-email-unconfirmed-text="@T("BackOffice.Users.EmailUnconfirmed", "E-posta Onaysız")"
+                       data-org-inactive-text="@T("BackOffice.Users.OrgAccessInactive", "Erişim Pasif")">
+                    <thead>
+                        <tr>
+                            <th class="text-center text-nowrap">@T("Common.Actions", "İşlemler")</th>
+                            <th class="text-nowrap">#</th>
+                            <th>@T("BackOffice.Users.ColumnUser", "Kullanıcı")</th>
+                            <th>@T("Common.Email", "E-posta")</th>
+                            <th>@T("BackOffice.Users.Phone", "Telefon")</th>
+                            <th>@T("BackOffice.Users.ColumnInstitution", "Kurum")</th>
+                            <th>@T("BackOffice.Users.Location", "Ülke / Şehir")</th>
+                            <th>@T("BackOffice.Users.Access", "Organizasyon / Kongre")</th>
+                            <th>@T("BackOffice.Users.ColumnRoles", "Roller")</th>
+                            <th>@T("Common.Status", "Durum")</th>
+                            <th>@T("BackOffice.Users.ColumnCreated", "Oluşturma")</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_LocalizationScripts")
+    <script src="~/lib/select2/dist/js/select2.min.js" asp-append-version="true"></script>
+    @if (culture.StartsWith("tr", StringComparison.OrdinalIgnoreCase))
+    {
+        <script src="~/lib/select2/dist/js/i18n/tr.min.js" asp-append-version="true"></script>
+    }
+    <script src="~/js/features/users/users.security.js" asp-append-version="true"></script>
+    <script src="~/js/features/users/users.table.js" asp-append-version="true"></script>
+}

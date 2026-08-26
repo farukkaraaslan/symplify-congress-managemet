@@ -1,0 +1,129 @@
+@model Symplify.BackOffice.WebUI.Models.CongressBoardMembers.UpdateCongressBoardMemberViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string GetInitials(string? fullName)
+    {
+        string[] parts = (fullName ?? string.Empty)
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        if (parts.Length == 0)
+            return "?";
+
+        string initials = parts.Length == 1
+            ? parts[0][0].ToString()
+            : $"{parts[0][0]}{parts[^1][0]}";
+
+        return initials.ToUpper(new System.Globalization.CultureInfo("tr-TR"));
+    }
+}
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    string postUrl = Url.Action("Update", "CongressBoardMemberSignatures", new { culture = currentCulture }) ?? $"/{currentCulture}/congress-board-member-signatures/update";
+}
+
+<div class="modal fade" id="updateBoardMemberSignatureModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="updateBoardMemberSignatureForm" action="@postUrl" method="post" enctype="multipart/form-data" autocomplete="off">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <input type="hidden" name="congressId" value="@Model.CongressId" />
+
+                <div class="modal-header">
+                    <div>
+                        <h6 class="modal-title">@L.GetStringValue("BackOffice.CongressBoardMembers.Signature.Title")</h6>
+                        <small class="text-neutral-500 d-block mt-1">@L.GetStringValue("BackOffice.CongressBoardMembers.Signature.Description")</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label='@L.GetStringValue("Common.Close")'></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="alert alert-info d-flex align-items-start gap-2 mb-4" role="alert">
+                        <i class="ri-information-line mt-1"></i>
+                        <div>
+                            <strong class="d-block">@L.GetStringValue("BackOffice.CongressBoardMembers.Signature.InfoTitle")</strong>
+                            <span>@L.GetStringValue("BackOffice.CongressBoardMembers.Signature.InfoDescription")</span>
+                        </div>
+                    </div>
+
+                    <div class="card border shadow-none mb-4">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="position-relative w-48-px h-48-px flex-shrink-0">
+                                    <span class="js-board-member-avatar-fallback position-absolute top-0 start-0 w-48-px h-48-px rounded-circle bg-primary-50 text-primary-600 border d-flex align-items-center justify-content-center fw-semibold">
+                                        @GetInitials(Model.FullName)
+                                    </span>
+
+                                    @if (!string.IsNullOrWhiteSpace(Model.ImagePreviewUrl))
+                                    {
+                                        <img src="@Model.ImagePreviewUrl"
+                                             alt=""
+                                             class="js-board-member-avatar-image position-absolute top-0 start-0 w-48-px h-48-px rounded-circle object-fit-cover border" />
+                                    }
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">@Model.FullName</h6>
+                                    <div class="text-neutral-500 text-sm">
+                                        @if (!string.IsNullOrWhiteSpace(Model.AcademicTitle))
+                                        {
+                                            <span>@Model.AcademicTitle</span>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(Model.Institution))
+                                        {
+                                            <span>@(string.IsNullOrWhiteSpace(Model.AcademicTitle) ? string.Empty : " · ")@Model.Institution</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row gy-4">
+                        <div class="col-12">
+                            <div class="form-switch switch-primary d-flex align-items-center gap-2">
+                                <input class="form-check-input" type="checkbox" role="switch" id="acceptanceSignerSwitch" name="isAcceptanceLetterSigner" value="true" @(Model.IsAcceptanceLetterSigner ? "checked" : null) />
+                                <input type="hidden" name="isAcceptanceLetterSigner" value="false" />
+                                <label class="form-check-label fw-semibold" for="acceptanceSignerSwitch">@L.GetStringValue("BackOffice.CongressBoardMembers.Signature.IsSigner")</label>
+                            </div>
+                            <small class="text-neutral-500 d-block mt-1">@L.GetStringValue("BackOffice.CongressBoardMembers.Signature.IsSignerHelp")</small>
+                        </div>
+
+                        <div class="col-12 @(string.IsNullOrWhiteSpace(Model.SignaturePreviewUrl) ? "d-none" : string.Empty)"
+                             data-signature-preview-section>
+                            <label class="form-label" data-signature-preview-label>
+                                @L.GetStringValue("BackOffice.CongressBoardMembers.Signature.Current")
+                            </label>
+
+                            <div class="border rounded-3 bg-neutral-50 p-12 d-flex align-items-center justify-content-center"
+                                 style="width: 300px; max-width: 100%; height: 140px;">
+                                <img src="@Model.SignaturePreviewUrl"
+                                     alt=""
+                                     data-signature-preview
+                                     style="display: block; width: 100%; height: 100%; max-width: 276px; max-height: 116px; object-fit: contain;" />
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">@L.GetStringValue("BackOffice.CongressBoardMembers.Signature.File")</label>
+                            <input type="file"
+                                   name="signatureFile"
+                                   class="form-control"
+                                   accept="image/png,image/jpeg,.png,.jpg,.jpeg"
+                                   data-signature-file-input />
+                            <small class="text-neutral-500 d-block mt-1">@L.GetStringValue("BackOffice.CongressBoardMembers.Signature.Help")</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-neutral-900 radius-8 px-20 py-11" data-bs-dismiss="modal">@L.GetStringValue("Common.Cancel")</button>
+                    <button type="submit" class="btn btn-primary-600 radius-8 px-20 py-11 d-inline-flex align-items-center gap-2">
+                        <i class="ri-save-line"></i>
+                        @L.GetStringValue("BackOffice.CongressBoardMembers.Signature.Save")
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

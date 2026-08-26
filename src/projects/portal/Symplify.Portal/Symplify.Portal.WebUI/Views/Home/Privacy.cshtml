@@ -1,0 +1,7 @@
+@{
+    string T(string key) => Html.Text(key);
+    ViewData["Title"] = T("Portal.Privacy.PageTitle");
+}
+<h1>@ViewData["Title"]</h1>
+
+<p>@T("Portal.Privacy.Description")</p>

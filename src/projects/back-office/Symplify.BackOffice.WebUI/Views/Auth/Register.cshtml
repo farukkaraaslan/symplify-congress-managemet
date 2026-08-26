@@ -1,0 +1,423 @@
+@using Symplify.BackOffice.Application.Features.Auth.Constants
+@using Symplify.BackOffice.WebUI.Localization
+@model Symplify.BackOffice.WebUI.Models.Auth.RegisterViewModel
+@inject IBackOfficeViewLocalizer L
+@{
+    Layout = null;
+    string culture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    ViewData["ClientResourcePrefixes"] = new[] { "BackOffice.Auth." };
+
+    string lightLogoUrl = !string.IsNullOrWhiteSpace(Model.OrganizationLogoLightUrl)
+        ? Model.OrganizationLogoLightUrl!
+        : Url.Content("~/assets/images/logo/symplify-logo-horizontal-light.svg");
+
+    string darkLogoUrl = !string.IsNullOrWhiteSpace(Model.OrganizationLogoDarkUrl)
+        ? Model.OrganizationLogoDarkUrl!
+        : (!string.IsNullOrWhiteSpace(Model.OrganizationLogoLightUrl)
+            ? Model.OrganizationLogoLightUrl!
+            : Url.Content("~/assets/images/logo/symplify-logo-horizontal-dark.svg"));
+
+    string logoAlt = Model.OrganizationShortName ?? "Symplify";
+    string organizationDisplayName = !string.IsNullOrWhiteSpace(Model.OrganizationShortName)
+                                     && !string.IsNullOrWhiteSpace(Model.OrganizationName)
+        ? $"{Model.OrganizationShortName} - {Model.OrganizationName}"
+        : (!string.IsNullOrWhiteSpace(Model.OrganizationName)
+            ? Model.OrganizationName!
+            : (Model.OrganizationShortName ?? string.Empty));
+
+    string? successMessage = ViewData["AuthSuccessMessage"]?.ToString();
+
+    string ResolveAuthText(string key, string fallback)
+    {
+        string value = L.GetStringValueSafe(key);
+        return string.Equals(value, key, StringComparison.Ordinal) ? fallback : value;
+    }
+
+    string phoneRequiredMessage = ResolveAuthText(
+        AuthMessages.PhoneRequired,
+        "Telefon numarası zorunludur.");
+
+    string phoneInvalidMessage = ResolveAuthText(
+        AuthMessages.PhoneInvalid,
+        "Telefon numarasını ülke kodu ile birlikte geçerli formatta giriniz.");
+
+    string GetPhoneDisplayValue(string? phoneNumber, string? dialCode)
+    {
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+        {
+            return string.Empty;
+        }
+
+        string value = phoneNumber.Trim();
+        string digits = new string(value.Where(char.IsDigit).ToArray());
+        string dialDigits = string.IsNullOrWhiteSpace(dialCode)
+            ? string.Empty
+            : new string(dialCode.Where(char.IsDigit).ToArray());
+
+        if (!string.IsNullOrWhiteSpace(dialDigits)
+            && digits.StartsWith(dialDigits, StringComparison.Ordinal))
+        {
+            digits = digits[dialDigits.Length..];
+        }
+
+        return string.IsNullOrWhiteSpace(digits) ? value : digits;
+    }
+}
+<!DOCTYPE html>
+<html lang="@culture" data-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@L[AuthResourceKeys.RegisterPageTitle]</title>
+
+    <link rel="icon" type="image/png" href="~/assets/images/favicon.png" sizes="16x16" />
+    <link rel="stylesheet" href="~/lib/remixicon/fonts/remixicon.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/select2/dist/css/select2.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/css/intlTelInput.css" />
+    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
+</head>
+<body class="auth-page">
+    <div class="position-fixed end-0 top-0 p-24 z-3">
+        @await Component.InvokeAsync("LanguageSwitcher")
+    </div>
+
+    <section class="auth auth-register-page d-flex flex-wrap">
+        <div class="auth-left d-lg-block d-none">
+            <div class="d-flex align-items-center flex-column h-100 justify-content-center">
+                <img src="~/assets/images/auth/auth-illustration.svg"
+                     alt=""
+                     class="w-100 max-w-464-px" />
+            </div>
+        </div>
+
+        <div class="auth-right d-flex flex-column justify-content-center align-items-center">
+            <div class="max-w-464-px mx-auto w-100 auth-register-card">
+                <div class="auth-register-header text-center">
+                    <a asp-controller="Auth"
+                       asp-action="Login"
+                       asp-route-culture="@culture"
+                       asp-route-org="@Model.OrganizationSlug"
+                       class="brand-logo d-flex">
+                        <img src="@lightLogoUrl" alt="@logoAlt" class="light-logo" />
+                        <img src="@darkLogoUrl" alt="@logoAlt" class="dark-logo" />
+                    </a>
+
+                    <h4>@L[AuthResourceKeys.RegisterTitle]</h4>
+
+                    @if (Model.HasOrganizationContext && !string.IsNullOrWhiteSpace(organizationDisplayName))
+                    {
+                        <p class="text-secondary-light">
+                            @L[AuthResourceKeys.RegisterOrganizationSubtitle, organizationDisplayName]
+                        </p>
+                    }
+                    else
+                    {
+                        <p class="text-secondary-light">@L[AuthResourceKeys.RegisterSubtitle]</p>
+                    }
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(successMessage))
+                {
+                    <div class="alert alert-success radius-12" role="alert">
+                        @successMessage
+                    </div>
+                }
+
+                <form asp-action="Register"
+                      asp-controller="Auth"
+                      asp-route-culture="@culture"
+                      method="post"
+                      class="auth-form-stack"
+                      novalidate
+                      data-auth-register-form
+                      data-states-url="@Url.Action("States", "Auth", new { culture })"
+                      autocomplete="off"
+                      data-lpignore="true"
+                      data-1p-ignore="true"
+                      data-bwignore="true">
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden" asp-for="OrganizationId" />
+                    <input type="hidden" asp-for="OrganizationSlug" />
+                    <input type="hidden" asp-for="OrganizationName" />
+                    <input type="hidden" asp-for="OrganizationShortName" />
+
+                    <div asp-validation-summary="ModelOnly"
+                         class="alert alert-danger radius-12"
+                         role="alert"></div>
+
+                    <div class="auth-form-grid">
+                        <div class="auth-field">
+                            <div class="icon-field">
+                                <span class="icon">
+                                    <iconify-icon icon="f7:person"></iconify-icon>
+                                </span>
+                                <input asp-for="Name"
+                                       class="form-control"
+                                       placeholder="@L[AuthResourceKeys.FieldName]"
+                                       autocomplete="off"
+                                       data-normalize-person-name="true"
+                                       data-val="true"
+                                       data-val-required="@L[AuthMessages.NameRequired]"
+                                       data-lpignore="true"
+                                       data-1p-ignore="true"
+                                       data-bwignore="true"
+                                       readonly
+                                       onfocus="this.removeAttribute('readonly')"
+                                       onmousedown="this.removeAttribute('readonly')"
+                                       autocapitalize="none"
+                                       spellcheck="false" />
+                            </div>
+                            <span asp-validation-for="Name" class="text-danger text-sm d-block"></span>
+                        </div>
+
+                        <div class="auth-field">
+                            <div class="icon-field">
+                                <span class="icon">
+                                    <iconify-icon icon="f7:person"></iconify-icon>
+                                </span>
+                                <input asp-for="Surname"
+                                       class="form-control"
+                                       placeholder="@L[AuthResourceKeys.FieldSurname]"
+                                       autocomplete="off"
+                                       data-normalize-surname="true"
+                                       data-val="true"
+                                       data-val-required="@L[AuthMessages.SurnameRequired]"
+                                       data-lpignore="true"
+                                       data-1p-ignore="true"
+                                       data-bwignore="true"
+                                       readonly
+                                       onfocus="this.removeAttribute('readonly')"
+                                       onmousedown="this.removeAttribute('readonly')"
+                                       autocapitalize="none"
+                                       spellcheck="false" />
+                            </div>
+                            <span asp-validation-for="Surname" class="text-danger text-sm d-block"></span>
+                        </div>
+
+                        <div class="auth-field">
+                            <div class="icon-field">
+                                <span class="icon">
+                                    <iconify-icon icon="solar:buildings-2-outline"></iconify-icon>
+                                </span>
+                                <input asp-for="Institution"
+                                       class="form-control"
+                                       placeholder="@L[AuthResourceKeys.FieldInstitution]"
+                                       autocomplete="off"
+                                       data-normalize-institution="true"
+                                       data-val="true"
+                                       data-val-required="@L[AuthMessages.InstitutionRequired]"
+                                       data-lpignore="true"
+                                       data-1p-ignore="true"
+                                       data-bwignore="true"
+                                       readonly
+                                       onfocus="this.removeAttribute('readonly')"
+                                       onmousedown="this.removeAttribute('readonly')"
+                                       autocapitalize="none"
+                                       spellcheck="false" />
+                            </div>
+                            <span asp-validation-for="Institution" class="text-danger text-sm d-block"></span>
+                        </div>
+
+                        <div class="auth-field">
+                            <select asp-for="TitleId"
+                                    asp-items="Model.TitleOptions"
+                                    class="form-select"
+                                    data-val="true"
+                                    data-val-required="@L[AuthMessages.TitleRequired]">
+                                <option value="">@L[AuthResourceKeys.FieldSelectTitle]</option>
+                            </select>
+                            <span asp-validation-for="TitleId" class="text-danger text-sm d-block"></span>
+                        </div>
+
+                        <div class="auth-field">
+                            <select asp-for="CountryId"
+                                    asp-items="Model.CountryOptions"
+                                    class="form-select"
+                                    data-auth-country-select
+                                    data-val="true"
+                                    data-val-required="@L[AuthMessages.CountryRequired]">
+                                <option value="">@L[AuthResourceKeys.FieldSelectCountry]</option>
+                            </select>
+                            <span asp-validation-for="CountryId" class="text-danger text-sm d-block"></span>
+                        </div>
+
+                        <div class="auth-field">
+                            <select asp-for="StateId"
+                                    asp-items="Model.StateOptions"
+                                    class="form-select"
+                                    data-auth-state-select>
+                                <option value="">@L[AuthResourceKeys.FieldSelectState]</option>
+                            </select>
+                            <span asp-validation-for="StateId" class="text-danger text-sm d-block"></span>
+                        </div>
+
+                        <div class="auth-field auth-field--full">
+                            <input id="PhoneNumberDisplay"
+                                   name="PhoneNumberDisplay"
+                                   value="@GetPhoneDisplayValue(Model.PhoneNumber, Model.PhoneDialCode)"
+                                   type="tel"
+                                   class="form-control"
+                                   placeholder="@L[AuthResourceKeys.FieldPhone]"
+                                   autocomplete="off"
+                                   inputmode="tel"
+                                   data-auth-phone-input
+                                   data-auth-phone-required-message="@phoneRequiredMessage"
+                                   data-auth-phone-invalid-message="@phoneInvalidMessage"
+                                       data-lpignore="true"
+                                       data-1p-ignore="true"
+                                       data-bwignore="true"
+                                       readonly
+                                       onfocus="this.removeAttribute('readonly')"
+                                       onmousedown="this.removeAttribute('readonly')"
+                                       autocapitalize="none"
+                                       spellcheck="false" />
+
+                            <input asp-for="PhoneNumber" type="hidden" data-auth-phone-e164 />
+                            <input asp-for="PhoneCountryIso2" type="hidden" data-auth-phone-country />
+                            <input asp-for="PhoneDialCode" type="hidden" data-auth-phone-dial-code />
+
+                            <span asp-validation-for="PhoneNumber"
+                                  class="text-danger text-sm d-block"
+                                  data-auth-phone-validation></span>
+                        </div>
+
+                        <div class="auth-field auth-field--full">
+                            <div class="icon-field">
+                                <span class="icon">
+                                    <iconify-icon icon="mage:email"></iconify-icon>
+                                </span>
+                                <input asp-for="Email"
+                                       type="email"
+                                       class="form-control"
+                                       placeholder="@L[AuthResourceKeys.FieldEmail]"
+                                       autocomplete="off"
+                                       data-val="true"
+                                       data-val-required="@L[AuthMessages.EmailRequired]"
+                                       data-val-email="@L[AuthMessages.EmailInvalid]"
+                                       data-lpignore="true"
+                                       data-1p-ignore="true"
+                                       data-bwignore="true"
+                                       readonly
+                                       onfocus="this.removeAttribute('readonly')"
+                                       onmousedown="this.removeAttribute('readonly')"
+                                       autocapitalize="none"
+                                       spellcheck="false" />
+                            </div>
+                            <span asp-validation-for="Email" class="text-danger text-sm d-block"></span>
+                        </div>
+
+                        <div class="auth-field auth-field--full">
+                            <div class="position-relative icon-field">
+                                <span class="icon">
+                                    <iconify-icon icon="solar:lock-password-outline"></iconify-icon>
+                                </span>
+                                <input asp-for="Password"
+                                       type="password"
+                                       class="form-control pe-48"
+                                       id="register-password"
+                                       placeholder="@L[AuthResourceKeys.FieldPassword]"
+                                       autocomplete="new-password"
+                                       data-val="true"
+                                       data-val-required="@L[AuthMessages.PasswordRequired]"
+                                       data-lpignore="true"
+                                       data-1p-ignore="true"
+                                       data-bwignore="true"
+                                       readonly
+                                       onfocus="this.removeAttribute('readonly')"
+                                       onmousedown="this.removeAttribute('readonly')"
+                                       autocapitalize="none"
+                                       spellcheck="false" />
+                                <span class="toggle-password ri-eye-line cursor-pointer"
+                                      data-toggle="#register-password"
+                                      aria-label="Şifreyi göster"></span>
+                            </div>
+                            <span class="password-help">@L[AuthResourceKeys.PasswordHint]</span>
+                            <span asp-validation-for="Password" class="text-danger text-sm d-block"></span>
+                        </div>
+
+                        <div class="auth-field auth-field--full">
+                            <div class="position-relative icon-field">
+                                <span class="icon">
+                                    <iconify-icon icon="solar:lock-password-outline"></iconify-icon>
+                                </span>
+                                <input asp-for="ConfirmPassword"
+                                       type="password"
+                                       class="form-control pe-48"
+                                       id="register-confirm-password"
+                                       placeholder="@L[AuthResourceKeys.FieldConfirmPassword]"
+                                       autocomplete="new-password"
+                                       data-val="true"
+                                       data-val-required="@L[AuthMessages.ConfirmPasswordRequired]"
+                                       data-val-equalto="@L[AuthMessages.PasswordsDoNotMatch]"
+                                       data-val-equalto-other="*.Password"
+                                       data-lpignore="true"
+                                       data-1p-ignore="true"
+                                       data-bwignore="true"
+                                       readonly
+                                       onfocus="this.removeAttribute('readonly')"
+                                       onmousedown="this.removeAttribute('readonly')"
+                                       autocapitalize="none"
+                                       spellcheck="false" />
+                                <span class="toggle-password ri-eye-line cursor-pointer"
+                                      data-toggle="#register-confirm-password"
+                                      aria-label="Şifreyi göster"></span>
+                            </div>
+                            <span asp-validation-for="ConfirmPassword" class="text-danger text-sm d-block"></span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="form-check style-check">
+                            <input asp-for="AcceptTerms"
+                                   class="form-check-input"
+                                   type="checkbox"
+                                   data-val="true"
+                                   data-val-required="@L[AuthMessages.TermsRequired]" />
+                            <label asp-for="AcceptTerms" class="form-check-label">
+                                @L[AuthResourceKeys.TermsPrefix]
+                                <a href="javascript:void(0)" class="text-primary-600 fw-semibold">
+                                    @L[AuthResourceKeys.TermsLink]
+                                </a>
+                                @L[AuthResourceKeys.TermsMiddle]
+                                <a href="javascript:void(0)" class="text-primary-600 fw-semibold">
+                                    @L[AuthResourceKeys.PrivacyLink]
+                                </a>
+                            </label>
+                        </div>
+                        <span asp-validation-for="AcceptTerms" class="text-danger text-sm d-block"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary auth-submit-btn w-100">
+                        @L[AuthResourceKeys.RegisterButton]
+                    </button>
+
+                    <div class="auth-register-footer text-center text-secondary-light">
+                        @L[AuthResourceKeys.AlreadyHaveAccount]
+                        <a asp-action="Login"
+                           asp-controller="Auth"
+                           asp-route-culture="@culture"
+                           asp-route-org="@Model.OrganizationSlug"
+                           class="text-primary-600 fw-semibold">
+                            @L[AuthResourceKeys.SignInLink]
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-ui/dist/jquery-ui.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/iconify-icon/dist/iconify-icon.min.js"></script>
+    <script src="~/lib/select2/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/js/intlTelInput.min.js"></script>
+    <script src="~/js/app.js"></script>
+    <script src="~/js/common/text-normalizer.js" asp-append-version="true"></script>
+    <partial name="_ValidationScriptsPartial" />
+    @await Html.PartialAsync("_LocalizationScripts")
+    <script src="~/js/features/auth/auth-pages.js" asp-append-version="true"></script>
+</body>
+</html>

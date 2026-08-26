@@ -1,0 +1,57 @@
+@model PaymentIndexViewModel
+@{
+    string currentCulture = ViewData["CurrentCulture"] as string ?? "tr-TR";
+    bool isEnglish = currentCulture.StartsWith("en", StringComparison.OrdinalIgnoreCase);
+    string cultureQuery = "?culture=" + Uri.EscapeDataString(currentCulture);
+
+    string T(string key, string trFallback, string enFallback)
+    {
+        string value = Html.Text(key);
+        return string.Equals(value, key, StringComparison.Ordinal)
+            ? isEnglish ? enFallback : trFallback
+            : value;
+    }
+}
+
+<div class="page-title light-background">
+    <div class="container d-lg-flex justify-content-between align-items-center">
+        <h1 class="mb-2 mb-lg-0">@Model.PageTitle</h1>
+        <nav class="breadcrumbs">
+            <ol>
+                <li><a href="/@(cultureQuery)">@T("Portal.Navigation.Home", "Anasayfa", "Home")</a></li>
+                <li class="current">@Model.PageTitle</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="row justify-content-center">
+            <div class="col-lg-11 col-xl-10">
+                <article class="card card--flat">
+                    <div class="card__body p-4 p-lg-5">
+                        @if (!string.IsNullOrWhiteSpace(Model.Section?.Content))
+                        {
+                            @Html.Raw(Model.Section.Content)
+                        }
+                        else
+                        {
+                            <div class="card card--note mb-0">
+                                <div class="card__body text-center">
+                                    <div class="mb-3"><i class="bi bi-credit-card display-6"></i></div>
+                                    <div class="card__title mb-1">
+                                        @T("Portal.Payment.EmptyTitle", "Ödeme bilgisi henüz yayınlanmadı", "Payment information has not been published yet")
+                                    </div>
+                                    <div class="card__desc mb-0">
+                                        @T("Portal.Payment.EmptyDescription", "Güncel ödeme bilgileri yayınlandığında bu sayfada görüntülenecektir.", "Current payment information will be displayed on this page when published.")
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,254 @@
+@model ContentsIndexViewModel
+@{
+    string currentCulture = ViewData["CurrentCulture"] as string ?? "tr-TR";
+    string T(string key) => Html.Text(key);
+    string cultureQuery = "?culture=" + Uri.EscapeDataString(currentCulture);
+    CultureInfo culture = CultureInfo.GetCultureInfo(currentCulture);
+
+    var paymentPlans = Model.Data.PaymentPlans
+        .OrderBy(plan => plan.Order)
+        .ThenBy(plan => plan.Amount)
+        .ThenBy(plan => plan.Name)
+        .ToList();
+
+    string FormatMoney(decimal amount, string? currency)
+    {
+        if (amount <= 0)
+        {
+            return T("Portal.PaymentPlans.Free");
+        }
+
+        string value = amount.ToString("N2", culture);
+        return string.IsNullOrWhiteSpace(currency)
+            ? value
+            : $"{value} {currency}";
+    }
+
+    string FormatDate(DateTime? date)
+    {
+        return date.HasValue
+            ? date.Value.ToString("dd MMMM yyyy", culture)
+            : string.Empty;
+    }
+
+    string SafePlanId(Guid id, int index)
+    {
+        return $"payment-plan-{index}-{id:N}";
+    }
+
+    string StripHtml(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        string withoutTags = System.Text.RegularExpressions.Regex.Replace(value, "<.*?>", " ");
+        string decoded = System.Net.WebUtility.HtmlDecode(withoutTags);
+        return System.Text.RegularExpressions.Regex.Replace(decoded, @"\s+", " ").Trim();
+    }
+
+    string ShortDescription(string? value, int maxLength = 110)
+    {
+        string plainText = StripHtml(value);
+        if (string.IsNullOrWhiteSpace(plainText))
+        {
+            return T("Portal.PaymentPlans.ShortFallback");
+        }
+
+        if (plainText.Length <= maxLength)
+        {
+            return plainText;
+        }
+
+        return plainText.Substring(0, maxLength).TrimEnd() + "...";
+    }
+
+    IReadOnlyList<KeyValuePair<string, string>> BuildPaymentInfo(PublicPaymentPlanResponse plan)
+    {
+        var items = new List<KeyValuePair<string, string>>
+        {
+            new(T("Portal.PaymentPlans.Amount"), FormatMoney(plan.Amount, plan.Currency))
+        };
+
+        if (plan.DueDate.HasValue)
+        {
+            items.Add(new(T("Portal.PaymentPlans.DueDate"), FormatDate(plan.DueDate)));
+        }
+
+        if (plan.ValidFrom.HasValue || plan.ValidUntil.HasValue)
+        {
+            string validText = string.Join(" - ", new[] { FormatDate(plan.ValidFrom), FormatDate(plan.ValidUntil) }.Where(x => !string.IsNullOrWhiteSpace(x)));
+            items.Add(new(T("Portal.PaymentPlans.Validity"), validText));
+        }
+
+        return items;
+    }
+
+    string BuildImportantNote(string? description)
+    {
+        return string.Empty;
+    }
+
+    string BuildReadableFallbackDescription(string? description)
+    {
+        return StripHtml(description);
+    }
+}
+
+<div class="page-title light-background">
+    <div class="container d-lg-flex justify-content-between align-items-center">
+        <h1 class="mb-2 mb-lg-0">@T("Portal.PaymentPlans.PageTitle")</h1>
+        <nav class="breadcrumbs">
+            <ol>
+                <li><a href="/@(cultureQuery)">@T("Portal.Navigation.Home")</a></li>
+                <li class="current">@T("Portal.PaymentPlans.PageTitle")</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="text-center mb-5">
+            <span class="badge badge--pill mb-3">
+                <i class="bi bi-credit-card"></i>
+                <span>@T("Portal.PaymentPlans.HeaderBadge")</span>
+            </span>
+            <h2 class="h3 fw-bold mb-2">@T("Portal.PaymentPlans.HeaderTitle")</h2>
+            <p class="text-muted mb-0">@T("Portal.PaymentPlans.HeaderDescription")</p>
+        </div>
+
+        @if (paymentPlans.Count == 0)
+        {
+            <div class="card card--note">
+                <div class="card__body text-center">
+                    <div class="mb-3"><i class="bi bi-credit-card display-6"></i></div>
+                    <div class="card__title mb-1">@T("Portal.PaymentPlans.EmptyTitle")</div>
+                    <div class="card__desc mb-0">@T("Portal.PaymentPlans.EmptyDescription")</div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4 justify-content-center align-items-stretch">
+                @for (int index = 0; index < paymentPlans.Count; index++)
+                {
+                    var plan = paymentPlans[index];
+                    string modalId = SafePlanId(plan.Id, index + 1);
+                    bool isHighlighted = index == 0;
+                    string cardDescription = ShortDescription(plan.Description);
+                    var paymentInfo = BuildPaymentInfo(plan);
+                    string importantNote = BuildImportantNote(plan.Description);
+                    string fallbackDescription = BuildReadableFallbackDescription(plan.Description);
+
+                    <div class="col-md-6 col-xl-4">
+                        <article class="card card--flat h-100 @(isHighlighted ? "border border-primary" : string.Empty)" data-aos="fade-up" data-aos-delay="@(150 + (index * 50))">
+                            <div class="card__body d-flex flex-column h-100">
+                                <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+                                    <h3 class="card__title h5 mb-0">@plan.Name</h3>
+
+                                    @if (isHighlighted)
+                                    {
+                                        <span class="badge badge--pill">
+                                            <i class="bi bi-star"></i>
+                                            <span>@T("Portal.PaymentPlans.Featured")</span>
+                                        </span>
+                                    }
+                                </div>
+
+                                <div class="mb-4">
+                                    <div class="display-6 fw-bold mb-0">@FormatMoney(plan.Amount, plan.Currency)</div>
+                                    <div class="text-muted">@T("Portal.PaymentPlans.ParticipationFee")</div>
+                                </div>
+
+                                <p class="card__desc mb-4">@cardDescription</p>
+
+                                <ul class="list list--icon mb-4">
+                                    <li class="list__item">
+                                        <i class="bi bi-check2"></i>
+                                        <span>@T("Portal.PaymentPlans.BankInfoHint")</span>
+                                    </li>
+                                    <li class="list__item">
+                                        <i class="bi bi-check2"></i>
+                                        <span>@T("Portal.PaymentPlans.CheckDescriptionHint")</span>
+                                    </li>
+                                    @if (plan.DueDate.HasValue)
+                                    {
+                                        <li class="list__item">
+                                            <i class="bi bi-check2"></i>
+                                            <span>@T("Portal.PaymentPlans.DueDateShort") : @FormatDate(plan.DueDate)</span>
+                                        </li>
+                                    }
+                                </ul>
+
+                                <div class="mt-auto d-grid">
+                                    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#@modalId">
+                                        @T("Portal.PaymentPlans.DetailsButton")
+                                    </button>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <div class="modal fade" id="@modalId" tabindex="-1" aria-labelledby="@modalId-title" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <div>
+                                        <h5 class="modal-title" id="@modalId-title">@plan.Name</h5>
+                                        <div class="text-muted small">@FormatMoney(plan.Amount, plan.Currency)</div>
+                                    </div>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label='@T("Portal.Common.Close")'></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="card card--flat mb-4">
+                                        <div class="card__body">
+                                            <div class="card__title mb-3">@T("Portal.PaymentPlans.PaymentInformation")</div>
+
+                                            <dl class="row mb-0 g-3">
+                                                @foreach (var item in paymentInfo)
+                                                {
+                                                    <dt class="col-sm-4 text-muted">@item.Key</dt>
+                                                    <dd class="col-sm-8 mb-0 fw-semibold">@item.Value</dd>
+                                                }
+                                            </dl>
+                                        </div>
+                                    </div>
+
+                                    @if (!string.IsNullOrWhiteSpace(importantNote))
+                                    {
+                                        <div class="card card--note mb-4">
+                                            <div class="card__body">
+                                                <div class="card__title mb-2">@T("Portal.PaymentPlans.ImportantNote")</div>
+                                                <div class="card__desc mb-0">@importantNote</div>
+                                            </div>
+                                        </div>
+                                    }
+
+                                    @if (paymentInfo.Count <= 1 && !string.IsNullOrWhiteSpace(fallbackDescription))
+                                    {
+                                        <div class="card card--flat mb-0">
+                                            <div class="card__body">
+                                                <div class="card__title mb-2">@T("Portal.PaymentPlans.Description")</div>
+                                                <div class="card__desc mb-0">
+                                                    @foreach (string line in fallbackDescription.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries))
+                                                    {
+                                                        <p class="mb-2">@line</p>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T("Portal.Common.Close")</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</section>

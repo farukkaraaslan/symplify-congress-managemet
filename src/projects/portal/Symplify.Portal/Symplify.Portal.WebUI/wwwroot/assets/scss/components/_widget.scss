@@ -1,0 +1,107 @@
+@use "../abstracts" as a;
+
+.widget {
+  background: color-mix(in srgb, var(--surface-color), #ffffff 4%);
+  border: 1px solid color-mix(in srgb, var(--default-color), transparent 88%);
+  border-radius: var(--bs-border-radius-xxl);
+  padding: 1.25rem;
+  margin-bottom: 30px;
+  box-shadow: var(--shadow-2);
+
+  @include a.mq-up(md) {
+    padding: 1.5rem;
+  }
+}
+
+.widget__title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  color: var(--heading-color);
+  position: relative;
+  padding-bottom: 0.65rem;
+
+  &:after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background: var(--accent-color);
+  }
+}
+
+.widget--search {
+  .widget__body {
+    position: relative;
+  }
+
+  .form-control {
+    padding-right: 50px;
+    border: 2px solid color-mix(in srgb, var(--default-color), transparent 85%);
+    border-radius: var(--bs-border-radius-pill);
+    padding: 12px 20px;
+    background: color-mix(in srgb, var(--surface-color), #ffffff 6%);
+    color: var(--default-color);
+
+    &:focus {
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--accent-color), transparent 80%);
+    }
+
+    &::placeholder {
+      color: color-mix(in srgb, var(--default-color), transparent 60%);
+    }
+  }
+
+  .widget__action {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--accent-color);
+    color: var(--contrast-color);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.3s ease;
+
+    &:hover {
+      background: color-mix(in srgb, var(--accent-color), transparent 20%);
+    }
+  }
+}
+
+.widget--filter {
+  .widget__label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--heading-color);
+  }
+
+  .form-select {
+    background: color-mix(in srgb, var(--surface-color), #ffffff 6%);
+    color: var(--default-color);
+    border: 2px solid color-mix(in srgb, var(--default-color), transparent 85%);
+    border-radius: var(--bs-border-radius-lg);
+    padding: 10px 15px;
+
+    &:focus {
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--accent-color), transparent 80%);
+    }
+  }
+}
+
+@include a.mq-down(md) {
+  .widget {
+    padding: 20px;
+  }
+}

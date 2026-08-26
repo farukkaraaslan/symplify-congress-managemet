@@ -1,0 +1,153 @@
+@model Symplify.BackOffice.WebUI.Models.CongressBoardMembers.CreateCongressBoardMemberViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    string postUrl = Url.Action("Create", "CongressBoardMembers", new { culture = currentCulture }) ?? $"/{currentCulture}/CongressBoardMembers/Create";
+    string defaultLanguageLabel = L.GetStringValue("Common.Default");
+    if (string.IsNullOrWhiteSpace(defaultLanguageLabel) || string.Equals(defaultLanguageLabel, "Common.Default", StringComparison.OrdinalIgnoreCase))
+    {
+        defaultLanguageLabel = "Varsayılan";
+    }
+}
+
+<div class="modal fade" id="createCommitteeMemberModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="createCongressBoardMemberForm" action="@postUrl" method="post" enctype="multipart/form-data" autocomplete="off">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="CongressId" />
+
+                <div class="modal-header">
+                    <div>
+                        <h6 class="modal-title">@L.GetStringValue("BackOffice.CongressBoardMembers.Create.Title")</h6>
+                        <small class="text-neutral-500 d-block mt-1">@L.GetStringValue("BackOffice.CongressBoardMembers.Create.Description")</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label='@L.GetStringValue("Common.Close")'></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="card border shadow-none mb-4">
+                        <div class="card-header border-bottom"><h6 class="text-md mb-0">@L.GetStringValue("Common.BasicInformation")</h6></div>
+                        <div class="card-body row gy-4">
+                            <div class="col-md-6">
+                                <label asp-for="CongressBoardId" class="form-label">@L.GetStringValue("BackOffice.CongressBoardMembers.Fields.BoardType") <required-mark></required-mark></label>
+                                <select asp-for="CongressBoardId" class="form-control form-select" data-val="true" data-val-required='@L.GetStringValue("BackOffice.CongressBoardMembers.Validation.BoardRequired")'>
+                                    <option value="">@L.GetStringValue("Common.Select")</option>
+                                    @foreach (var item in Model.BoardOptions)
+                                    {
+                                        <option value="@item.Id">@item.Name</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="CongressBoardId" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="AcademicTitle" class="form-label">@L.GetStringValue("BackOffice.CongressBoardMembers.Fields.AcademicTitle")</label>
+                                <select asp-for="AcademicTitle" class="form-control form-select">
+                                    <option value="">@L.GetStringValue("Common.Select")</option>
+                                    @foreach (string title in Model.AcademicTitleOptions)
+                                    {
+                                        <option value="@title">@(title == "-" ? L.GetStringValue("BackOffice.CongressBoardMembers.Fields.NoAcademicTitle") : title)</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="AcademicTitle" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="FullName" class="form-label">@L.GetStringValue("BackOffice.CongressBoardMembers.Fields.FullName") <required-mark></required-mark></label>
+                                <input asp-for="FullName" class="form-control" placeholder="Örn: Osman ÇAYDERE" maxlength="250" data-val="true" data-val-required='@L.GetStringValue("BackOffice.CongressBoardMembers.Validation.FullNameRequired")' />
+                                <span asp-validation-for="FullName" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Institution" class="form-label">@L.GetStringValue("BackOffice.CongressBoardMembers.Fields.Institution")</label>
+                                <input asp-for="Institution" class="form-control" placeholder="Örn: Gazi Üniversitesi" maxlength="500" />
+                                <span asp-validation-for="Institution" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6 d-flex align-items-end">
+                                <div class="form-switch switch-primary d-flex align-items-center gap-2 mt-4">
+                                    <input asp-for="IsActive" class="form-check-input" type="checkbox" role="switch" />
+                                    <label asp-for="IsActive" class="form-check-label">@L.GetStringValue("Common.ActiveQuestion")</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="ImageFile" class="form-label text-sm fw-medium">@L.GetStringValue("BackOffice.CongressBoardMembers.Fields.Photo")</label>
+                                <label class="border border-neutral-200 rounded-3 p-40 d-flex flex-column align-items-center justify-content-center text-center bg-neutral-50 cursor-pointer"
+                                       data-symplify-dropzone
+                                       data-dropzone-file-name-target=".js-board-member-image-file-name"
+                                       data-dropzone-preview-target=".js-board-member-image-preview"
+                                       data-dropzone-error-target=".js-board-member-image-error"
+                                       data-dropzone-accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                                       data-dropzone-max-size-mb="5"
+                                       data-dropzone-show-image-preview="true">
+                                    <img alt='@L.GetStringValue("BackOffice.CongressBoardMembers.Fields.Photo")'
+                                         class="js-board-member-image-preview d-none rounded-circle object-fit-cover w-96-px h-96-px mb-16"
+                                         data-dropzone-preview />
+                                    <i class="ri-user-add-line text-4xl text-neutral-400 mb-2"></i>
+                                    <span class="btn btn-outline-primary-600 radius-8 px-20 py-11 d-inline-flex align-items-center gap-2 mt-2">@L.GetStringValue("BackOffice.CongressBoardMembers.Buttons.SelectPhoto")</span>
+                                    <span class="text-xs text-neutral-500 mt-2 js-board-member-image-file-name" data-dropzone-file-name>@L.GetStringValue("BackOffice.CongressBoardMembers.Help.Photo")</span>
+                                    <span class="text-danger d-none mt-2 js-board-member-image-error" data-dropzone-error></span>
+                                    <input asp-for="ImageFile" type="file" class="d-none" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" />
+                                </label>
+                                <span asp-validation-for="ImageFile" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border shadow-none">
+                        <div class="card-header border-bottom"><h6 class="text-md mb-0">@L.GetStringValue("Common.Translations")</h6></div>
+                        <div class="card-body">
+                            <ul class="nav nav-pills mb-3" role="tablist">
+                                @for (int i = 0; i < Model.Translations.Count; i++)
+                                {
+                                    string paneId = "committeeCreateTranslation-" + i;
+                                    string tabId = paneId + "-tab";
+
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link @(i == 0 ? "active" : string.Empty)"
+                                                id="@tabId"
+                                                data-bs-toggle="pill"
+                                                data-bs-target="#@paneId"
+                                                type="button"
+                                                role="tab"
+                                                aria-controls="@paneId"
+                                                aria-selected="@(i == 0 ? "true" : "false")">
+                                            <span class="d-inline-flex align-items-center gap-2">
+                                                <span>@Model.Translations[i].LanguageName</span>
+                                                @if (Model.Translations[i].IsDefault)
+                                                {
+                                                    <span class="badge bg-primary-50 text-primary-600 rounded-pill">@defaultLanguageLabel</span>
+                                                }
+                                            </span>
+                                        </button>
+                                    </li>
+                                }
+                            </ul>
+                            <div class="tab-content">
+                                @for (int i = 0; i < Model.Translations.Count; i++)
+                                {
+                                    <div class="tab-pane fade @(i == 0 ? "show active" : null)" id="committeeCreateTranslation-@i" role="tabpanel" aria-labelledby="committeeCreateTranslation-@i-tab" tabindex="0">
+                                        <input type="hidden" asp-for="Translations[i].LanguageId" />
+                                        <input type="hidden" asp-for="Translations[i].Culture" />
+                                        <input type="hidden" asp-for="Translations[i].LanguageName" />
+                                        <input type="hidden" asp-for="Translations[i].IsDefault" />
+                                        <div class="row gy-4">
+                                            <div class="col-12">
+                                                <label asp-for="Translations[i].Biography" class="form-label">@L.GetStringValue("BackOffice.CongressBoardMembers.Fields.Description")</label>
+                                                <textarea asp-for="Translations[i].Biography" class="form-control" rows="4" placeholder='@L.GetStringValue("BackOffice.CongressBoardMembers.Placeholders.Description")'></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light-100 text-dark radius-8 px-20 py-11 d-flex align-items-center gap-2" data-bs-dismiss="modal">@L.GetStringValue("Common.Cancel")</button>
+                    <button type="submit" class="btn btn-primary-600 radius-8 px-20 py-11 d-flex align-items-center gap-2">@L.GetStringValue("BackOffice.CongressBoardMembers.Buttons.Save")</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+

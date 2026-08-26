@@ -1,0 +1,17 @@
+@using Symplify.BackOffice.WebUI.Localization
+@inject IBackOfficeViewLocalizer L
+@{
+    string culture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+}
+<div class="card border shadow-none radius-12">
+    <div class="card-body text-center py-64">
+        <div class="mb-20">
+            <i class="ri-shield-cross-line text-danger text-5xl"></i>
+        </div>
+        <h5 class="mb-8">@L["BackOffice.Auth.AccessDenied.Title"]</h5>
+        <p class="text-neutral-500 mb-24">@L["BackOffice.Auth.AccessDenied.Message"]</p>
+        <a asp-controller="Auth" asp-action="Login" asp-route-culture="@culture" class="btn btn-primary-600 radius-8 px-20 py-11">
+            @L["BackOffice.Auth.AccessDenied.BackToLogin"]
+        </a>
+    </div>
+</div>

@@ -1,0 +1,177 @@
+@model Symplify.BackOffice.WebUI.Models.Congresses.ManageCongressViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+
+    string getListUrl = Url.Action("GetList", "CongressBoardMembers", new { culture = currentCulture }) ?? $"/{currentCulture}/CongressBoardMembers/GetList";
+    string createModalUrl = Url.Action("CreateModal", "CongressBoardMembers", new { culture = currentCulture, congressId = Model.Id }) ?? $"/{currentCulture}/CongressBoardMembers/CreateModal?congressId={Model.Id}";
+    string editModalUrl = Url.Action("EditModal", "CongressBoardMembers", new { culture = currentCulture }) ?? $"/{currentCulture}/CongressBoardMembers/EditModal";
+    string deleteUrl = Url.Action("Delete", "CongressBoardMembers", new { culture = currentCulture }) ?? $"/{currentCulture}/CongressBoardMembers/Delete";
+    string reorderUrl = Url.Action("Reorder", "CongressBoardMembers", new { culture = currentCulture, congressId = Model.Id }) ?? $"/{currentCulture}/CongressBoardMembers/Reorder?congressId={Model.Id}";
+    string signatureModalUrl = Url.Action("EditModal", "CongressBoardMemberSignatures", new { culture = currentCulture }) ?? $"/{currentCulture}/congress-board-member-signatures/edit-modal";
+    string excelTemplateUrl = Url.Action("DownloadExcelTemplate", "CongressBoardMembers", new { culture = currentCulture, congressId = Model.Id }) ?? $"/{currentCulture}/CongressBoardMembers/DownloadExcelTemplate?congressId={Model.Id}";
+    string filterOptionsUrl = Url.Action("GetFilterOptions", "CongressBoardMembers", new { culture = currentCulture, congressId = Model.Id }) ?? $"/{currentCulture}/CongressBoardMembers/GetFilterOptions?congressId={Model.Id}";
+    string excelUploadModalUrl = Url.Action("UploadExcelModal", "CongressBoardMembers", new { culture = currentCulture, congressId = Model.Id }) ?? $"/{currentCulture}/CongressBoardMembers/UploadExcelModal?congressId={Model.Id}";
+
+    string boardListUrl = Url.Action("GetManageList", "CongressBoards", new { culture = currentCulture, congressId = Model.Id }) ?? $"/{currentCulture}/congress-boards/manage-list?congressId={Model.Id}";
+    string boardCreateModalUrl = Url.Action("CreateManageModal", "CongressBoards", new { culture = currentCulture, congressId = Model.Id }) ?? $"/{currentCulture}/congress-boards/create-modal?congressId={Model.Id}";
+    string boardEditModalUrl = Url.Action("EditManageModal", "CongressBoards", new { culture = currentCulture }) ?? $"/{currentCulture}/congress-boards/edit-modal";
+    string boardDeleteUrl = Url.Action("DeleteManage", "CongressBoards", new { culture = currentCulture }) ?? $"/{currentCulture}/congress-boards/delete-manage";
+    string boardReorderUrl = Url.Action("ReorderManage", "CongressBoards", new { culture = currentCulture, congressId = Model.Id }) ?? $"/{currentCulture}/congress-boards/reorder-manage?congressId={Model.Id}";
+}
+
+<div class="card border shadow-none mb-4"
+     id="congressBoardMemberPanel"
+     data-congress-id="@Model.Id"
+     data-source-url="@getListUrl"
+     data-create-modal-url="@createModalUrl"
+     data-edit-modal-url="@editModalUrl"
+     data-delete-url="@deleteUrl"
+     data-reorder-url="@reorderUrl"
+     data-signature-modal-url="@signatureModalUrl"
+     data-excel-upload-modal-url="@excelUploadModalUrl"
+     data-filter-options-url="@filterOptionsUrl"
+     data-board-list-url="@boardListUrl"
+     data-board-create-modal-url="@boardCreateModalUrl"
+     data-board-edit-modal-url="@boardEditModalUrl"
+     data-board-delete-url="@boardDeleteUrl"
+     data-board-reorder-url="@boardReorderUrl">
+
+    @Html.AntiForgeryToken()
+
+    <div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <h6 class="text-md mb-0">@L.GetStringValue("BackOffice.CongressBoardMembers.ListTitle")</h6>
+            <small class="text-neutral-500">@L.GetStringValue("BackOffice.CongressBoardMembers.ListDescription")</small>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button id="openCreateBoardMemberModalButton" class="btn btn-primary-600 radius-8 px-20 py-11 d-flex align-items-center gap-2" type="button">
+                <i class="ri-add-line me-1"></i> @L.GetStringValue("BackOffice.CongressBoardMembers.Buttons.New")
+            </button>
+            <button id="openBoardMemberExcelUploadModalButton" class="btn btn-primary-600 radius-8 px-20 py-11 d-flex align-items-center gap-2" type="button">
+                <i class="ri-upload-2-line me-1"></i> @L.GetStringValue("BackOffice.CongressBoardMembers.Buttons.ExcelUpload")
+            </button>
+            <a class="btn btn-outline-neutral-900 radius-8 px-20 py-11 d-flex align-items-center gap-2" href="@excelTemplateUrl">
+                <i class="ri-download-2-line me-1"></i> @L.GetStringValue("BackOffice.CongressBoardMembers.Buttons.ExcelTemplate")
+            </a>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="card border shadow-none mb-24">
+            <div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                    <h6 class="text-md mb-0">@L.GetStringValue("BackOffice.CongressBoards.ListTitle")</h6>
+                    <small class="text-neutral-500">@L.GetStringValue("BackOffice.CongressBoards.ListDescription")</small>
+                </div>
+                <button id="openCreateCongressBoardModalButton" class="btn btn-primary-100 text-primary-600 radius-8 px-12 py-8 d-flex align-items-center gap-2" type="button">
+                    <i class="ri-add-line me-1"></i> @L.GetStringValue("BackOffice.CongressBoards.Buttons.New")
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table bordered-table mb-0" id="congressBoardsTable">
+                        <thead>
+                            <tr>
+                                <th>@L.GetStringValue("BackOffice.CongressBoards.Fields.Order")</th>
+                                <th>@L.GetStringValue("BackOffice.CongressBoards.Fields.Name")</th>
+                                <th>@L.GetStringValue("BackOffice.CongressBoards.Fields.Description")</th>
+                                <th>@L.GetStringValue("Common.Status")</th>
+                                <th class="text-end">@L.GetStringValue("Common.Actions")</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="5" class="text-center text-neutral-500 py-24">@L.GetStringValue("Common.Loading")</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="row gy-3 mb-24">
+            <div class="col-md-6 col-xl-3">
+                <div class="border rounded-3 p-16 h-100">
+                    <span class="text-sm text-neutral-500 d-block mb-1">@L.GetStringValue("BackOffice.CongressBoardMembers.Summary.Total")</span>
+                    <h6 class="mb-0" data-committee-summary="total">0</h6>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-3">
+                <div class="border rounded-3 p-16 h-100">
+                    <span class="text-sm text-neutral-500 d-block mb-1">@L.GetStringValue("BackOffice.CongressBoardMembers.Summary.Organizing")</span>
+                    <h6 class="mb-0" data-committee-summary="organizing">0</h6>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-3">
+                <div class="border rounded-3 p-16 h-100">
+                    <span class="text-sm text-neutral-500 d-block mb-1">@L.GetStringValue("BackOffice.CongressBoardMembers.Summary.Scientific")</span>
+                    <h6 class="mb-0" data-committee-summary="scientific">0</h6>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-3">
+                <div class="border rounded-3 p-16 h-100">
+                    <span class="text-sm text-neutral-500 d-block mb-1">@L.GetStringValue("BackOffice.CongressBoardMembers.Summary.Secretariat")</span>
+                    <h6 class="mb-0" data-committee-summary="secretariat">0</h6>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border shadow-none mb-24">
+            <div class="card-header border-bottom">
+                <h6 class="text-md mb-0">@L.GetStringValue("BackOffice.CongressBoardMembers.Filters.Title")</h6>
+            </div>
+            <div class="card-body">
+                <div class="row gy-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label">@L.GetStringValue("BackOffice.CongressBoardMembers.Fields.BoardType")</label>
+                        <select class="form-control form-select committee-board-filter">
+                            <option value="">@L.GetStringValue("Common.All")</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">@L.GetStringValue("BackOffice.CongressBoardMembers.Fields.AcademicTitle")</label>
+                        <select class="form-control form-select committee-title-filter">
+                            <option value="">@L.GetStringValue("Common.All")</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">@L.GetStringValue("BackOffice.CongressBoardMembers.Fields.Status")</label>
+                        <select class="form-control form-select committee-status-filter">
+                            <option value="">@L.GetStringValue("Common.All")</option>
+                            <option value="Aktif">@L.GetStringValue("Common.Active")</option>
+                            <option value="Pasif">@L.GetStringValue("Common.Passive")</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <button class="btn btn-outline-neutral-900 radius-8 px-20 py-11 d-flex align-items-center justify-content-center committee-filter-reset" type="button">
+                            <i class="ri-refresh-line"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table bordered-table mb-0" id="congressBoardMembersTable">
+                <thead>
+                    <tr>
+                        <th>@L.GetStringValue("BackOffice.CongressBoardMembers.Fields.Order")</th>
+                        <th>@L.GetStringValue("BackOffice.CongressBoardMembers.Fields.BoardType")</th>
+                        <th>@L.GetStringValue("BackOffice.CongressBoardMembers.Fields.AcademicTitle")</th>
+                        <th>@L.GetStringValue("BackOffice.CongressBoardMembers.Fields.FullName")</th>
+                        <th>@L.GetStringValue("BackOffice.CongressBoardMembers.Fields.Institution")</th>
+                        <th>@L.GetStringValue("BackOffice.CongressBoardMembers.Fields.SignatureAuthority")</th>
+                        <th>@L.GetStringValue("BackOffice.CongressBoardMembers.Fields.Status")</th>
+                        <th class="text-end">@L.GetStringValue("Common.Actions")</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="congressBoardMemberModalContainer"></div>
+

@@ -1,0 +1,175 @@
+@model Symplify.BackOffice.WebUI.Models.OrganizationApiKeys.OrganizationApiKeysIndexViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+
+    ViewData["Title"] = L.GetStringValue("BackOffice.OrganizationApiKeys.PageTitle");
+
+    const string controllerName = "OrganizationApiKeys";
+    const string featureName = "organization-api-keys";
+
+    string homeUrl = Url.Action("Index", "Home", new { culture = currentCulture })
+        ?? $"/{currentCulture}/home/index";
+
+    string organizationIndexUrl = Url.Action("Index", "Organizations", new { culture = currentCulture })
+        ?? $"/{currentCulture}/organizations/index";
+
+    string createUrl = Url.Action("Create", controllerName, new { culture = currentCulture, organizationId = Model.OrganizationId })
+        ?? $"/{currentCulture}/organizationapikeys/create?organizationId={Model.OrganizationId}";
+
+    string getListUrl = Url.Action("GetList", controllerName, new { culture = currentCulture, organizationId = Model.OrganizationId })
+        ?? $"/{currentCulture}/organizationapikeys/getlist?organizationId={Model.OrganizationId}";
+
+    string pageDescriptionTemplate = L.GetStringValue("BackOffice.OrganizationApiKeys.PageDescription");
+    string pageDescription = string.Format(pageDescriptionTemplate, Model.OrganizationName);
+}
+
+@Html.AntiForgeryToken()
+
+<div class="dashboard-main-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-0">@L.GetStringValue("BackOffice.OrganizationApiKeys.PageTitle")</h6>
+            <small class="text-neutral-500">@pageDescription</small>
+        </div>
+
+        <ul class="d-flex align-items-center gap-2">
+            <li class="fw-medium">
+                <a href="@homeUrl"
+                   class="d-flex align-items-center gap-1 hover-text-primary text-neutral-600">
+                    <iconify-icon icon="solar:home-smile-angle-outline" class="icon text-lg"></iconify-icon>
+                    @L.GetStringValue("Common.Panel")
+                </a>
+            </li>
+            <li>-</li>
+            <li class="fw-medium">
+                <a href="@organizationIndexUrl" class="hover-text-primary text-neutral-600">
+                    @L.GetStringValue("BackOffice.Organizations.PageTitle")
+                </a>
+            </li>
+            <li>-</li>
+            <li class="fw-medium">@L.GetStringValue("BackOffice.OrganizationApiKeys.PageTitle")</li>
+        </ul>
+    </div>
+
+    <div class="alert alert-info bg-primary-50 border-primary-100 text-primary-700 d-flex align-items-start gap-3 mb-24">
+        <i class="ri-information-line text-xl mt-1"></i>
+        <div class="flex-grow-1">
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                <h6 class="text-md mb-0">@Model.OrganizationName</h6>
+
+                @if (!string.IsNullOrWhiteSpace(Model.OrganizationCode))
+                {
+                    <span class="badge bg-primary-100 text-primary-600 rounded-pill px-12 py-6">
+                        @Model.OrganizationCode.ToUpperInvariant()
+                    </span>
+                }
+
+                <span class="badge @(Model.IsOrganizationActive ? "bg-success-100 text-success-600" : "bg-danger-100 text-danger-600") rounded-pill px-12 py-6">
+                    @(Model.IsOrganizationActive
+                        ? L.GetStringValue("BackOffice.Organizations.Status.ActiveOrganization")
+                        : L.GetStringValue("BackOffice.Organizations.Status.PassiveOrganization"))
+                </span>
+            </div>
+
+            <p class="mb-0">
+                @L.GetStringValue("BackOffice.OrganizationApiKeys.ManagementDescription")
+            </p>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.OneTimePlainTextKey))
+    {
+        <div class="alert alert-warning bg-warning-100 border-warning-200 text-warning-700 mb-24">
+            <strong>@L.GetStringValue("BackOffice.OrganizationApiKeys.Warning.OneTimeSecretTitle")</strong>
+            <p class="mb-2">
+                @L.GetStringValue("BackOffice.OrganizationApiKeys.Warning.OneTimeSecretMessage")
+            </p>
+
+            <div class="input-group mt-2">
+                <input id="oneTimeApiKey" class="form-control font-monospace" value="@Model.OneTimePlainTextKey" readonly />
+                <button type="button" class="btn btn-warning-600 text-white js-copy-one-time-key">
+                    <i class="ri-file-copy-line me-1"></i>
+                    @L.GetStringValue("BackOffice.OrganizationApiKeys.Buttons.Copy")
+                </button>
+            </div>
+        </div>
+    }
+
+    <div class="card border shadow-none radius-12">
+        <div class="card-header border-bottom d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+                <h6 class="mb-1">@L.GetStringValue("BackOffice.OrganizationApiKeys.ListTitle")</h6>
+                <small class="text-neutral-500">
+                    @L.GetStringValue("BackOffice.OrganizationApiKeys.ListDescription")
+                </small>
+            </div>
+
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <a href="@organizationIndexUrl"
+                   class="btn btn-outline-neutral-900 radius-8 px-16 py-9 d-inline-flex align-items-center gap-2">
+                    <i class="ri-arrow-left-line"></i>
+                    @L.GetStringValue("BackOffice.OrganizationApiKeys.BackToOrganizations")
+                </a>
+
+                <a href="@createUrl"
+                   class="btn btn-primary-600 radius-8 px-20 py-11 d-inline-flex align-items-center gap-2">
+                    <i class="ri-key-2-line"></i>
+                    @L.GetStringValue("BackOffice.OrganizationApiKeys.CreateButton")
+                </a>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table bordered-table mb-0 js-organization-api-key-table"
+                       id="organizationApiKeysTable"
+                       data-feature="@featureName"
+                       data-source-url="@getListUrl"
+                       data-organization-id="@Model.OrganizationId">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>@L.GetStringValue("BackOffice.OrganizationApiKeys.Fields.Name")</th>
+                            <th>@L.GetStringValue("BackOffice.OrganizationApiKeys.Fields.Environment")</th>
+                            <th>@L.GetStringValue("BackOffice.OrganizationApiKeys.Fields.KeyType")</th>
+                            <th>@L.GetStringValue("BackOffice.OrganizationApiKeys.Fields.KeyPrefix")</th>
+                            <th>@L.GetStringValue("BackOffice.OrganizationApiKeys.Fields.Scopes")</th>
+                            <th>@L.GetStringValue("BackOffice.OrganizationApiKeys.Fields.IsActive")</th>
+                            <th>@L.GetStringValue("BackOffice.OrganizationApiKeys.Fields.ExpiresAt")</th>
+                            <th>@L.GetStringValue("BackOffice.OrganizationApiKeys.Fields.LastUsedAt")</th>
+                            <th class="text-end">@L.GetStringValue("Common.Actions")</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_LocalizationScripts")
+
+    <script>
+        window.Symplify = window.Symplify || {};
+        window.Symplify.OrganizationApiKeys = window.Symplify.OrganizationApiKeys || {};
+        window.Symplify.OrganizationApiKeys.texts = Object.assign(window.Symplify.OrganizationApiKeys.texts || {}, {
+            copied: window.Symplify.t("Common.Copied", "Kopyalandı."),
+            copyFailed: window.Symplify.t("Common.CopyFailed", "Kopyalama işlemi başarısız oldu."),
+            copy: window.Symplify.t("Common.Copy", "Kopyala"),
+            active: window.Symplify.t("Common.Active", "Aktif"),
+            passive: window.Symplify.t("Common.Passive", "Pasif"),
+            neverUsed: window.Symplify.t("BackOffice.OrganizationApiKeys.NeverUsed", "Henüz kullanılmadı"),
+            notExpire: window.Symplify.t("BackOffice.OrganizationApiKeys.NotExpire", "Süresiz"),
+            noScope: window.Symplify.t("BackOffice.OrganizationApiKeys.Scopes.EmptyShort", "Kapsam yok"),
+            showMoreScopes: window.Symplify.t("BackOffice.OrganizationApiKeys.Scopes.ShowMore", "+{0} kapsam"),
+            keyPrefixCopied: window.Symplify.t("BackOffice.OrganizationApiKeys.Messages.KeyPrefixCopied", "Key prefix kopyalandı.")
+        });
+    </script>
+
+    <script src="~/js/features/organization-api-keys/organization-api-keys.table.js" asp-append-version="true"></script>
+    <script src="~/js/features/organization-api-keys/organization-api-keys.index.js" asp-append-version="true"></script>
+}
+

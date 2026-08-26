@@ -1,0 +1,79 @@
+@model Symplify.BackOffice.WebUI.Models.Congresses.ManageCongressViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+
+    string getListUrl = Url.Action("GetList", "CongressSliders", new { culture = currentCulture })
+        ?? $"/{currentCulture}/CongressSliders/GetList";
+
+    string createModalUrl = Url.Action("CreateModal", "CongressSliders", new { culture = currentCulture, congressId = Model.Id })
+        ?? $"/{currentCulture}/CongressSliders/CreateModal?congressId={Model.Id}";
+
+    string editModalUrl = Url.Action("EditModal", "CongressSliders", new { culture = currentCulture })
+        ?? $"/{currentCulture}/CongressSliders/EditModal";
+
+    string deleteUrl = Url.Action("Delete", "CongressSliders", new { culture = currentCulture })
+        ?? $"/{currentCulture}/CongressSliders/Delete";
+
+    string reorderUrl = Url.Action("Reorder", "CongressSliders", new { culture = currentCulture, congressId = Model.Id })
+        ?? $"/{currentCulture}/CongressSliders/Reorder?congressId={Model.Id}";
+}
+
+<div class="card border shadow-none mb-4"
+     id="congressSliderPanel"
+     data-congress-id="@Model.Id"
+     data-source-url="@getListUrl"
+     data-reorder-url="@reorderUrl"
+     data-create-modal-url="@createModalUrl"
+     data-edit-modal-url="@editModalUrl"
+     data-delete-url="@deleteUrl">
+
+    @Html.AntiForgeryToken()
+
+    <div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <h6 class="text-md mb-0">@L.GetStringValue("BackOffice.CongressSliders.ListTitle")</h6>
+            <small class="text-neutral-500">
+                @L.GetStringValue("BackOffice.CongressSliders.ListDescription")
+            </small>
+        </div>
+
+        <button id="openCreateSliderModalButton"
+                class="btn btn-primary-600 radius-8 px-20 py-11 d-flex align-items-center gap-2"
+                type="button">
+            <i class="ri-add-line me-1"></i>
+            @L.GetStringValue("BackOffice.CongressSliders.Buttons.New")
+        </button>
+    </div>
+
+    <div class="card-body">
+        <div class="alert alert-info bg-info-50 text-info-700 border-info-100 mb-3">
+            @L.GetStringValue("BackOffice.CongressSliders.Reorder.Help")
+        </div>
+
+        <div class="table-responsive">
+            <table class="table bordered-table mb-0"
+                   id="congressSlidersTable"
+                   data-reorder-url="@reorderUrl">
+                <thead>
+                    <tr>
+                        <th class="text-nowrap">#</th>
+                        <th class="text-center text-nowrap"></th>
+                        <th class="text-nowrap">@L.GetStringValue("BackOffice.CongressSliders.Fields.Order")</th>
+                        <th class="text-nowrap">@L.GetStringValue("BackOffice.CongressSliders.Fields.Image")</th>
+                        <th>@L.GetStringValue("BackOffice.CongressSliders.Fields.Title")</th>
+                        <th>@L.GetStringValue("BackOffice.CongressSliders.Fields.Subtitle")</th>
+                        <th class="text-nowrap">@L.GetStringValue("BackOffice.CongressSliders.Fields.Language")</th>
+                        <th class="text-nowrap">@L.GetStringValue("BackOffice.CongressSliders.Fields.Status")</th>
+                        <th class="text-end text-nowrap">@L.GetStringValue("Common.Actions")</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="congressSliderModalContainer"></div>
+

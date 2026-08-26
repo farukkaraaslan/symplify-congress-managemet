@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Core.CrossCuttingConcers\Core.CrossCuttingConcerns.csproj" />
+    <ProjectReference Include="..\Core.Security\Core.Security.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Responses\" />
+    <Folder Include="Pipelines\Caching\" />
+    <Folder Include="Pipelines\Authorization\" />
+  </ItemGroup>
+
+</Project>

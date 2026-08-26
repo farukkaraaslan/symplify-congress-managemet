@@ -1,0 +1,313 @@
+@using Symplify.BackOffice.Application.Features.UserProfiles.Constants
+@using Symplify.BackOffice.WebUI.Localization
+@inject IBackOfficeViewLocalizer L
+@model Symplify.BackOffice.WebUI.Models.Profile.ProfileViewModel
+
+@{
+    string currentCulture = Context.Request.RouteValues["culture"]?.ToString() ?? "tr-TR";
+    bool isEnglishCulture = currentCulture.StartsWith("en", StringComparison.OrdinalIgnoreCase);
+
+    string T(string key, string trFallback, string? enFallback = null)
+    {
+        string value = L.GetStringValue(key);
+
+        if (!string.IsNullOrWhiteSpace(value) &&
+            !string.Equals(value, key, StringComparison.OrdinalIgnoreCase))
+        {
+            return value;
+        }
+
+        return isEnglishCulture && !string.IsNullOrWhiteSpace(enFallback)
+            ? enFallback
+            : trFallback;
+    }
+
+    string displayName = $"{Model.Profile.Name} {Model.Profile.Surname}".Trim();
+    if (string.IsNullOrWhiteSpace(displayName))
+    {
+        displayName = Model.Profile.Email;
+    }
+
+    string initials = GetInitials(Model.Profile.Name, Model.Profile.Surname, Model.Profile.Email);
+    bool hasProfilePhoto = !string.IsNullOrWhiteSpace(Model.Profile.ProfileImageUrl);
+    string profilePhotoClass = hasProfilePhoto ? "profile-photo-preview--has-photo" : string.Empty;
+    string profilePhotoAlt = T(ProfileResourceKeys.PhotoAlt, "Profil fotoğrafı", "Profile photo");
+    string photoUpdateText = T(ProfileResourceKeys.PhotoUpdate, "Fotoğrafı güncelle", "Update photo");
+    string phoneRequiredMessage = T("BackOffice.Profile.Validation.PhoneRequired", "Telefon numarası zorunludur.", "Phone number is required.");
+    string phoneInvalidMessage = T(ProfileResourceKeys.ValidationPhoneInvalid, "Telefon numarasını geçerli formatta giriniz.", "Enter a valid phone number.");
+    string firstRole = Model.Roles.FirstOrDefault() ?? T("BackOffice.Profile.Role.User", "Kullanıcı", "User");
+    string homeUrl = Url.Action("Index", "Home", new { culture = currentCulture }) ?? $"/{currentCulture}/Home/Index";
+    string submissionsUrl = Url.Action("Index", "Submissions", new { culture = currentCulture }) ?? $"/{currentCulture}/Submissions/Index";
+
+    ViewData["Title"] = T(ProfileResourceKeys.PageTitle, "Profilim", "My Profile");
+    ViewData["SuppressSidebar"] = true;
+    ViewData["UseAuthorTemplate"] = true;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/css/intlTelInput.css" />
+}
+
+<div class="author-container">
+    <div class="author-page-head">
+        <div>
+            <span class="author-kicker">
+                <i class="ri-user-settings-line"></i>
+                @T(ProfileResourceKeys.Kicker, "Hesap Bilgileri", "Account Information")
+            </span>
+            <h1 class="author-title h4">@T(ProfileResourceKeys.Title, "Profilim", "My Profile")</h1>
+            <p class="author-subtitle">
+                @T(ProfileResourceKeys.Description, "Kişisel bilgilerini ve şifreni güvenli şekilde buradan yönetebilirsin.", "You can securely manage your personal information and password here.")
+            </p>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <a href="@homeUrl" class="btn btn-outline-primary-600 radius-10 px-16 py-10">
+                <i class="ri-arrow-left-line me-1"></i>
+                @T(ProfileResourceKeys.Home, "Ana Sayfa", "Home")
+            </a>
+            <a href="@submissionsUrl" class="btn btn-primary-600 radius-10 px-16 py-10">
+                <i class="ri-file-list-3-line me-1"></i>
+                @T(ProfileResourceKeys.MySubmissions, "Bildirilerim", "My Submissions")
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] is not null)
+    {
+        <div class="alert alert-success border-success-100 text-success-700 mb-24">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger border-danger-100 text-danger-700 mb-24">
+            <div asp-validation-summary="All"></div>
+        </div>
+    }
+
+    <div class="row gy-4">
+        <div class="col-xl-4">
+            <section class="card border-0 radius-12">
+                <div class="card-body p-24 text-center">
+                    <div class="position-relative d-inline-block mx-auto">
+                        <div id="profilePhotoPreview"
+                             class="@profilePhotoClass w-120-px h-120-px rounded-circle bg-primary-50 text-primary-600 border border-primary-100 d-inline-flex align-items-center justify-content-center overflow-hidden text-3xl fw-bold"
+                             data-profile-photo-box
+                             data-avatar-text="@initials">
+                            @if (hasProfilePhoto)
+                            {
+                                <img src="@Model.Profile.ProfileImageUrl" alt="@profilePhotoAlt" class="w-100 h-100 object-fit-cover d-block" />
+                            }
+                            <span class="@(hasProfilePhoto ? "d-none" : string.Empty)">@initials</span>
+                        </div>
+                        <label for="profilePhotoInput"
+                               class="position-absolute end-0 bottom-0 w-40-px h-40-px rounded-circle border border-3 border-white bg-primary-600 text-white d-inline-flex align-items-center justify-content-center cursor-pointer shadow-sm"
+                               title="@photoUpdateText"
+                               aria-label="@photoUpdateText">
+                            <i class="ri-camera-line"></i>
+                        </label>
+                    </div>
+
+                    <h5 class="fw-semibold mb-1 mt-16 mb-1">@displayName</h5>
+                    <p class="text-neutral-500 text-sm mb-12">@Model.Profile.Email</p>
+                    <div class="d-flex flex-wrap justify-content-center gap-2">
+                        @foreach (string role in Model.Roles)
+                        {
+                            <span class="status-pill status-pill--primary">@ResolveRoleText(role)</span>
+                        }
+                    </div>
+                    @if (!Model.Roles.Any())
+                    {
+                        <span class="status-pill status-pill--primary">@ResolveRoleText(firstRole)</span>
+                    }
+                    <p class="text-sm text-neutral-500 mb-0 mt-16 mb-0">
+                        @T(ProfileResourceKeys.PhotoHelp, "Profil fotoğrafı yoksa ad ve soyad baş harflerin gösterilir.", "If there is no profile photo, your initials are displayed.")
+                    </p>
+                </div>
+            </section>
+
+            <section class="help-box help-box--primary mt-20">
+                <div class="d-flex gap-3 align-items-start">
+                    <span class="author-mini-avatar"><i class="ri-shield-check-line"></i></span>
+                    <div>
+                        <h6 class="mb-2">@T(ProfileResourceKeys.SecurityNoteTitle, "Güvenlik notu", "Security note")</h6>
+                        <p class="text-sm text-neutral-500 mb-0">
+                            @T(ProfileResourceKeys.SecurityNoteDescription, "Şifreni düzenli aralıklarla değiştir. Paylaşılan veya tahmin edilebilir şifre kullanma.", "Change your password regularly. Do not use shared or predictable passwords.")
+                        </p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-xl-8">
+            <section class="card border-0 radius-12">
+                <div class="card-header bg-base border-bottom py-16 px-24 d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                    <div>
+                        <h5 class="fw-semibold mb-1">@T(ProfileResourceKeys.ProfileInformation, "Profil Bilgileri", "Profile Information")</h5>
+                        <p class="text-sm text-neutral-500 mb-0">
+                            @T(ProfileResourceKeys.ProfileInformationDescription, "Ad, soyad, telefon, kurum ve ORCID bilgilerini güncelleyebilirsin.", "You can update your name, phone, institution, and ORCID information.")
+                        </p>
+                    </div>
+                    <span class="status-pill status-pill--muted">
+                        <i class="ri-lock-line"></i>
+                        @T(ProfileResourceKeys.EmailReadonly, "E-posta yönetici tarafından değiştirilir", "Email is changed by the administrator")
+                    </span>
+                </div>
+                <div class="card-body p-24">
+                    <form asp-controller="Profile"
+                          asp-action="Update"
+                          asp-route-culture="@currentCulture"
+                          method="post"
+                          enctype="multipart/form-data"
+                          data-profile-form>
+                        @Html.AntiForgeryToken()
+                        <input asp-for="Profile.Id" type="hidden" />
+                        <input asp-for="Profile.ProfileImageFile"
+                               id="profilePhotoInput"
+                               type="file"
+                               class="d-none"
+                               accept="image/png,image/jpeg,image/webp"
+                               data-profile-photo-input="#profilePhotoPreview" />
+
+                        <div class="row gy-3">
+                            <div class="col-md-6">
+                                <label asp-for="Profile.Name" class="form-label">@T(ProfileResourceKeys.FieldName, "Ad", "First Name")</label>
+                                <input asp-for="Profile.Name" class="form-control" data-normalize-person-name="true" />
+                                <span asp-validation-for="Profile.Name" class="text-danger text-sm"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Profile.Surname" class="form-label">@T(ProfileResourceKeys.FieldSurname, "Soyad", "Last Name")</label>
+                                <input asp-for="Profile.Surname" class="form-control" data-normalize-surname="true" />
+                                <span asp-validation-for="Profile.Surname" class="text-danger text-sm"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Profile.Email" class="form-label">@T(ProfileResourceKeys.FieldEmail, "E-posta", "Email")</label>
+                                <input asp-for="Profile.Email" class="form-control" readonly />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Profile.PhoneNumberDisplay" class="form-label">@T(ProfileResourceKeys.FieldPhone, "Telefon", "Phone")</label>
+                                <input asp-for="Profile.PhoneNumber"
+                                       type="hidden"
+                                       id="ProfilePhoneNumber"
+                                       data-profile-phone-hidden />
+                                <input asp-for="Profile.PhoneNumberDisplay"
+                                       id="ProfilePhoneNumberDisplay"
+                                       type="tel"
+                                       class="form-control"
+                                       autocomplete="tel-national"
+                                       placeholder="5413900441"
+                                       data-profile-phone-input
+                                       data-profile-phone-required-message="@phoneRequiredMessage"
+                                       data-profile-phone-invalid-message="@phoneInvalidMessage" />
+                                <span asp-validation-for="Profile.PhoneNumber" class="text-danger text-sm" data-profile-phone-validation></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Profile.Institution" class="form-label">@T(ProfileResourceKeys.FieldInstitution, "Kurum", "Institution")</label>
+                                <input asp-for="Profile.Institution" class="form-control" data-normalize-institution="true" />
+                                <span asp-validation-for="Profile.Institution" class="text-danger text-sm"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Profile.Orcid" class="form-label">@T(ProfileResourceKeys.FieldOrcid, "ORCID", "ORCID")</label>
+                                <input asp-for="Profile.Orcid" class="form-control" />
+                                <span asp-validation-for="Profile.Orcid" class="text-danger text-sm"></span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-24">
+                            <button type="submit" class="btn btn-primary-600 radius-10 px-20 py-11">
+                                <i class="ri-save-3-line me-1"></i>
+                                @T(ProfileResourceKeys.UpdateProfile, "Profili Güncelle", "Update Profile")
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section class="card border-0 radius-12 mt-24" id="password-card">
+                <div class="card-header bg-base border-bottom py-16 px-24 d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                    <div>
+                        <h5 class="fw-semibold mb-1">@T(ProfileResourceKeys.ChangePasswordTitle, "Şifre Değiştir", "Change Password")</h5>
+                        <p class="text-sm text-neutral-500 mb-0">
+                            @T(ProfileResourceKeys.ChangePasswordDescription, "Mevcut şifreni doğrulayarak yeni şifre belirleyebilirsin.", "You can set a new password by verifying your current password.")
+                        </p>
+                    </div>
+                </div>
+                <div class="card-body p-24">
+                    <form asp-controller="Profile" asp-action="ChangePassword" asp-route-culture="@currentCulture" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="row gy-3">
+                            <div class="col-12">
+                                <label asp-for="ChangePassword.CurrentPassword" class="form-label">@T(ProfileResourceKeys.CurrentPassword, "Mevcut Şifre", "Current Password")</label>
+                                <input asp-for="ChangePassword.CurrentPassword" class="form-control" autocomplete="current-password" />
+                                <span asp-validation-for="ChangePassword.CurrentPassword" class="text-danger text-sm"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="ChangePassword.NewPassword" class="form-label">@T(ProfileResourceKeys.NewPassword, "Yeni Şifre", "New Password")</label>
+                                <input asp-for="ChangePassword.NewPassword" class="form-control" autocomplete="new-password" />
+                                <span asp-validation-for="ChangePassword.NewPassword" class="text-danger text-sm"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="ChangePassword.ConfirmPassword" class="form-label">@T(ProfileResourceKeys.ConfirmPassword, "Yeni Şifre Tekrar", "Confirm New Password")</label>
+                                <input asp-for="ChangePassword.ConfirmPassword" class="form-control" autocomplete="new-password" />
+                                <span asp-validation-for="ChangePassword.ConfirmPassword" class="text-danger text-sm"></span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-24">
+                            <button type="submit" class="btn btn-outline-primary-600 radius-10 px-20 py-11">
+                                <i class="ri-lock-password-line me-1"></i>
+                                @T(ProfileResourceKeys.UpdatePassword, "Şifreyi Güncelle", "Update Password")
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/js/intlTelInput.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/js/utils.js"></script>
+    <script src="~/js/common/text-normalizer.js" asp-append-version="true"></script>
+    <script src="~/js/features/profile/profile-page.js" asp-append-version="true"></script>
+}
+
+@functions {
+    private static string GetInitials(string name, string surname, string email)
+    {
+        if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(surname))
+            return string.Concat(name.Trim()[0], surname.Trim()[0]).ToUpperInvariant();
+
+        if (!string.IsNullOrWhiteSpace(email))
+            return email.Trim()[0].ToString().ToUpperInvariant();
+
+        return "U";
+    }
+
+    private string ResolveRoleText(string role)
+    {
+        string normalizedRole = role.Trim().ToUpperInvariant();
+
+        return normalizedRole switch
+        {
+            "AUTHOR" => GetRoleResource("BackOffice.Profile.Role.Author", "Yazar"),
+            "ADMIN" => GetRoleResource("BackOffice.Profile.Role.Admin", "Admin"),
+            "EDITOR" => GetRoleResource("BackOffice.Profile.Role.Editor", "Editör"),
+            "REVIEWER" => GetRoleResource("BackOffice.Profile.Role.Reviewer", "Hakem"),
+            _ => role
+        };
+    }
+
+    private string GetRoleResource(string key, string fallback)
+    {
+        string value = L.GetStringValue(key);
+        return !string.IsNullOrWhiteSpace(value) &&
+               !string.Equals(value, key, StringComparison.OrdinalIgnoreCase)
+            ? value
+            : fallback;
+    }
+}

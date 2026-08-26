@@ -1,0 +1,82 @@
+@using Symplify.BackOffice.WebUI.Localization
+@inject IBackOfficeViewLocalizer L
+@model Symplify.BackOffice.Application.Features.Users.Commands.Create.CreateUserCommand
+
+@{
+    string T(string key, string fallback = "") {
+        var v = L.GetStringValue(key);
+        return string.IsNullOrWhiteSpace(v) || string.Equals(v, key, StringComparison.OrdinalIgnoreCase) ? (string.IsNullOrWhiteSpace(fallback) ? key : fallback) : v;
+    }
+    ViewData["Title"] = T("BackOffice.Users.Create.PageTitle", "Yeni Kullanıcı");
+    string culture = Context.Request.RouteValues["culture"]?.ToString() ?? "tr-TR";
+}
+
+<div class="dashboard-main-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-0">@T("BackOffice.Users.Create.PageTitle", "Yeni Kullanıcı")</h6>
+            <small class="text-neutral-500">@T("BackOffice.Users.Create.PageSubtitle", "BackOffice kullanıcısı oluşturun ve başlangıç rollerini seçin.")</small>
+        </div>
+        <a asp-action="Index" asp-route-culture="@culture" class="btn btn-outline-neutral-900 radius-8 px-16 py-10 d-inline-flex align-items-center gap-2">
+            <i class="ri-arrow-left-line"></i> @T("Common.BackToList", "Listeye Dön")
+        </a>
+    </div>
+
+    <form asp-action="Create" asp-route-culture="@culture" method="post" class="card border shadow-none radius-12">
+        @Html.AntiForgeryToken()
+        <div class="card-body">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <div class="row gy-3">
+                <div class="col-md-6">
+                    <label asp-for="Name" class="form-label fw-semibold">@T("Common.Name", "Ad")</label>
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger text-sm"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Surname" class="form-label fw-semibold">@T("BackOffice.Users.Surname", "Soyad")</label>
+                    <input asp-for="Surname" class="form-control" />
+                    <span asp-validation-for="Surname" class="text-danger text-sm"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Email" class="form-label fw-semibold">@T("Common.Email", "E-posta")</label>
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger text-sm"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="PhoneNumber" class="form-label fw-semibold">@T("BackOffice.Users.Phone", "Telefon")</label>
+                    <input asp-for="PhoneNumber" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Institution" class="form-label fw-semibold">@T("BackOffice.Users.Institution", "Kurum")</label>
+                    <input asp-for="Institution" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Orcid" class="form-label fw-semibold">ORCID</label>
+                    <input asp-for="Orcid" class="form-control" />
+                </div>
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <input asp-for="EmailConfirmed" class="form-check-input" />
+                        <label asp-for="EmailConfirmed" class="form-check-label">@T("BackOffice.Users.CreateEmailConfirmed", "E-posta onaylı oluştur")</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check form-switch mb-2">
+                        <input asp-for="GeneratePassword" class="form-check-input" id="generatePasswordSwitch" />
+                        <label asp-for="GeneratePassword" class="form-check-label">@T("BackOffice.Users.GeneratePassword", "Güvenli rastgele şifre oluştur")</label>
+                    </div>
+                    <input asp-for="Password" class="form-control" placeholder="@T("BackOffice.Users.ManualPasswordPlaceholder", "Manuel şifre için doldurun")" />
+                    <small class="text-neutral-500">@T("BackOffice.Users.GeneratePasswordHint", "Rastgele şifre seçiliyse bu alan dikkate alınmaz.")</small>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer border-top d-flex justify-content-end gap-2">
+            <a asp-action="Index" asp-route-culture="@culture" class="btn btn-outline-neutral-900 radius-8 px-16 py-10">@T("Common.Cancel", "Vazgeç")</a>
+            <button type="submit" class="btn btn-primary-600 radius-8 px-16 py-10">@T("BackOffice.Users.CreateSubmit", "Kullanıcı Oluştur")</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

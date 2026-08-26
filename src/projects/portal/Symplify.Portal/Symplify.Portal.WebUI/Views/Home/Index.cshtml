@@ -1,0 +1,527 @@
+@model HomeIndexViewModel
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    string currentCulture = ViewData["CurrentCulture"] as string ?? "tr-TR";
+    string T(string key, string fallback)
+    {
+        if (ViewData["Shell"] is PublicSiteBootstrapResponse shell &&
+            shell.Resources.TryGetValue(key, out string? value) &&
+            !string.IsNullOrWhiteSpace(value))
+        {
+            return value;
+        }
+
+        return fallback;
+    }
+    string cultureQuery = "?culture=" + Uri.EscapeDataString(currentCulture);
+    CultureInfo culture = CultureInfo.GetCultureInfo(currentCulture);
+
+    string fallbackHeroImage1 = Url.Content("~/assets/img/education/showcase-4.webp");
+    string fallbackHeroImage2 = Url.Content("~/assets/img/education/events-7.webp");
+    string fallbackHeroImage3 = Url.Content("~/assets/img/blog/blog-hero-1.webp");
+    string fallbackLogoLight = Url.Content("~/assets/img/brand/symplify-logo-stacked-dark.svg");
+    string fallbackLogoDark = Url.Content("~/assets/img/brand/symplify-logo-stacked-light.svg");
+
+    string congressTitle = !string.IsNullOrWhiteSpace(Model.Home.Congress.Title)
+        ? Model.Home.Congress.Title
+        : (!string.IsNullOrWhiteSpace(Model.Home.Congress.Name) ? Model.Home.Congress.Name : T("Portal.Seo.DefaultDescription", "Symplify Kongre"));
+
+    string organizationName = !string.IsNullOrWhiteSpace(Model.Home.Organization.ShortName)
+        ? Model.Home.Organization.ShortName
+        : (!string.IsNullOrWhiteSpace(Model.Home.Organization.Name) ? Model.Home.Organization.Name : "Symplify");
+
+    // Slider üzerinde fallback başlık/açıklama/buton kullanılmaz.
+    // API slider title/subtitle/button gönderirse gösterilir; null/boş ise ilgili alan basılmaz.
+    string sliderShortName = !string.IsNullOrWhiteSpace(Model.Home.Organization.ShortName)
+        ? Model.Home.Organization.ShortName!.Trim()
+        : string.Empty;
+
+    string? FirstNonEmpty(params string?[] values)
+    {
+        foreach (string? value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+        }
+
+        return null;
+    }
+
+    string logoLight = FirstNonEmpty(
+        Model.Home.Congress.LogoLightUrl,
+        Model.Home.Congress.LogoDarkUrl,
+        Model.Home.Organization.LogoLightUrl,
+        Model.Home.Organization.LogoDarkUrl,
+        fallbackLogoLight)!;
+
+    string logoDark = FirstNonEmpty(
+        Model.Home.Congress.LogoDarkUrl,
+        Model.Home.Congress.LogoLightUrl,
+        Model.Home.Organization.LogoDarkUrl,
+        Model.Home.Organization.LogoLightUrl,
+        fallbackLogoDark)!;
+
+    string FormatDate(DateTime? date) => date.HasValue ? date.Value.ToString("d MMMM yyyy", culture) : string.Empty;
+    string FormatDayMonth(DateTime date) => date.ToString("d MMMM", culture);
+    string FormatMonthYear(DateTime date) => date.ToString("MMMM yyyy", culture);
+
+    string FormatDateRange(DateTime? start, DateTime? end)
+    {
+        if (!start.HasValue && !end.HasValue) return string.Empty;
+        if (start.HasValue && end.HasValue)
+        {
+            DateTime startDate = start.Value.Date;
+            DateTime endDate = end.Value.Date;
+
+            if (startDate == endDate)
+            {
+                return FormatDate(startDate);
+            }
+
+            if (startDate.Year == endDate.Year && startDate.Month == endDate.Month)
+            {
+                return $"{startDate.Day.ToString(culture)}-{endDate.Day.ToString(culture)} {FormatMonthYear(endDate)}";
+            }
+
+            if (startDate.Year == endDate.Year)
+            {
+                return $"{FormatDayMonth(startDate)} - {FormatDayMonth(endDate)} {endDate.Year.ToString(culture)}";
+            }
+
+            return $"{FormatDate(startDate)} - {FormatDate(endDate)}";
+        }
+        return FormatDate(start ?? end);
+    }
+
+    string congressDateRange = FormatDateRange(Model.Home.Congress.StartDate, Model.Home.Congress.EndDate);
+
+    // Portal ana kartında lokasyon yalnızca İl/Eyalet + Ülke üzerinden gösterilir.
+    // Eski CityName / LocationText / VenueName fallback'leri bilinçli olarak kullanılmaz.
+    string locationText = string.Join(" / ", new[]
+    {
+        Model.Home.Congress.StateName,
+        Model.Home.Congress.CountryName
+    }.Where(value => !string.IsNullOrWhiteSpace(value)));
+
+    string eventYear = Model.Home.Congress.StartDate?.Year.ToString(culture)
+        ?? Model.Home.Congress.EndDate?.Year.ToString(culture)
+        ?? DateTime.Now.Year.ToString(culture);
+
+    string StripHtml(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+        return System.Text.RegularExpressions.Regex.Replace(value, "<.*?>", string.Empty).Trim();
+    }
+
+    string Shorten(string? value, int maxLength)
+    {
+        string plain = StripHtml(value);
+        if (plain.Length <= maxLength) return plain;
+        return plain[..maxLength].TrimEnd() + "...";
+    }
+
+    string? GetAnnouncementUrl(PublicAnnouncementResponse announcement)
+    {
+        string? url = FirstNonEmpty(announcement.ExternalUrl, announcement.AttachmentUrl);
+
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return null;
+        }
+
+        return url.Trim();
+    }
+
+    var sliders = Model.Home.Sliders.OrderBy(x => x.Order).ToArray();
+
+    var orderedAnnouncements = Model.Home.Announcements
+        .OrderByDescending(x => x.IsPinned)
+        .ThenByDescending(x => x.PublishStartDate ?? DateTime.MinValue)
+        .ThenBy(x => x.Order)
+        .ThenBy(x => x.Title)
+        .ToArray();
+
+    var tickerAnnouncements = Model.TickerAnnouncements.Count > 0
+        ? Model.TickerAnnouncements
+            .OrderByDescending(x => x.IsPinned)
+            .ThenByDescending(x => x.PublishStartDate ?? DateTime.MinValue)
+            .ThenBy(x => x.Order)
+            .ThenBy(x => x.Title)
+            .ToArray()
+        : orderedAnnouncements.Take(3).ToArray();
+
+    var featuredAnnouncements = Model.FeaturedAnnouncements.Count > 0
+        ? Model.FeaturedAnnouncements
+            .OrderByDescending(x => x.IsPinned)
+            .ThenByDescending(x => x.PublishStartDate ?? DateTime.MinValue)
+            .ThenBy(x => x.Order)
+            .ThenBy(x => x.Title)
+            .ToArray()
+        : orderedAnnouncements.Take(3).ToArray();
+
+    var importantDates = Model.Home.ImportantDates.OrderBy(x => x.Order).ThenBy(x => x.StartDate).ToArray();
+    var featuredSections = Model.Home.FeaturedSections.OrderBy(x => x.Order).Take(3).ToArray();
+    int heroSlideCount = sliders.Length > 0 ? sliders.Length : 3;
+
+    string welcomeTitle = !string.IsNullOrWhiteSpace(Model.Home.Congress.WelcomeTitle)
+        ? Model.Home.Congress.WelcomeTitle!
+        : $"{organizationName} {eventYear} hakkında bilmeniz gerekenler";
+
+    string welcomeContent = !string.IsNullOrWhiteSpace(Model.Home.Congress.WelcomeContent)
+        ? Model.Home.Congress.WelcomeContent!
+        : (!string.IsNullOrWhiteSpace(Model.Home.Congress.ShortDescription) ? Model.Home.Congress.ShortDescription! : T("Portal.Home.WelcomeFallbackDescription", "Kongre bilgileri ve güncel duyurular bu sayfada yayınlanacaktır."));
+
+    string GetConfiguredSubmissionEntryUrl()
+    {
+        string backOfficeBaseUrl = Configuration["Portal:BackOfficeBaseUrl"]
+            ?? Configuration["PORTAL_BACKOFFICE_BASE_URL"]
+            ?? Configuration["Portal:AdminPanelUrl"]
+            ?? Configuration["PORTAL_ADMIN_PANEL_URL"]
+            ?? string.Empty;
+
+        backOfficeBaseUrl = backOfficeBaseUrl.Trim().TrimEnd('/');
+        if (!Uri.TryCreate(backOfficeBaseUrl, UriKind.Absolute, out Uri? baseUri) ||
+            (baseUri.Scheme != Uri.UriSchemeHttp && baseUri.Scheme != Uri.UriSchemeHttps))
+        {
+            return "#";
+        }
+
+        string cultureSegment = string.IsNullOrWhiteSpace(currentCulture) ? "tr-TR" : currentCulture.Trim();
+        string loginPathTemplate = Configuration["Portal:BackOfficeLoginPathTemplate"]
+            ?? Configuration["PORTAL_BACKOFFICE_LOGIN_PATH_TEMPLATE"]
+            ?? "/{culture}/auth/login";
+
+        string loginPath = loginPathTemplate
+            .Replace("{culture}", cultureSegment, StringComparison.OrdinalIgnoreCase)
+            .Trim();
+
+        if (string.IsNullOrWhiteSpace(loginPath))
+        {
+            loginPath = $"/{cultureSegment}/auth/login";
+        }
+
+        if (!loginPath.StartsWith('/'))
+        {
+            loginPath = "/" + loginPath;
+        }
+
+        string organizationCode = !string.IsNullOrWhiteSpace(Model.Home.Organization.Code)
+            ? Model.Home.Organization.Code.Trim()
+            : (!string.IsNullOrWhiteSpace(Model.Home.Organization.ShortName)
+                ? Model.Home.Organization.ShortName.Trim()
+                : (Configuration["Portal:DefaultOrganizationCode"]
+                    ?? Configuration["PORTAL_DEFAULT_ORGANIZATION_CODE"]
+                    ?? string.Empty).Trim());
+
+        var builder = new UriBuilder(baseUri)
+        {
+            Path = loginPath,
+            Fragment = string.Empty
+        };
+
+        var query = System.Web.HttpUtility.ParseQueryString(string.Empty);
+        if (!string.IsNullOrWhiteSpace(organizationCode))
+        {
+            query["org"] = organizationCode.ToLowerInvariant();
+        }
+
+        builder.Query = query.ToString();
+        return builder.Uri.ToString();
+    }
+
+    string submissionEntryUrl = GetConfiguredSubmissionEntryUrl();
+}
+
+<section class="section home-index-hero">
+    <div class="container-fluid px-3 px-lg-4 px-xxl-5" data-aos="fade-up" data-aos-delay="100">
+        <div class="row g-3 align-items-stretch hero-grid-modern">
+            <div class="col-lg-3 order-2 order-lg-1">
+                <aside class="event-summary-card event-summary-card--compact h-100" data-aos="fade-right" data-aos-delay="120">
+                    <div class="event-summary-card__logo-wrap">
+                        <img src="@logoLight"
+                             data-logo-light="@logoLight"
+                             data-logo-dark="@logoDark"
+                             alt="@organizationName Kongre Logosu"
+                             class="event-summary-card__logo">
+                    </div>
+
+                    <div class="event-summary-card__content">
+                        <span class="event-badge">@T("Portal.Home.CongressInfo", "Kongre Bilgisi")</span>
+                        <h1 class="event-title">@congressTitle</h1>
+                        <div class="event-year">@eventYear</div>
+
+                        <div class="event-meta-list event-meta-list--plain">
+                            @if (!string.IsNullOrWhiteSpace(congressDateRange))
+                            {
+                                <div class="event-meta-text">@congressDateRange</div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(locationText))
+                            {
+                                <div class="event-meta-text">@locationText</div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="btn-grid btn-grid--single">
+                        <a href="@submissionEntryUrl" class="btn btn-primary">@T("Portal.Home.MemberLoginSubmitAbstract", "Üye Girişi / Özet Gönder")</a>
+                    </div>
+                </aside>
+            </div>
+
+            <div class="col-lg-9 order-1 order-lg-2">
+                <div class="hero-side-stack hero-side-stack--announced h-100">
+                    <div class="hero-panel hero-panel--compact">
+                        <div id="heroCarousel" class="carousel slide hero-carousel" data-bs-ride="carousel">
+                            @if (heroSlideCount > 1)
+                            {
+                                <div class="carousel-indicators">
+                                    @for (int i = 0; i < heroSlideCount; i++)
+                                    {
+                                        <button type="button"
+                                                data-bs-target="#heroCarousel"
+                                                data-bs-slide-to="@i"
+                                                class="@(i == 0 ? "active" : string.Empty)"
+                                                aria-current="@(i == 0 ? "true" : "false")"
+                                                aria-label="Slide @(i + 1)"></button>
+                                    }
+                                </div>
+                            }
+
+                            <div class="carousel-inner">
+                                @if (sliders.Length > 0)
+                                {
+                                    for (int i = 0; i < sliders.Length; i++)
+                                    {
+                                        var slider = sliders[i];
+                                        string sliderImage = !string.IsNullOrWhiteSpace(slider.ImageUrl) ? slider.ImageUrl : fallbackHeroImage1;
+                                        string? sliderTitle = !string.IsNullOrWhiteSpace(slider.Title) ? slider.Title!.Trim() : null;
+                                        string? sliderDescription = !string.IsNullOrWhiteSpace(slider.Subtitle) ? slider.Subtitle!.Trim() : null;
+                                        string? sliderButtonText = !string.IsNullOrWhiteSpace(slider.ButtonText) ? slider.ButtonText!.Trim() : null;
+                                        string? sliderButtonUrl = !string.IsNullOrWhiteSpace(slider.ButtonUrl) ? slider.ButtonUrl!.Trim() : null;
+                                        bool hasSliderButton = !string.IsNullOrWhiteSpace(sliderButtonText) && !string.IsNullOrWhiteSpace(sliderButtonUrl);
+                                        bool hasCaption = !string.IsNullOrWhiteSpace(sliderShortName)
+                                            || !string.IsNullOrWhiteSpace(sliderTitle)
+                                            || !string.IsNullOrWhiteSpace(sliderDescription)
+                                            || hasSliderButton;
+                                        string sliderAlt = !string.IsNullOrWhiteSpace(sliderTitle)
+                                            ? sliderTitle!
+                                            : (!string.IsNullOrWhiteSpace(sliderShortName) ? sliderShortName : T("Portal.Home.AnnouncementImageAlt", "Slider görseli"));
+
+                                        <div class="carousel-item @(i == 0 ? "active" : string.Empty)">
+                                            <img src="@sliderImage" alt="@sliderAlt">
+                                            @if (hasCaption)
+                                            {
+                                                <div class="carousel-caption hero-slide-caption">
+                                                    @if (!string.IsNullOrWhiteSpace(sliderShortName))
+                                                    {
+                                                        <div class="hero-slide-kicker"><i class="bi bi-stars"></i> @sliderShortName</div>
+                                                    }
+
+                                                    @if (!string.IsNullOrWhiteSpace(sliderTitle))
+                                                    {
+                                                        <h2 class="hero-slide-title">@sliderTitle</h2>
+                                                    }
+
+                                                    @if (!string.IsNullOrWhiteSpace(sliderDescription))
+                                                    {
+                                                        <p class="hero-slide-desc">@sliderDescription</p>
+                                                    }
+
+                                                    @if (hasSliderButton)
+                                                    {
+                                                        <a href="@sliderButtonUrl" class="btn btn-primary">@sliderButtonText</a>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="carousel-item active">
+                                        <img src="@fallbackHeroImage1" alt="@sliderShortName">
+                                        @if (!string.IsNullOrWhiteSpace(sliderShortName))
+                                        {
+                                            <div class="carousel-caption hero-slide-caption">
+                                                <div class="hero-slide-kicker"><i class="bi bi-stars"></i> @sliderShortName</div>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <div class="carousel-item">
+                                        <img src="@fallbackHeroImage2" alt="@sliderShortName">
+                                        @if (!string.IsNullOrWhiteSpace(sliderShortName))
+                                        {
+                                            <div class="carousel-caption hero-slide-caption">
+                                                <div class="hero-slide-kicker"><i class="bi bi-stars"></i> @sliderShortName</div>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <div class="carousel-item">
+                                        <img src="@fallbackHeroImage3" alt="@sliderShortName">
+                                        @if (!string.IsNullOrWhiteSpace(sliderShortName))
+                                        {
+                                            <div class="carousel-caption hero-slide-caption">
+                                                <div class="hero-slide-kicker"><i class="bi bi-stars"></i> @sliderShortName</div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+
+                            @if (heroSlideCount > 1)
+                            {
+                                <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Önceki</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Sonraki</span>
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="hero-announce-strip" aria-label="Son duyurular">
+                        <div class="hero-announce-strip__label">
+                            <i class="bi bi-bell-fill"></i>
+                            <span>@T("Portal.Home.LatestAnnouncements", "Son Duyurular")</span>
+                        </div>
+
+                        <div class="hero-announce-strip__items">
+                            <div class="hero-announce-strip__items-inner">
+                                @if (tickerAnnouncements.Length > 0)
+                                {
+                                    for (int i = 0; i < tickerAnnouncements.Length; i++)
+                                    {
+                                        var announcement = tickerAnnouncements[i];
+                                        var announcementUrl = GetAnnouncementUrl(announcement);
+                                        if (!string.IsNullOrWhiteSpace(announcementUrl))
+                                        {
+                                            <a href="@announcementUrl" class="text-reset text-decoration-none">@announcement.Title</a>
+                                        }
+                                        else
+                                        {
+                                            <span>@announcement.Title</span>
+                                        }
+                                        @if (i < tickerAnnouncements.Length - 1)
+                                        {
+                                            <span class="dot">•</span>
+                                        }
+                                    }
+                                }
+                                else if (importantDates.Length > 0)
+                                {
+                                    for (int i = 0; i < importantDates.Length; i++)
+                                    {
+                                        var dateItem = importantDates[i];
+                                        <span>@dateItem.Title: <strong>@FormatDateRange(dateItem.StartDate, dateItem.EndDate)</strong></span>
+                                        @if (i < importantDates.Length - 1)
+                                        {
+                                            <span class="dot">•</span>
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    <span>@T("Portal.Home.NoAnnouncementDescription", "Kongre duyuruları yakında yayınlanacaktır.")</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="duyurular" class="section below-hero-section">
+    <div class="container-fluid px-3 px-lg-4 px-xxl-5" data-aos="fade-up" data-aos-delay="100">
+        <div class="row g-4 align-items-stretch">
+            <div class="col-lg-3">
+                <aside class="date-card date-card--compact h-100">
+                    <div>
+                        <span class="date-pill">@T("Portal.Home.DateInfo", "Tarih Bilgisi")</span>
+                        <h3>@T("Portal.Home.CongressCalendar", "Kongre Takvimi")</h3>
+                    </div>
+
+                    <div class="date-list">
+                        @if (importantDates.Length > 0)
+                        {
+                            foreach (var dateItem in importantDates)
+                            {
+                                <div class="date-list-item">
+                                    <strong>@FormatDateRange(dateItem.StartDate, dateItem.EndDate)</strong>
+                                    <span>@dateItem.Title</span>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="date-list-item">
+                                <strong>@T("Portal.Home.NoImportantDateTitle", "Yakında")</strong>
+                                <span>@T("Portal.Home.NoImportantDateDescription", "Kongre takvimi yayınlandığında burada gösterilecektir.")</span>
+                            </div>
+                        }
+                    </div>
+
+                </aside>
+            </div>
+
+            <div class="col-lg-6">
+                <article class="info-spotlight-card info-spotlight-card--compact">
+                    <div class="eyebrow"><i class="bi bi-info-circle"></i> @T("Portal.Home.CongressInformation", "Kongre Bilgilendirme")</div>
+                    <div class="lead">@Html.Raw(welcomeContent)</div>
+                </article>
+            </div>
+
+            <div class="col-lg-3">
+                <aside class="mini-notice-card mini-notice-card--announcements h-100">
+                    <div>
+                        <span class="notice-chip"><i class="bi bi-megaphone"></i> @T("Portal.Home.Announcements", "Duyurular")</span>
+                        <h3>@T("Portal.Home.CurrentAnnouncements", "Güncel Duyurular")</h3>
+                    </div>
+
+                    <div class="notice-list">
+                        @if (featuredAnnouncements.Length > 0)
+                        {
+                            foreach (var announcement in featuredAnnouncements.Take(3))
+                            {
+                                var announcementUrl = GetAnnouncementUrl(announcement);
+                                var announcementSummary = !string.IsNullOrWhiteSpace(announcement.Summary)
+                                    ? announcement.Summary
+                                    : Shorten(announcement.Content, 110);
+
+                                if (!string.IsNullOrWhiteSpace(announcementUrl))
+                                {
+                                    <a class="notice-list-item d-block text-decoration-none" href="@announcementUrl">
+                                        <strong>@announcement.Title</strong>
+                                        <span>@announcementSummary</span>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <div class="notice-list-item">
+                                        <strong>@announcement.Title</strong>
+                                        <span>@announcementSummary</span>
+                                    </div>
+                                }
+                            }
+                        }
+                        else
+                        {
+                            <div class="notice-list-item">
+                                <strong>@T("Portal.Home.NoAnnouncementTitle", "Henüz duyuru bulunmuyor")</strong>
+                                <span>@T("Portal.Home.NoAnnouncementDescription", "Güncel duyurular yayınlandığında bu alanda listelenecektir.")</span>
+                            </div>
+                        }
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </div>
+</section>

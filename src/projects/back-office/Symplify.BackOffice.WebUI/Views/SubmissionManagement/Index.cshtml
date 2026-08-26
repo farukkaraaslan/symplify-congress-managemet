@@ -1,0 +1,329 @@
+@using Symplify.BackOffice.Application.Features.Submissions.Constants
+@using Symplify.BackOffice.Application.Features.Submissions.Queries.GetList
+@using Symplify.BackOffice.Application.Features.Submissions.Queries.GetManagementFilterOptions
+@using Symplify.BackOffice.WebUI.Localization
+@using Symplify.BackOffice.WebUI.Models.Submissions
+@model SubmissionManagementIndexViewModel
+@inject IBackOfficeViewLocalizer L
+
+@{
+    ViewData["Title"] = L.GetStringValue(SubmissionManagementResourceKeys.PageTitle);
+    ViewData["ClientResourcePrefixes"] = new[] { "BackOffice.Submissions.Management.Editor." };
+    string? currentCulture = Context.Request.RouteValues["culture"]?.ToString();
+
+    List<GetListSubmissionListItemDto> initialSubmissions = Model.Submissions.Items?.ToList() ?? new List<GetListSubmissionListItemDto>();
+    int totalCount = Model.Submissions.Count;
+    int submittedCount = initialSubmissions.Count(IsSubmitted);
+    int reviewerProcessCount = initialSubmissions.Count(IsReviewerProcess);
+    int acceptedCount = initialSubmissions.Count(IsAccepted);
+    int rejectedCount = initialSubmissions.Count(IsRejected);
+    int paymentPendingCount = initialSubmissions.Count(IsPaymentPending);
+    int paymentCompletedCount = initialSubmissions.Count(IsPaymentCompleted);
+
+    Guid routeTemplateId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+    string routeTemplateToken = routeTemplateId.ToString();
+    string getListUrl = Url.Action("GetList", "SubmissionManagement", new { culture = currentCulture }) ?? $"/{currentCulture}/submission-management/get-list";
+    string manageUrlTemplate = (Url.Action("Manage", "SubmissionManagement", new { culture = currentCulture, id = routeTemplateId }) ?? $"/{currentCulture}/submission-management/{routeTemplateToken}").Replace(routeTemplateToken, "__id__");
+    string editUrlTemplate = (Url.Action("Edit", "SubmissionManagement", new { culture = currentCulture, id = routeTemplateId, returnUrl = Context.Request.Path + Context.Request.QueryString }) ?? $"/{currentCulture}/submission-management/edit/{routeTemplateToken}").Replace(routeTemplateToken, "__id__");
+    string deleteUrl = Url.Action("Delete", "SubmissionManagement", new { culture = currentCulture }) ?? $"/{currentCulture}/submission-management/delete";
+    string archiveToggleUrl = Url.Action(
+        "Index",
+        "SubmissionManagement",
+        new
+        {
+            culture = currentCulture,
+            archiveMode = !Model.ArchiveMode
+        })
+        ?? $"/{currentCulture}/submission-management?archiveMode={!Model.ArchiveMode}";
+}
+
+
+<div class="dashboard-main-body">
+@Html.AntiForgeryToken()
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-0">@L[SubmissionManagementResourceKeys.PageTitle]</h6>
+        </div>
+        <ul class="d-flex align-items-center gap-2 mb-0 list-unstyled">
+            <li class="fw-medium">
+                <a class="d-flex align-items-center gap-1 hover-text-primary text-neutral-600" href="@Url.Action("Index", "Home", new { culture = currentCulture })">
+                    <iconify-icon class="icon text-lg" icon="solar:home-smile-angle-outline"></iconify-icon>
+                    @L[SubmissionManagementResourceKeys.BreadcrumbDashboard]
+                </a>
+            </li>
+            <li>-</li>
+            <li class="fw-medium">@L[SubmissionManagementResourceKeys.BreadcrumbIndex]</li>
+        </ul>
+    </div>
+
+    <div class="d-flex flex-nowrap gap-3 mb-24" id="submissionManagementStats">
+        @RenderStat("total", SubmissionManagementResourceKeys.StatTotal, totalCount, "bg-primary-50 text-primary-600", "ri-file-list-3-line")
+        @RenderStat("accepted", SubmissionManagementResourceKeys.StatAccepted, acceptedCount, "bg-success-focus text-success-main", "ri-check-line")
+        @RenderStat("rejected", SubmissionManagementResourceKeys.StatRejected, rejectedCount, "bg-danger-focus text-danger-main", "ri-close-line")
+        @RenderStat("submitted", SubmissionManagementResourceKeys.StatSubmitted, submittedCount, "bg-warning-focus text-warning-main", "ri-send-plane-line")
+        @RenderStat("reviewerProcess", SubmissionManagementResourceKeys.StatReviewerProcess, reviewerProcessCount, "bg-info-focus text-info-main", "ri-user-search-line")
+        @RenderStat("paymentPending", SubmissionManagementResourceKeys.StatPaymentPending, paymentPendingCount, "bg-primary-50 text-primary-600", "ri-bank-card-line")
+        @RenderStat("paymentCompleted", SubmissionManagementResourceKeys.StatPaymentCompleted, paymentCompletedCount, "bg-success-focus text-success-main", "ri-secure-payment-line")
+    </div>
+
+    <div class="card mb-24" id="submissionManagementFilters">
+        <div class="card-header border-bottom bg-base py-20">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 w-100">
+                <h5 class="mb-0">@L[SubmissionManagementResourceKeys.FiltersTitle]</h5>
+
+                <a id="submissionManagementArchiveToggle"
+                   href="@archiveToggleUrl"
+                   class="btn btn-sm @(Model.ArchiveMode ? "btn-primary-600" : "btn-outline-warning") radius-8 px-14 py-8 ms-auto">
+                    <i class="@(Model.ArchiveMode ? "ri-inbox-unarchive-line" : "ri-archive-line") me-1"></i>
+                    @(Model.ArchiveMode
+                        ? L[SubmissionManagementResourceKeys.ViewActive]
+                        : L[SubmissionManagementResourceKeys.ViewArchive])
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <input type="hidden"
+                   name="archiveMode"
+                   value="@Model.ArchiveMode.ToString().ToLowerInvariant()" />
+
+            <div class="row gy-3">
+                <div class="col-md-6 col-xl-2">
+                    <label class="form-label" for="submissionManagementCongressId">@L[SubmissionManagementResourceKeys.FilterCongressLabel]</label>
+                    <select id="submissionManagementCongressId" name="congressId" class="form-select js-submission-management-filter">
+                        <option value="">
+                            @(Model.ArchiveMode
+                                ? L[SubmissionManagementResourceKeys.FilterAllArchivedCongresses]
+                                : L[SubmissionManagementResourceKeys.FilterAllActiveCongresses])
+                        </option>
+                        @foreach (SubmissionManagementFilterOptionDto option in Model.FilterOptions.Congresses)
+                        {
+                            <option value="@option.Value" selected="@(Model.CongressId?.ToString() == option.Value)">@option.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6 col-xl-2">
+                    <label class="form-label" for="submissionManagementSubmissionTypeId">@L[SubmissionManagementResourceKeys.FilterSubmissionTypeLabel]</label>
+                    <select id="submissionManagementSubmissionTypeId" name="submissionTypeId" class="form-select js-submission-management-filter">
+                        <option value="">@L[SubmissionManagementResourceKeys.FilterAllSubmissionTypes]</option>
+                        @foreach (SubmissionManagementFilterOptionDto option in Model.FilterOptions.SubmissionTypes)
+                        {
+                            <option value="@option.Value" selected="@(Model.SubmissionTypeId?.ToString() == option.Value)">@option.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6 col-xl-2">
+                    <label class="form-label" for="submissionManagementTopicId">@L[SubmissionManagementResourceKeys.FilterTopicLabel]</label>
+                    <select id="submissionManagementTopicId" name="topicId" class="form-select js-submission-management-filter">
+                        <option value="">@L[SubmissionManagementResourceKeys.FilterAllTopics]</option>
+                        @foreach (SubmissionManagementFilterOptionDto option in Model.FilterOptions.Topics)
+                        {
+                            <option value="@option.Value" selected="@(Model.TopicId?.ToString() == option.Value)">@option.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6 col-xl-2">
+                    <label class="form-label" for="submissionManagementPaymentStatusId">@L[SubmissionManagementResourceKeys.FilterPaymentLabel]</label>
+                    <select id="submissionManagementPaymentStatusId" name="paymentStatusId" class="form-select js-submission-management-filter">
+                        <option value="">@L[SubmissionManagementResourceKeys.FilterAllPaymentStatuses]</option>
+                        @foreach (SubmissionManagementFilterOptionDto option in Model.FilterOptions.PaymentStatuses)
+                        {
+                            <option value="@option.Value" selected="@(Model.PaymentStatusId?.ToString() == option.Value)">@option.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6 col-xl-2">
+                    <label class="form-label" for="submissionManagementTransactionStatusId">@L[SubmissionManagementResourceKeys.FilterStatusLabel]</label>
+                    <select id="submissionManagementTransactionStatusId" name="transactionStatusId" class="form-select js-submission-management-filter">
+                        <option value="">@L[SubmissionManagementResourceKeys.FilterAllStatuses]</option>
+                        @foreach (SubmissionManagementFilterOptionDto option in Model.FilterOptions.TransactionStatuses)
+                        {
+                            <option value="@option.Value" selected="@(Model.TransactionStatusId?.ToString() == option.Value)">@option.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6 col-xl-2">
+                    <label class="form-label" for="submissionManagementOwnerMultiplicity">@L[SubmissionManagementResourceKeys.FilterOwnerMultiplicityLabel]</label>
+                    <select id="submissionManagementOwnerMultiplicity" name="ownerMultiplicity" class="form-select js-submission-management-filter">
+                        <option value="0" selected="@(Model.OwnerMultiplicity == SubmissionOwnerMultiplicityFilter.All)">
+                            @L[SubmissionManagementResourceKeys.FilterOwnerMultiplicityAll]
+                        </option>
+                        <option value="1" selected="@(Model.OwnerMultiplicity == SubmissionOwnerMultiplicityFilter.Single)">
+                            @L[SubmissionManagementResourceKeys.FilterOwnerMultiplicitySingle]
+                        </option>
+                        <option value="2" selected="@(Model.OwnerMultiplicity == SubmissionOwnerMultiplicityFilter.Multiple)">
+                            @L[SubmissionManagementResourceKeys.FilterOwnerMultiplicityMultiple]
+                        </option>
+                    </select>
+                </div>
+            </div>
+            <div class="d-flex align-items-center justify-content-end gap-2 mt-24">
+                <button id="submissionManagementResetFilters" class="btn btn-outline-neutral-500 radius-8" type="button">
+                    <i class="ri-refresh-line me-1"></i>@L[SubmissionManagementResourceKeys.ResetFilters]
+                </button>
+                <button id="submissionManagementApplyFilters" class="btn btn-primary-600 radius-8" type="button">
+                    <i class="ri-filter-3-line me-1"></i>@L[SubmissionManagementResourceKeys.ApplyFilters]
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card basic-data-table">
+        <div class="card-header border-bottom bg-base py-20">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                    <h5 class="mb-0">@L[SubmissionManagementResourceKeys.ListTitle]</h5>
+                </div>
+                <span class="badge bg-primary-50 text-primary-600 rounded-pill">
+                    <i class="ri-file-list-3-line me-1"></i>
+                    <span data-submission-list-count>@totalCount</span> @L.GetStringValue("Common.Records")
+                </span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table bordered-table table-sm mb-0 align-middle w-100 js-submissions-data-table"
+                       id="managementSubmissionsTable"
+                       data-mode="management"
+                       data-source-url="@getListUrl"
+                       data-manage-url-template="@manageUrlTemplate"
+                       data-edit-url-template="@editUrlTemplate"
+                       data-delete-url="@deleteUrl"
+                       data-filters-container="#submissionManagementFilters"
+                       data-stats-container="#submissionManagementStats"
+                       data-actions-text="@L[SubmissionManagementResourceKeys.ColumnManage]"
+                       data-manage-text="@L[SubmissionManagementResourceKeys.ManageButton]"
+                       data-detail-text="@L[SubmissionManagementResourceKeys.DetailButton]"
+                       data-edit-text="@L[SubmissionManagementResourceKeys.EditButton]"
+                       data-reviewer-text="@L[SubmissionManagementResourceKeys.ReviewerAssignmentButton]"
+                       data-evaluations-text="@L[SubmissionManagementResourceKeys.EvaluationsButton]"
+                       data-files-text="@L[SubmissionManagementResourceKeys.FilesButton]"
+                       data-history-text="@L[SubmissionManagementResourceKeys.HistoryButton]"
+                       data-payment-text="@L[SubmissionManagementResourceKeys.PaymentActionButton]"
+                       data-delete-text="@L[SubmissionManagementResourceKeys.DeleteButton]"
+                       data-delete-confirm-title="@L[SubmissionManagementResourceKeys.DeleteConfirmTitle]"
+                       data-delete-confirm-text="@L[SubmissionManagementResourceKeys.DeleteConfirmText]"
+                       data-delete-confirm-button="@L[SubmissionManagementResourceKeys.DeleteConfirmButton]"
+                       data-orcid-label="@L[SubmissionManagementResourceKeys.Orcid]"
+                       data-corresponding-label="@L[SubmissionManagementResourceKeys.CorrespondingShort]"
+                       data-author-count-format="@T(SubmissionManagementResourceKeys.AuthorCountFormat)"
+                       data-additional-author-count-format="@T(SubmissionManagementResourceKeys.AdditionalAuthorCountFormat)"
+                       data-owner-submission-count-format="@T(SubmissionManagementResourceKeys.OwnerSubmissionCountFormat)"
+                       data-owner-multiple-title="@T(SubmissionManagementResourceKeys.OwnerMultipleBadgeTitle)"
+                       data-owner-missing="@T(SubmissionManagementResourceKeys.OwnerMissing)">
+                    <thead>
+                    <tr>
+                        <th>@L[SubmissionManagementResourceKeys.ColumnManage]</th>
+                        <th>@L[SubmissionManagementResourceKeys.ColumnRowNumber]</th>
+                        <th>@L[SubmissionManagementResourceKeys.ColumnSubmissionNumber]</th>
+                        <th>@L[SubmissionManagementResourceKeys.ColumnSubmissionTitle]</th>
+                        <th>@L[SubmissionManagementResourceKeys.ColumnCongress]</th>
+                        <th>@L[SubmissionManagementResourceKeys.ColumnTypeTopic]</th>
+                        <th>@L[SubmissionManagementResourceKeys.ColumnSubmissionOwner]</th>
+                        <th>@L[SubmissionManagementResourceKeys.ColumnPayment]</th>
+                        <th>@L[SubmissionManagementResourceKeys.ColumnStatus]</th>
+                        <th>@L[SubmissionManagementResourceKeys.ColumnDate]</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string T(string key) => L.GetStringValue(key);
+
+    private Microsoft.AspNetCore.Html.IHtmlContent RenderStat(string statKey, string labelKey, int count, string iconClass, string icon)
+    {
+        string html = $@"<div class=""flex-fill"">
+        <div class=""card h-100"">
+            <div class=""card-body d-flex align-items-center justify-content-between gap-2"">
+                <div class=""min-w-0"">
+                    <span class=""text-secondary-light text-sm d-block text-nowrap text-truncate"" title=""{System.Net.WebUtility.HtmlEncode(T(labelKey))}"">{System.Net.WebUtility.HtmlEncode(T(labelKey))}</span>
+                    <h5 class=""mb-0"" data-stat-count=""{System.Net.WebUtility.HtmlEncode(statKey)}"">{count}</h5>
+                </div>
+                <span class=""w-44-px h-44-px rounded-circle {iconClass} d-inline-flex align-items-center justify-content-center""><i class=""{icon} text-xl""></i></span>
+            </div>
+        </div>
+    </div>";
+        return new Microsoft.AspNetCore.Html.HtmlString(html);
+    }
+
+    private static bool IsSubmitted(GetListSubmissionListItemDto item)
+        => IsStatusCode(item.TransactionStatusCode, "SUBMITTED") || item.TransactionStatusId == 110 || ContainsAny(item.TransactionStatusName, "gönderildi", "submitted");
+
+    private static bool IsReviewerProcess(GetListSubmissionListItemDto item)
+        => item.TransactionStatusId is 130 or 140
+            || IsStatusCode(item.TransactionStatusCode, "REVIEWER_ASSIGNMENT", "UNDER_REVIEW")
+            || ContainsAny(item.TransactionStatusName, "hakem", "review");
+
+    private static bool IsAccepted(GetListSubmissionListItemDto item)
+        => IsStatusCode(item.TransactionStatusCode, "ACCEPTED") || item.TransactionStatusId == 180 || ContainsAny(item.TransactionStatusName, "kabul", "accepted");
+
+    private static bool IsRejected(GetListSubmissionListItemDto item)
+        => IsStatusCode(item.TransactionStatusCode, "REJECTED") || item.TransactionStatusId == 190 || ContainsAny(item.TransactionStatusName, "red", "reject");
+
+    private static bool IsPaymentPending(GetListSubmissionListItemDto item)
+    {
+        string statusCode = NormalizeCode(item.PaymentStatusCode);
+        if (statusCode is "PAYMENTPENDING" or "PENDING" or "WAITING" or "WAITINGPAYMENT")
+            return true;
+
+        string statusName = NormalizeCode(item.PaymentStatusName);
+        return statusName.Contains("BEKLIYOR", StringComparison.Ordinal) ||
+               statusName.Contains("PENDING", StringComparison.Ordinal) ||
+               statusName.Contains("WAITING", StringComparison.Ordinal);
+    }
+
+    private static bool IsPaymentCompleted(GetListSubmissionListItemDto item)
+    {
+        string statusCode = NormalizeCode(item.PaymentStatusCode);
+        if (statusCode is "PAYMENTCOMPLETED" or "COMPLETED" or "PAID" or "PAYMENTPAID" or "PAYMENTDONE")
+            return true;
+
+        string statusName = NormalizeCode(item.PaymentStatusName);
+        return statusName.Contains("ODEMEYAPILDI", StringComparison.Ordinal) ||
+               statusName.Contains("ODEMEISLEMIYAPILDI", StringComparison.Ordinal) ||
+               statusName.Contains("TAMAMLANDI", StringComparison.Ordinal) ||
+               statusName.Contains("COMPLETED", StringComparison.Ordinal) ||
+               statusName.Contains("PAID", StringComparison.Ordinal);
+    }
+
+    private static bool IsStatusCode(string? value, params string[] expectedCodes)
+    {
+        string normalized = NormalizeCode(value);
+        return expectedCodes.Any(expected => string.Equals(normalized, NormalizeCode(expected), StringComparison.Ordinal));
+    }
+
+    private static string NormalizeCode(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        string normalized = value.Trim().ToUpperInvariant()
+            .Replace("İ", "I", StringComparison.Ordinal)
+            .Replace("Ö", "O", StringComparison.Ordinal)
+            .Replace("Ü", "U", StringComparison.Ordinal)
+            .Replace("Ş", "S", StringComparison.Ordinal)
+            .Replace("Ğ", "G", StringComparison.Ordinal)
+            .Replace("Ç", "C", StringComparison.Ordinal);
+
+        return new string(normalized.Where(char.IsLetterOrDigit).ToArray());
+    }
+
+    private static bool ContainsAny(string? value, params string[] tokens)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
+
+        return tokens.Any(token => value.Contains(token, StringComparison.OrdinalIgnoreCase));
+    }
+}
+
+@section Scripts {
+    @await Html.PartialAsync("_LocalizationScripts")
+    <script src="~/js/features/submissions/submissions-actions.js" asp-append-version="true"></script>
+    <script src="~/js/features/submissions/submissions.table.js" asp-append-version="true"></script>
+}

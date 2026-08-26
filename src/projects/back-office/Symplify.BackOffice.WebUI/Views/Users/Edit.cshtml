@@ -1,0 +1,470 @@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using Symplify.BackOffice.WebUI.Localization
+@inject IBackOfficeViewLocalizer L
+@model Symplify.BackOffice.Application.Features.Users.Commands.Update.UpdateUserCommand
+
+@{
+    string T(string key, string fallback = "") {
+        var value = L.GetStringValue(key);
+        return string.IsNullOrWhiteSpace(value) || string.Equals(value, key, StringComparison.OrdinalIgnoreCase)
+            ? (string.IsNullOrWhiteSpace(fallback) ? key : fallback)
+            : value;
+    }
+
+    ViewData["Title"] = T("BackOffice.Users.Edit.PageTitle", "Kullanıcı Düzenle");
+    string culture = Context.Request.RouteValues["culture"]?.ToString() ?? "tr-TR";
+    string displayName = ViewBag.UserDisplayName as string ?? $"{Model.Name} {Model.Surname}".Trim();
+    string displayTitle = ViewBag.UserTitle as string ?? string.Empty;
+
+    List<SelectListItem> titleOptions = ViewBag.TitleOptions as List<SelectListItem> ?? new();
+    List<SelectListItem> countryOptions = ViewBag.CountryOptions as List<SelectListItem> ?? new();
+    List<SelectListItem> stateOptions = ViewBag.StateOptions as List<SelectListItem> ?? new();
+    List<SelectListItem> organizationOptions = ViewBag.OrganizationOptions as List<SelectListItem> ?? new();
+    List<SelectListItem> congressOptions = ViewBag.CongressOptions as List<SelectListItem> ?? new();
+}
+
+<div class="dashboard-main-body pb-24">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-0">@T("BackOffice.Users.Edit.PageTitle", "Kullanıcı Düzenle")</h6>
+            <small class="text-neutral-500">@T("BackOffice.Users.Edit.PageSubtitle", "Profil, iletişim, lokasyon, kongre erişimi ve hesap ayarlarını güncelleyin.")</small>
+        </div>
+        <a asp-action="Details" asp-route-culture="@culture" asp-route-id="@Model.Id" class="btn btn-outline-neutral-900 radius-8 px-16 py-10 d-inline-flex align-items-center gap-2">
+            <i class="ri-arrow-left-line"></i> @T("BackOffice.Users.BackToDetail", "Detaya Dön")
+        </a>
+    </div>
+
+    <form asp-action="Edit" asp-route-culture="@culture" asp-route-id="@Model.Id" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="OrganizationAccessId" />
+
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <div class="card p-0 overflow-hidden position-relative radius-12 mb-24">
+            <div class="card-body p-20">
+                <div class="d-flex align-items-center gap-16 flex-wrap mb-20">
+                    <span class="w-64-px h-64-px rounded-circle bg-primary-50 text-primary-600 d-flex justify-content-center align-items-center flex-shrink-0 fw-bold text-xl">
+                        @((string.IsNullOrWhiteSpace(Model.Name) ? "K" : Model.Name.Trim()[0].ToString().ToUpperInvariant()) + (string.IsNullOrWhiteSpace(Model.Surname) ? "" : Model.Surname.Trim()[0].ToString().ToUpperInvariant()))
+                    </span>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">@displayName</h6>
+                        <span class="text-secondary-light">@(string.IsNullOrWhiteSpace(displayTitle) ? Model.Email : displayTitle)</span>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto overflow-y-hidden px-2 px-md-0">
+                    <ul class="nav border-gradient-tab nav-pills d-flex flex-nowrap" id="userEditTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link d-flex align-items-center px-24 text-nowrap active" id="profile-edit-tab" data-bs-toggle="pill" data-bs-target="#profile-edit-pane" type="button" role="tab">
+                                <i class="ri-user-line me-2"></i>@T("BackOffice.Users.Edit.ProfileSection", "Profil")
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link d-flex align-items-center px-24 text-nowrap" id="contact-edit-tab" data-bs-toggle="pill" data-bs-target="#contact-edit-pane" type="button" role="tab">
+                                <i class="ri-contacts-line me-2"></i>@T("BackOffice.Users.Edit.ContactSection", "İletişim ve Lokasyon")
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link d-flex align-items-center px-24 text-nowrap" id="access-edit-tab" data-bs-toggle="pill" data-bs-target="#access-edit-pane" type="button" role="tab">
+                                <i class="ri-building-line me-2"></i>@T("BackOffice.Users.Edit.OrgSection", "Organizasyon ve Kongre")
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link d-flex align-items-center px-24 text-nowrap" id="account-edit-tab" data-bs-toggle="pill" data-bs-target="#account-edit-pane" type="button" role="tab">
+                                <i class="ri-shield-user-line me-2"></i>@T("BackOffice.Users.Edit.AccountSection", "Hesap Durumu")
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="userEditTabsContent">
+            <div class="tab-pane fade show active" id="profile-edit-pane" role="tabpanel" aria-labelledby="profile-edit-tab" tabindex="0">
+                <div class="card p-0 overflow-hidden position-relative radius-16">
+                    <div class="card-header py-16 px-24 bg-base border-bottom">
+                        <h6 class="text-lg mb-0">@T("BackOffice.Users.Edit.ProfileSection", "Profil Bilgileri")</h6>
+                        <small class="text-neutral-500">@T("BackOffice.Users.Edit.ProfileSectionSubtitle", "Kimlik ve akademik profil alanları.")</small>
+                    </div>
+                    <div class="card-body p-24">
+                        <div class="row gy-4">
+                            <div class="col-md-6">
+                                <label asp-for="Name" class="form-label fw-semibold text-primary-light text-sm mb-8">@T("Common.Name", "Ad")</label>
+                                <input asp-for="Name" class="form-control radius-8" />
+                                <span asp-validation-for="Name" class="text-danger text-sm"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Surname" class="form-label fw-semibold text-primary-light text-sm mb-8">@T("BackOffice.Users.Surname", "Soyad")</label>
+                                <input asp-for="Surname" class="form-control radius-8" />
+                                <span asp-validation-for="Surname" class="text-danger text-sm"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="TitleId" class="form-label fw-semibold text-primary-light text-sm mb-8">@T("BackOffice.Users.Title", "Unvan")</label>
+                                <select asp-for="TitleId"
+                                        asp-items="titleOptions"
+                                        class="form-select radius-8 js-user-edit-select2"
+                                        data-placeholder="@T("BackOffice.Users.SelectTitle", "Unvan seçiniz")"
+                                        data-selected-value="@(Model.TitleId?.ToString() ?? string.Empty)">
+                                    <option value="">@T("BackOffice.Users.SelectTitle", "Unvan seçiniz")</option>
+                                </select>
+                                <span asp-validation-for="TitleId" class="text-danger text-sm"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Institution" class="form-label fw-semibold text-primary-light text-sm mb-8">@T("BackOffice.Users.Institution", "Kurum")</label>
+                                <input asp-for="Institution" class="form-control radius-8" />
+                                <span asp-validation-for="Institution" class="text-danger text-sm"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Orcid" class="form-label fw-semibold text-primary-light text-sm mb-8">ORCID</label>
+                                <input asp-for="Orcid" class="form-control radius-8" placeholder="0000-0000-0000-0000" />
+                                <span asp-validation-for="Orcid" class="text-danger text-sm"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="contact-edit-pane" role="tabpanel" aria-labelledby="contact-edit-tab" tabindex="0">
+                <div class="row gy-4">
+                    <div class="col-lg-6">
+                        <div class="card p-0 overflow-hidden position-relative radius-16 h-100">
+                            <div class="card-header py-16 px-24 bg-base border-bottom">
+                                <h6 class="text-lg mb-0">@T("BackOffice.Users.Edit.ContactSection", "İletişim Bilgileri")</h6>
+                            </div>
+                            <div class="card-body p-24">
+                                <div class="row gy-4">
+                                    <div class="col-12">
+                                        <label asp-for="Email" class="form-label fw-semibold text-primary-light text-sm mb-8">@T("Common.Email", "E-posta")</label>
+                                        <input asp-for="Email" class="form-control radius-8" type="email" />
+                                        <span asp-validation-for="Email" class="text-danger text-sm"></span>
+                                    </div>
+                                    <div class="col-12">
+                                        <label asp-for="PhoneNumber" class="form-label fw-semibold text-primary-light text-sm mb-8">@T("BackOffice.Users.Phone", "Telefon")</label>
+                                        <input asp-for="PhoneNumber" class="form-control radius-8" placeholder="+90 5xx xxx xx xx" />
+                                        <span asp-validation-for="PhoneNumber" class="text-danger text-sm"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="card p-0 overflow-hidden position-relative radius-16 h-100">
+                            <div class="card-header py-16 px-24 bg-base border-bottom">
+                                <h6 class="text-lg mb-0">@T("BackOffice.Users.Edit.LocationSection", "Lokasyon Bilgileri")</h6>
+                            </div>
+                            <div class="card-body p-24">
+                                <div class="row gy-4">
+                                    <div class="col-12">
+                                        <label asp-for="CountryId" class="form-label fw-semibold text-primary-light text-sm mb-8">@T("BackOffice.Users.Country", "Ülke")</label>
+                                        <select asp-for="CountryId"
+                                                asp-items="countryOptions"
+                                                class="form-select radius-8 js-user-edit-select2"
+                                                id="userCountrySelect"
+                                                data-placeholder="@T("BackOffice.Users.SelectCountry", "Ülke seçiniz")"
+                                                data-selected-value="@(Model.CountryId?.ToString() ?? string.Empty)"
+                                                data-state-url="@Url.Action("GetStateOptions", "Users", new { culture })">
+                                            <option value="">@T("BackOffice.Users.SelectCountry", "Ülke seçiniz")</option>
+                                        </select>
+                                        <span asp-validation-for="CountryId" class="text-danger text-sm"></span>
+                                    </div>
+                                    <div class="col-12">
+                                        <label asp-for="StateId" class="form-label fw-semibold text-primary-light text-sm mb-8">@T("BackOffice.Users.City", "Şehir / İl")</label>
+                                        <select asp-for="StateId"
+                                                asp-items="stateOptions"
+                                                class="form-select radius-8 js-user-edit-select2"
+                                                id="userStateSelect"
+                                                data-placeholder="@T("BackOffice.Users.SelectState", "Şehir / il seçiniz")"
+                                                data-selected-value="@(Model.StateId?.ToString() ?? string.Empty)">
+                                            <option value="">@T("BackOffice.Users.SelectState", "Şehir / il seçiniz")</option>
+                                        </select>
+                                        <span asp-validation-for="StateId" class="text-danger text-sm"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="access-edit-pane" role="tabpanel" aria-labelledby="access-edit-tab" tabindex="0">
+                <div class="card p-0 overflow-hidden position-relative radius-16">
+                    <div class="card-header py-16 px-24 bg-base border-bottom">
+                        <h6 class="text-lg mb-0">@T("BackOffice.Users.Edit.OrgSection", "Organizasyon ve Kongre Erişimi")</h6>
+                        <small class="text-neutral-500">@T("BackOffice.Users.Edit.OrgSectionSubtitle", "Kullanıcının organizasyon bağlamını ve varsayılan kongresini belirleyin.")</small>
+                    </div>
+                    <div class="card-body p-24">
+                        <div class="row gy-4 align-items-end">
+                            <div class="col-md-6">
+                                <label asp-for="OrganizationId" class="form-label fw-semibold text-primary-light text-sm mb-8">@T("BackOffice.Users.Organization", "Organizasyon")</label>
+                                <select asp-for="OrganizationId"
+                                        asp-items="organizationOptions"
+                                        class="form-select radius-8 js-user-edit-select2"
+                                        id="userOrganizationSelect"
+                                        data-placeholder="@T("BackOffice.Users.SelectOrganization", "Organizasyon seçiniz")"
+                                        data-selected-value="@(Model.OrganizationId?.ToString() ?? string.Empty)"
+                                        data-congress-url="@Url.Action("GetCongressOptions", "Users", new { culture })">
+                                    <option value="">@T("BackOffice.Users.SelectOrganization", "Organizasyon seçiniz")</option>
+                                </select>
+                                <span asp-validation-for="OrganizationId" class="text-danger text-sm"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="DefaultCongressId" class="form-label fw-semibold text-primary-light text-sm mb-8">@T("BackOffice.Users.DefaultCongress", "Varsayılan Kongre")</label>
+                                <select asp-for="DefaultCongressId"
+                                        asp-items="congressOptions"
+                                        class="form-select radius-8 js-user-edit-select2"
+                                        id="userDefaultCongressSelect"
+                                        data-placeholder="@T("BackOffice.Users.SelectDefaultCongress", "Varsayılan kongre seçiniz")"
+                                        data-selected-value="@(Model.DefaultCongressId?.ToString() ?? string.Empty)">
+                                    <option value="">@T("BackOffice.Users.SelectDefaultCongress", "Varsayılan kongre seçiniz")</option>
+                                </select>
+                                <span asp-validation-for="DefaultCongressId" class="text-danger text-sm"></span>
+                            </div>
+                            <div class="col-12">
+                                <div class="border radius-12 p-16 d-flex align-items-center justify-content-between gap-3">
+                                    <div>
+                                        <h6 class="text-md mb-1">@T("BackOffice.Users.OrgAccessActive", "Organizasyon erişimi aktif")</h6>
+                                        <small class="text-neutral-500">@T("BackOffice.Users.OrgAccessHint", "Pasif olduğunda kullanıcı organizasyon ve kongre bağlamına erişemez.")</small>
+                                    </div>
+                                    <div class="form-switch switch-primary d-flex align-items-center justify-content-center">
+                                        <input asp-for="OrganizationAccessIsActive" class="form-check-input" type="checkbox" role="switch" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="account-edit-pane" role="tabpanel" aria-labelledby="account-edit-tab" tabindex="0">
+                <div class="card p-0 overflow-hidden position-relative radius-16">
+                    <div class="card-header py-16 px-24 bg-base border-bottom">
+                        <h6 class="text-lg mb-0">@T("BackOffice.Users.Edit.AccountSection", "Hesap Durumu")</h6>
+                        <small class="text-neutral-500">@T("BackOffice.Users.Edit.AccountSectionSubtitle", "E-posta doğrulama ve hesap kilitleme ayarları.")</small>
+                    </div>
+                    <div class="card-body p-24">
+                        <div class="d-flex flex-column">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 py-16 border-bottom">
+                                <div class="flex-grow-1">
+                                    <h6 class="text-md mb-4">@T("BackOffice.Users.EmailConfirmed", "E-posta onaylı")</h6>
+                                    <span class="text-sm text-secondary-light">@T("BackOffice.Users.EmailConfirmedHint", "Kullanıcının e-posta doğrulama durumunu yönetir.")</span>
+                                </div>
+                                <div class="form-switch switch-primary d-flex align-items-center justify-content-center">
+                                    <input asp-for="EmailConfirmed" class="form-check-input" type="checkbox" role="switch" />
+                                </div>
+                            </div>
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 py-16">
+                                <div class="flex-grow-1">
+                                    <h6 class="text-md mb-4">@T("BackOffice.Users.LockoutEnabled", "Hesap kilitleme aktif")</h6>
+                                    <span class="text-sm text-secondary-light">@T("BackOffice.Users.LockoutEnabledHint", "Başarısız girişler sonrasında hesabın kilitlenebilmesini sağlar.")</span>
+                                </div>
+                                <div class="form-switch switch-primary d-flex align-items-center justify-content-center">
+                                    <input asp-for="LockoutEnabled" class="form-check-input" type="checkbox" role="switch" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-3 mt-24">
+            <a asp-action="Details" asp-route-culture="@culture" asp-route-id="@Model.Id" class="border border-primary-600 bg-hover-primary-50 text-primary-600 text-md px-24 py-12 radius-8">
+                @T("Common.Cancel", "Vazgeç")
+            </a>
+            <button type="submit" class="btn btn-primary border border-primary-600 text-md px-24 py-12 radius-8">
+                <i class="ri-save-line me-1"></i>@T("Common.Save", "Değişiklikleri Kaydet")
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/lib/select2/dist/js/select2.min.js" asp-append-version="true"></script>
+    <script src="~/lib/select2/dist/js/i18n/tr.min.js" asp-append-version="true"></script>
+
+    <script>
+        (() => {
+            'use strict';
+
+            const initialize = () => {
+                if (!window.jQuery || !jQuery.fn.select2) {
+                    console.error('Select2 yüklenemedi. Yerel Select2 JS/CSS dosyalarını kontrol edin.');
+                    return;
+                }
+
+                const $ = window.jQuery;
+                const $country = $('#userCountrySelect');
+                const $state = $('#userStateSelect');
+                const $organization = $('#userOrganizationSelect');
+                const $congress = $('#userDefaultCongressSelect');
+
+                const selectedValue = ($select) => ($select.data('selected-value') || '').toString();
+                const placeholder = ($select) => ($select.data('placeholder') || '').toString();
+
+                const hasOption = ($select, value) => {
+                    if (!value) return true;
+                    return $select.find('option').filter(function () {
+                        return this.value === value;
+                    }).length > 0;
+                };
+
+                const initializeSelect2 = ($select) => {
+                    if (!$select.length) return;
+
+                    if ($select.hasClass('select2-hidden-accessible')) {
+                        $select.select2('destroy');
+                    }
+
+                    $select.select2({
+                        width: '100%',
+                        dropdownParent: $(document.body),
+                        placeholder: placeholder($select),
+                        allowClear: true,
+                        minimumResultsForSearch: 0,
+                        language: 'tr'
+                    });
+                };
+
+                const setSelectedValue = ($select, value) => {
+                    if (!value || !hasOption($select, value)) return;
+                    $select.val(value).trigger('change.select2');
+                };
+
+                const replaceOptions = ($select, items, emptyText, valueToSelect) => {
+                    if ($select.hasClass('select2-hidden-accessible')) {
+                        $select.select2('destroy');
+                    }
+
+                    $select.empty().append(new Option(emptyText, '', false, !valueToSelect));
+
+                    (Array.isArray(items) ? items : []).forEach(item => {
+                        const value = (item.value || '').toString();
+                        const isSelected = valueToSelect
+                            ? value === valueToSelect
+                            : Boolean(item.selected);
+
+                        $select.append(new Option(item.text || '', value, isSelected, isSelected));
+                    });
+
+                    initializeSelect2($select);
+                    $select.val(valueToSelect || '').trigger('change.select2');
+                };
+
+                const loadOptions = async ({ $select, url, parameters, emptyText, valueToSelect }) => {
+                    if (!$select.length || !url) return;
+
+                    $select.prop('disabled', true);
+
+                    try {
+                        const query = new URLSearchParams(parameters || {});
+                        const response = await fetch(`${url}?${query.toString()}`, {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`Seçenekler yüklenemedi: ${response.status}`);
+                        }
+
+                        replaceOptions(
+                            $select,
+                            await response.json(),
+                            emptyText,
+                            valueToSelect || '');
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        $select.prop('disabled', false);
+                    }
+                };
+
+                $('.js-user-edit-select2').each(function () {
+                    initializeSelect2($(this));
+                });
+
+                $('.js-user-edit-select2').each(function () {
+                    const $select = $(this);
+                    setSelectedValue($select, selectedValue($select));
+                });
+
+                const initialStateId = selectedValue($state);
+                const initialCongressId = selectedValue($congress);
+
+                // Modelde değer var ama option listesinde yoksa selectedId ile tekrar getir.
+                if (initialStateId && !hasOption($state, initialStateId)) {
+                    void loadOptions({
+                        $select: $state,
+                        url: ($country.data('state-url') || '').toString(),
+                        parameters: {
+                            countryId: ($country.val() || '').toString(),
+                            selectedId: initialStateId
+                        },
+                        emptyText: placeholder($state),
+                        valueToSelect: initialStateId
+                    });
+                }
+
+                if (initialCongressId && !hasOption($congress, initialCongressId)) {
+                    void loadOptions({
+                        $select: $congress,
+                        url: ($organization.data('congress-url') || '').toString(),
+                        parameters: {
+                            organizationId: ($organization.val() || '').toString(),
+                            selectedId: initialCongressId
+                        },
+                        emptyText: placeholder($congress),
+                        valueToSelect: initialCongressId
+                    });
+                }
+
+                $country.on('change.userEdit', function () {
+                    void loadOptions({
+                        $select: $state,
+                        url: ($country.data('state-url') || '').toString(),
+                        parameters: { countryId: ($country.val() || '').toString() },
+                        emptyText: placeholder($state),
+                        valueToSelect: ''
+                    });
+                });
+
+                $organization.on('change.userEdit', function () {
+                    void loadOptions({
+                        $select: $congress,
+                        url: ($organization.data('congress-url') || '').toString(),
+                        parameters: { organizationId: ($organization.val() || '').toString() },
+                        emptyText: placeholder($congress),
+                        valueToSelect: ''
+                    });
+                });
+
+                document.querySelectorAll('[data-bs-toggle="pill"]').forEach(tab => {
+                    tab.addEventListener('shown.bs.tab', () => {
+                        window.setTimeout(() => {
+                            $('.js-user-edit-select2').each(function () {
+                                const $select = $(this);
+                                if ($select.hasClass('select2-hidden-accessible')) {
+                                    $select.select2({
+                                        width: '100%',
+                                        dropdownParent: $(document.body),
+                                        placeholder: placeholder($select),
+                                        allowClear: true,
+                                        minimumResultsForSearch: 0,
+                                        language: 'tr'
+                                    });
+                                }
+                            });
+                        }, 50);
+                    });
+                });
+            };
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initialize);
+            } else {
+                initialize();
+            }
+        })();
+    </script>
+}

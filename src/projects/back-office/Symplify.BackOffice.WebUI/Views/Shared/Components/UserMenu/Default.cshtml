@@ -1,0 +1,123 @@
+@using Symplify.BackOffice.WebUI.Localization
+@inject IBackOfficeViewLocalizer L
+@model Symplify.BackOffice.WebUI.Models.Navbar.UserMenuViewModel
+
+@{
+    bool useAuthorTemplate = string.Equals(ViewData["DisplayMode"]?.ToString(), "AuthorTopbar", StringComparison.OrdinalIgnoreCase);
+    string culture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    string homeUrl = Url.Action("Index", "Home", new { culture }) ?? $"/{culture}/Home/Index";
+    string submissionsUrl = Url.Action("Index", "Submissions", new { culture }) ?? $"/{culture}/submissions";
+
+    string T(string key, string fallback)
+    {
+        string value = L.GetStringValue(key);
+        return !string.IsNullOrWhiteSpace(value) && !string.Equals(value, key, StringComparison.OrdinalIgnoreCase)
+            ? value
+            : fallback;
+    }
+
+    string userMenuAriaLabel = T("BackOffice.UserMenu.AriaLabel", "Kullanıcı menüsü");
+    string profileText = T("BackOffice.UserMenu.Profile", "Profilim");
+    string changePasswordText = T("BackOffice.UserMenu.ChangePassword", "Şifremi Değiştir");
+    string settingsText = T("BackOffice.UserMenu.Settings", "Ayarlar");
+    string logoutText = T("BackOffice.UserMenu.Logout", "Çıkış Yap");
+}
+
+@if (useAuthorTemplate)
+{
+    <div class="dropdown">
+        <button class="author-user-pill" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="@userMenuAriaLabel">
+            <span class="author-user-avatar @(string.IsNullOrWhiteSpace(Model.ProfileImageUrl) ? string.Empty : "author-user-avatar--photo")">
+                @if (!string.IsNullOrWhiteSpace(Model.ProfileImageUrl))
+                {
+                    <img src="@Model.ProfileImageUrl" alt="@Model.DisplayName" class="w-100 h-100 object-fit-cover" />
+                }
+                else
+                {
+                    @Model.Initials
+                }
+            </span>
+            <span class="text-sm fw-bold text-primary-light d-none d-sm-inline">@Model.DisplayName</span>
+            <i class="ri-arrow-down-s-line"></i>
+        </button>
+        <div class="dropdown-menu dropdown-menu-end">
+            <a class="dropdown-item" href="@Model.ProfileUrl"><i class="ri-user-line me-2"></i>@profileText</a>
+            <a class="dropdown-item d-lg-none" href="@homeUrl"><i class="ri-home-5-line me-2"></i>@T("BackOffice.AuthorTopbar.Home", "Panel")</a>
+            <a class="dropdown-item d-lg-none" href="@submissionsUrl"><i class="ri-file-list-3-line me-2"></i>@T("BackOffice.AuthorTopbar.MySubmissions", "Bildirilerim")</a>
+            <a class="dropdown-item" href="@Model.ProfileUrl#password-card"><i class="ri-lock-password-line me-2"></i>@changePasswordText</a>
+            <div class="dropdown-divider"></div>
+            <form method="post" action="@Model.LogoutUrl" class="m-0">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="dropdown-item text-danger border-0 bg-transparent w-100 text-start">
+                    <i class="ri-logout-box-r-line me-2"></i>@logoutText
+                </button>
+            </form>
+        </div>
+    </div>
+}
+else
+{
+    <div class="dropdown">
+        <button class="d-flex justify-content-center align-items-center rounded-circle border-0 bg-transparent p-0" type="button" data-bs-toggle="dropdown" aria-label="@userMenuAriaLabel">
+            <span class="w-40-px h-40-px rounded-circle bg-primary-50 text-primary-600 d-flex align-items-center justify-content-center fw-bold overflow-hidden">
+                @if (!string.IsNullOrWhiteSpace(Model.ProfileImageUrl))
+                {
+                    <img src="@Model.ProfileImageUrl" alt="@Model.DisplayName" class="w-100 h-100 object-fit-cover" />
+                }
+                else
+                {
+                    @Model.Initials
+                }
+            </span>
+        </button>
+
+        <div class="dropdown-menu dropdown-menu-sm">
+            <div class="py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2">
+                <div>
+                    <h6 class="text-lg text-primary-light fw-semibold mb-2">@Model.DisplayName</h6>
+                    <span class="text-secondary-light fw-medium text-sm">@Model.PrimaryRole</span>
+                    @if (!string.IsNullOrWhiteSpace(Model.Email))
+                    {
+                        <span class="d-block text-secondary-light text-xs mt-1">@Model.Email</span>
+                    }
+                </div>
+            </div>
+
+            <ul class="to-top-list list-unstyled mb-0">
+                <li>
+                    <a class="dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-primary d-flex align-items-center gap-3"
+                       href="@Model.ProfileUrl">
+                        <iconify-icon icon="solar:user-linear" class="icon text-xl"></iconify-icon>
+                        @profileText
+                    </a>
+                </li>
+
+                <li>
+                    <a class="dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-primary d-flex align-items-center gap-3"
+                       href="@Model.ProfileUrl#password-card">
+                        <iconify-icon icon="solar:lock-password-outline" class="icon text-xl"></iconify-icon>
+                        @changePasswordText
+                    </a>
+                </li>
+
+                <li>
+                    <a class="dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-primary d-flex align-items-center gap-3"
+                       href="@Model.SettingsUrl">
+                        <iconify-icon icon="icon-park-outline:setting-two" class="icon text-xl"></iconify-icon>
+                        @settingsText
+                    </a>
+                </li>
+
+                <li>
+                    <form method="post" action="@Model.LogoutUrl" class="m-0">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-danger d-flex align-items-center gap-3 border-0 bg-transparent w-100">
+                            <iconify-icon icon="lucide:power" class="icon text-xl"></iconify-icon>
+                            @logoutText
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </div>
+}

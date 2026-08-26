@@ -1,0 +1,924 @@
+@using Symplify.BackOffice.WebUI.Localization
+@inject IBackOfficeViewLocalizer L
+
+@model Symplify.BackOffice.WebUI.Models.Submissions.SubmissionUpdateViewModel
+
+@{
+    string T(string key, string fallback)
+    {
+        var value = L.GetStringValue(key);
+
+        return string.IsNullOrWhiteSpace(value) ||
+               string.Equals(value, key, StringComparison.OrdinalIgnoreCase)
+            ? fallback
+            : value;
+    }
+
+    ViewData["Title"] = Model.IsExhibitionApplication
+        ? T("BackOffice.Submissions.Management.Edit.ExhibitionPageTitle", "Sergi Başvurusu Yönetimi - Düzenle")
+        : T("BackOffice.Submissions.Management.Edit.PageTitle", "Bildiri Yönetimi - Düzenle");
+    ViewData["ClientResourcePrefixes"] = new[] { "BackOffice.Submissions.", "BackOffice.Submissions.Management.Editor.", "BackOffice.Submissions.Management.Edit." };
+    string? currentCulture = Context.Request.RouteValues["culture"]?.ToString();
+    bool canEdit = Model.CanEdit;
+    string? returnUrl = ViewData["ReturnUrl"]?.ToString();
+    string backUrl = string.IsNullOrWhiteSpace(returnUrl)
+        ? Url.Action("Index", "SubmissionManagement", new { culture = currentCulture }) ?? "#"
+        : returnUrl;
+    string statusBadgeClass = canEdit ? "bg-warning-100 text-warning-700" : "bg-neutral-200 text-neutral-700";
+    string statusLabel = string.IsNullOrWhiteSpace(Model.TransactionStatusName)
+        ? (Model.IsSubmitted ? T("BackOffice.Submissions.Management.Edit.SubmittedStatus", "Onaya Gönderildi") : T("BackOffice.Submissions.Management.Edit.DraftStatus", "Taslak"))
+        : Model.TransactionStatusName;
+    string authorStepNumber = Model.IsExhibitionApplication ? "2" : "4";
+    string statusTitle = Model.IsExhibitionApplication
+        ? T("BackOffice.Submissions.Management.Edit.CurrentApplicationStatus", "Mevcut Başvuru Durumu")
+        : T("BackOffice.Submissions.Management.Edit.StatusTitle", "Mevcut Bildiri Durumu");
+    string submissionTypeText = Model.SubmissionTypes.FirstOrDefault(item => item.Id == Model.SubmissionTypeId)?.Text
+        ?? T("Common.NotAvailable", "-");
+    string? existingExhibitionPreviewUrl = Model.ExistingExhibitionFileId.HasValue
+        ? Url.Action("PreviewFile", "SubmissionManagementFiles", new { culture = currentCulture, fileId = Model.ExistingExhibitionFileId.Value })
+        : null;
+    string? existingExhibitionDownloadUrl = Model.ExistingExhibitionFileId.HasValue
+        ? Url.Action("DownloadFile", "SubmissionManagementFiles", new { culture = currentCulture, fileId = Model.ExistingExhibitionFileId.Value })
+        : null;
+    string? existingFullTextDownloadUrl = Model.ExistingFullTextFileId.HasValue
+        ? Url.Action("DownloadFile", "SubmissionManagementFiles", new { culture = currentCulture, fileId = Model.ExistingFullTextFileId.Value })
+        : null;
+    string? existingPresentationDownloadUrl = Model.ExistingPresentationFileId.HasValue
+        ? Url.Action("DownloadFile", "SubmissionManagementFiles", new { culture = currentCulture, fileId = Model.ExistingPresentationFileId.Value })
+        : null;
+
+    string FormatManagedFileDisplayName(Guid? fileId, string? originalFileName, string fileTypeCode)
+    {
+        string extension = System.IO.Path.GetExtension(originalFileName ?? string.Empty);
+        string submissionCode = BuildFileNameSegment(string.IsNullOrWhiteSpace(Model.SubmissionNumber)
+            ? Model.Id.ToString("N")[..8].ToUpperInvariant()
+            : Model.SubmissionNumber);
+        string fileCode = fileId.HasValue && fileId.Value != Guid.Empty
+            ? fileId.Value.ToString("N")[..8].ToUpperInvariant()
+            : "00000000";
+        string normalizedExtension = string.IsNullOrWhiteSpace(extension)
+            ? string.Empty
+            : extension.ToLowerInvariant();
+
+        return $"{submissionCode}_{fileTypeCode}_{fileCode}{normalizedExtension}";
+    }
+
+    string BuildFileNameSegment(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return "SUBMISSION";
+
+        string normalized = value.Trim().ToUpperInvariant()
+            .Replace("İ", "I", StringComparison.Ordinal)
+            .Replace("Ö", "O", StringComparison.Ordinal)
+            .Replace("Ü", "U", StringComparison.Ordinal)
+            .Replace("Ş", "S", StringComparison.Ordinal)
+            .Replace("Ğ", "G", StringComparison.Ordinal)
+            .Replace("Ç", "C", StringComparison.Ordinal);
+
+        normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"[^A-Z0-9]+", "-");
+        normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"-+", "-").Trim('-');
+
+        return string.IsNullOrWhiteSpace(normalized) ? "SUBMISSION" : normalized;
+    }
+
+    string existingFullTextDisplayName = FormatManagedFileDisplayName(
+        Model.ExistingFullTextFileId,
+        Model.ExistingFullTextFileName,
+        "FULL-TEXT");
+
+    string existingPresentationDisplayName = FormatManagedFileDisplayName(
+        Model.ExistingPresentationFileId,
+        Model.ExistingPresentationFileName,
+        "PRESENTATION-VIDEO");
+
+    string existingExhibitionDisplayName = FormatManagedFileDisplayName(
+        Model.ExistingExhibitionFileId,
+        Model.ExistingExhibitionFileName,
+        "EXHIBITION-IMAGE");
+}
+
+<div class="dashboard-main-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <a href="@backUrl"
+           class="btn btn-outline-primary-600 radius-8 px-16 py-8 d-inline-flex align-items-center gap-2">
+            <i class="ri-arrow-left-line"></i>
+            @T("BackOffice.Submissions.Management.Edit.BackToList", "Listeye Dön")
+        </a>
+
+        <ul class="d-flex align-items-center gap-2 mb-0">
+            <li class="fw-medium">
+                <a class="d-flex align-items-center gap-1 hover-text-primary text-neutral-600" asp-controller="Congresses" asp-action="Index" asp-route-culture="@currentCulture">
+                    <iconify-icon class="icon text-lg" icon="solar:home-smile-angle-outline"></iconify-icon>
+                    @T("BackOffice.Submissions.Management.Edit.Breadcrumb.Dashboard", "Panel")
+                </a>
+            </li>
+            <li>-</li>
+            <li class="fw-medium">
+                <a class="hover-text-primary text-neutral-600" href="@backUrl">@T("BackOffice.Submissions.Management.Edit.Breadcrumb.Index", "Bildiri Yönetimi")</a>
+            </li>
+            <li>-</li>
+            <li class="fw-medium">@(Model.IsExhibitionApplication ? T("BackOffice.Submissions.Management.Edit.ExhibitionHeaderTitle", "Yönetimden Sergi Başvurusu Düzenle") : T("BackOffice.Submissions.Management.Edit.Breadcrumb.Edit", "Yönetimden Bildiri Düzenle"))</li>
+        </ul>
+    </div>
+
+    @if (!canEdit)
+    {
+        <div class="alert alert-warning bg-warning-100 border-warning-200 text-warning-700 d-flex align-items-start gap-3 mb-24">
+            <i class="ri-error-warning-line text-xl mt-1"></i>
+            <div>
+                <h6 class="text-md mb-1">@T("BackOffice.Submissions.Management.Edit.ReadOnlyTitle", "Bildiri düzenlenemez")</h6>
+                <p class="mb-0">@T("BackOffice.Submissions.Management.Edit.ReadOnlyDescription", "Bu bildiri mevcut iş akışı durumunda güncellenemez. Sadece taslak veya revizyon beklenen durumlarda düzenleme yapılabilir.")</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info bg-primary-50 border-primary-100 text-primary-700 d-flex align-items-start gap-3 mb-24">
+            <i class="ri-information-line text-xl mt-1"></i>
+            <div>
+                <h6 class="text-md mb-1">@(Model.IsExhibitionApplication ? T("BackOffice.Submissions.Management.Edit.ExhibitionInfoTitle", "Sergi başvurusu düzenleme") : T("BackOffice.Submissions.Management.Edit.InfoTitle", "Bildiri düzenleme"))</h6>
+                <p class="mb-0">@(Model.IsExhibitionApplication ? T("BackOffice.Submissions.Management.Edit.ExhibitionInfoDescription", "Sergi başvurusunda eser bilgileri ve dosya bilgisini güncelleyebilirsiniz.") : T("BackOffice.Submissions.Management.Edit.InfoDescription", "Bildiri kongresi değiştirilemez. Bildiri türü, konu, içerik ve yazar bilgilerini güncelleyebilirsiniz."))</p>
+            </div>
+        </div>
+    }
+
+    <div class="mb-24">
+        <h6 class="fw-semibold mb-0">@(Model.IsExhibitionApplication ? T("BackOffice.Submissions.Management.Edit.ExhibitionHeaderTitle", "Yönetimden Sergi Başvurusu Düzenle") : T("BackOffice.Submissions.Management.Edit.Breadcrumb.Edit", "Yönetimden Bildiri Düzenle"))</h6>
+        <small class="text-neutral-500">@Model.SubmissionNumber @(Model.IsExhibitionApplication ? T("BackOffice.Submissions.Management.Edit.ExhibitionHeaderSubtitleSuffix", "numaralı sergi başvurusu bilgilerini güncelleyin.") : T("BackOffice.Submissions.Management.Edit.HeaderSubtitleSuffix", "numaralı bildiri bilgilerini güncelleyin."))</small>
+    </div>
+
+    <form asp-action="Edit" asp-route-culture="@currentCulture" asp-route-id="@Model.Id" asp-route-returnUrl="@returnUrl" method="post" enctype="multipart/form-data" autocomplete="off" id="submissionEditForm">
+        @Html.AntiForgeryToken()
+        <input asp-for="Id" type="hidden" />
+        <input asp-for="CongressId" type="hidden" />
+        <input asp-for="SubmissionNumber" type="hidden" />
+        <input asp-for="IsSubmitted" type="hidden" />
+        <input asp-for="IsExhibitionApplication" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        @if (Model.IsExhibitionApplication)
+        {
+            <input asp-for="SubmissionTypeId" type="hidden" />
+            <input asp-for="TopicId" type="hidden" />
+            <input asp-for="LanguageId" type="hidden" />
+
+            @for (int i = 0; i < Model.Authors.Count; i++)
+            {
+                <input type="hidden" name="Authors[@i].Id" value="@Model.Authors[i].Id" />
+                <input type="hidden" name="Authors[@i].TitleId" value="@Model.Authors[i].TitleId" />
+                <input type="hidden" name="Authors[@i].FullName" value="@Model.Authors[i].FullName" />
+                <input type="hidden" name="Authors[@i].Email" value="@Model.Authors[i].Email" />
+                <input type="hidden" name="Authors[@i].Institution" value="@Model.Authors[i].Institution" />
+                <input type="hidden" name="Authors[@i].Orcid" value="@Model.Authors[i].Orcid" />
+                <input type="hidden" name="Authors[@i].IsCorrespondingAuthor" value="@Model.Authors[i].IsCorrespondingAuthor" />
+            }
+
+            <fieldset disabled="@(!canEdit)">
+                <div class="row gy-4">
+                    <div class="col-xl-8">
+                        <div class="card border shadow-none mb-4">
+                            <div class="card-header border-bottom d-flex align-items-center gap-3">
+                                <span class="w-36-px h-36-px rounded-circle bg-primary-50 text-primary-600 d-flex align-items-center justify-content-center fw-semibold">1</span>
+                                <div>
+                                    <h6 class="text-md mb-0">@T("BackOffice.ExhibitionApplications.Create.WorkInfoTitle", "Eser Bilgileri")</h6>
+                                    <small class="text-neutral-500">@T("BackOffice.ExhibitionApplications.Create.WorkInfoSubtitle", "Başvuru yapılacak kongre ve sergi türü otomatik belirlenir.")</small>
+                                </div>
+                            </div>
+                            <div class="card-body row gy-4">
+                                <div class="col-md-6">
+                                    <label class="form-label">@T("BackOffice.Submissions.Create.CongressLabel", "Kongre") <span class="text-danger">*</span></label>
+                                    <div class="border rounded-3 px-16 py-12 bg-neutral-50 fw-semibold text-neutral-900">
+                                        @Model.CongressName
+                                    </div>
+                                    <span asp-validation-for="CongressId" class="text-danger"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">@T("BackOffice.Submissions.Create.SubmissionTypeLabel", "Bildiri Türü") <span class="text-danger">*</span></label>
+                                    <div class="border rounded-3 px-16 py-12 bg-neutral-50 fw-semibold text-neutral-900">
+                                        @submissionTypeText
+                                    </div>
+                                    <span asp-validation-for="SubmissionTypeId" class="text-danger"></span>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label" asp-for="WorkName">@T("BackOffice.ExhibitionApplications.Create.WorkName", "Eserin Adı") <span class="text-danger">*</span></label>
+                                    <input class="form-control" asp-for="WorkName" maxlength="300" data-normalize-title-tr="true" placeholder='@T("BackOffice.ExhibitionApplications.Create.WorkNamePlaceholder", "Eser adını yazın")' />
+                                    <span asp-validation-for="WorkName" class="text-danger"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label" asp-for="Dimensions">@T("BackOffice.ExhibitionApplications.Create.Dimensions", "Eserin Ölçüleri")</label>
+                                    <input class="form-control" asp-for="Dimensions" maxlength="200" placeholder='@T("BackOffice.ExhibitionApplications.Create.DimensionsPlaceholder", "Örn: 50x70 cm")' />
+                                    <span asp-validation-for="Dimensions" class="text-danger"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label" asp-for="Technique">@T("BackOffice.ExhibitionApplications.Create.Technique", "Uygulanan Teknik") <span class="text-danger">*</span></label>
+                                    <input class="form-control" asp-for="Technique" maxlength="250" placeholder='@T("BackOffice.ExhibitionApplications.Create.TechniquePlaceholder", "Örn: Yağlı boya, akrilik, dijital çalışma")' />
+                                    <span asp-validation-for="Technique" class="text-danger"></span>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label" asp-for="Description">@T("BackOffice.ExhibitionApplications.Create.Description", "Açıklama")</label>
+                                    <textarea class="form-control" asp-for="Description" rows="5" maxlength="4000" placeholder='@T("BackOffice.ExhibitionApplications.Create.DescriptionPlaceholder", "Varsa vermek istediğiniz ek bilgi")'></textarea>
+                                    <span asp-validation-for="Description" class="text-danger"></span>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label" asp-for="Address">@T("BackOffice.ExhibitionApplications.Create.Address", "Adresiniz") <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" asp-for="Address" rows="4" maxlength="1000" placeholder='@T("BackOffice.ExhibitionApplications.Create.AddressPlaceholder", "İletişim ve teslimat için adresinizi yazın")'></textarea>
+                                    <span asp-validation-for="Address" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-4">
+                        <div class="card border shadow-none mb-4">
+                            <div class="card-header border-bottom d-flex align-items-center gap-3">
+                                <span class="w-36-px h-36-px rounded-circle bg-success-100 text-success-600 d-flex align-items-center justify-content-center fw-semibold">2</span>
+                                <div>
+                                    <h6 class="text-md mb-0">@T("BackOffice.ExhibitionApplications.Create.FileTitle", "Dosya Yükle")</h6>
+                                    <small class="text-neutral-500">@T("BackOffice.ExhibitionApplications.Create.FileSubtitle", "Aynı eser için birden fazla görsel varsa kolaj olarak tek dosya yükleyin.")</small>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                @if (Model.HasExistingExhibitionFile)
+                                {
+                                    <div class="border rounded-3 p-16 mb-3">
+                                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-12">
+                                            <div>
+                                                <h6 class="text-sm mb-1">@T("BackOffice.Submissions.Management.Edit.ExhibitionCurrentFileTitle", "Mevcut Sergi Dosyası")</h6>
+                                                <small class="text-neutral-500">@T("BackOffice.Submissions.Management.Edit.ExhibitionCurrentFileDescription", "Yeni dosya seçmezseniz bu dosya korunur.")</small>
+                                            </div>
+                                            <span class="badge bg-primary-50 text-primary-600 radius-8 px-10 py-6">@T("BackOffice.Submissions.Management.Editor.Files.Kind.ExhibitionImage", "Sergi Görseli")</span>
+                                        </div>
+
+                                        @if (Model.ExistingExhibitionFileIsImage && !string.IsNullOrWhiteSpace(existingExhibitionPreviewUrl))
+                                        {
+                                            <button type="button" class="border-0 bg-transparent p-0 w-100 text-start" data-bs-toggle="modal" data-bs-target="#existingExhibitionImageModal">
+                                                <div class="ratio ratio-16x9 border rounded-3 overflow-hidden bg-neutral-50 mb-12">
+                                                    <img src="@existingExhibitionPreviewUrl" alt='@T("BackOffice.Submissions.Management.Editor.Exhibition.ImageAlt", "Sergi görseli")' class="w-100 h-100 object-fit-cover" />
+                                                </div>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <div class="border rounded-3 bg-neutral-50 px-16 py-24 text-center mb-12">
+                                                <i class="ri-file-text-line text-primary-600 text-3xl d-block mb-2"></i>
+                                                <strong class="d-block">@T("BackOffice.Submissions.Management.Edit.ExhibitionCurrentFilePreviewUnavailable", "Dosya ön izlemesi desteklenmiyor")</strong>
+                                            </div>
+                                        }
+
+                                        <div class="d-flex flex-column gap-1 text-sm text-neutral-700 mb-12">
+                                            <span>@T("BackOffice.Submissions.Management.Edit.ExhibitionCurrentFileName", "Dosya adı"): @existingExhibitionDisplayName</span>
+                                            @if (Model.ExistingExhibitionFileUploadedAt.HasValue)
+                                            {
+                                                <span>@T("BackOffice.Submissions.Management.Editor.Files.UploadedAt", "Yüklenme"): @Model.ExistingExhibitionFileUploadedAt.Value.ToString("dd.MM.yyyy HH:mm")</span>
+                                            }
+                                        </div>
+
+                                        <div class="d-flex flex-wrap gap-2">
+                                            @if (!string.IsNullOrWhiteSpace(existingExhibitionPreviewUrl))
+                                            {
+                                                <a href="@existingExhibitionPreviewUrl" target="_blank" rel="noopener" class="btn btn-outline-primary radius-8 px-14 py-8 d-inline-flex align-items-center gap-1">
+                                                    <i class="ri-eye-line"></i>
+                                                    @T("BackOffice.Submissions.Management.Editor.Exhibition.Preview", "Ön İzle")
+                                                </a>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(existingExhibitionDownloadUrl))
+                                            {
+                                                <a href="@existingExhibitionDownloadUrl" class="btn btn-outline-neutral-900 radius-8 px-14 py-8 d-inline-flex align-items-center gap-1">
+                                                    <i class="ri-download-2-line"></i>
+                                                    @T("BackOffice.Submissions.Management.Editor.Files.Download", "İndir")
+                                                </a>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+
+
+                                <div id="selectedExhibitionFilePreview" class="border border-primary-200 rounded-3 p-16 mb-3 d-none">
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-12">
+                                        <div>
+                                            <h6 class="text-sm mb-1">@T("BackOffice.Submissions.Management.Edit.ExhibitionSelectedFileTitle", "Seçilen Yeni Dosya")</h6>
+                                            <small class="text-neutral-500">@T("BackOffice.Submissions.Management.Edit.ExhibitionSelectedFileDescription", "Kaydettiğinizde mevcut sergi dosyasının yerine geçer.")</small>
+                                        </div>
+                                        <span class="badge bg-primary-50 text-primary-600 radius-8 px-10 py-6">@T("BackOffice.Submissions.Management.Editor.Files.Kind.ExhibitionImage", "Sergi Görseli")</span>
+                                    </div>
+                                    <div id="selectedExhibitionImageContainer" class="ratio ratio-16x9 border rounded-3 overflow-hidden bg-neutral-50 mb-12 d-none">
+                                        <img id="selectedExhibitionImage" src="" alt='@T("BackOffice.Submissions.Management.Editor.Exhibition.ImageAlt", "Sergi görseli")' class="w-100 h-100 object-fit-cover" />
+                                    </div>
+                                    <div id="selectedExhibitionFileFallback" class="border rounded-3 bg-neutral-50 px-16 py-24 text-center mb-12 d-none">
+                                        <i class="ri-file-text-line text-primary-600 text-3xl d-block mb-2"></i>
+                                        <strong class="d-block">@T("BackOffice.Submissions.Management.Edit.ExhibitionCurrentFilePreviewUnavailable", "Dosya ön izlemesi desteklenmiyor")</strong>
+                                    </div>
+                                    <div class="d-flex flex-column gap-1 text-sm text-neutral-700">
+                                        <span>@T("BackOffice.Submissions.Management.Edit.ExhibitionCurrentFileName", "Dosya adı"): <strong id="selectedExhibitionFileName"></strong></span>
+                                    </div>
+                                </div>
+
+                                <div class="bg-neutral-50 border rounded-3 px-16 py-24 text-center mb-3">
+                                    <i class="ri-upload-cloud-2-line text-primary-600 text-3xl d-block mb-2"></i>
+                                    <strong class="d-block mb-1">@T("BackOffice.ExhibitionApplications.Create.FileDropTitle", "Lütfen Dosyanızı Buradan Yükleyiniz")</strong>
+                                    <small class="text-neutral-500 d-block mb-3">@T("BackOffice.ExhibitionApplications.Create.FileHelp", "JPG, PNG, WEBP veya PDF. Maksimum 20 MB.")</small>
+                                    <input class="form-control" asp-for="ExhibitionFile" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" />
+                                </div>
+                                <span asp-validation-for="ExhibitionFile" class="text-danger d-block mb-3"></span>
+                                <small class="text-neutral-500 d-block mb-3">@T("BackOffice.Submissions.Management.Edit.ExhibitionFileOptionalHelp", "Yeni dosya seçmezseniz mevcut sergi dosyası korunur.")</small>
+
+
+                                <div class="card border shadow-none mb-4">
+                                    <div class="card-header border-bottom d-flex align-items-center gap-3">
+                                        <span class="w-36-px h-36-px rounded-circle bg-info-50 text-info-600 d-flex align-items-center justify-content-center fw-semibold"><i class="ri-folder-upload-line"></i></span>
+                                        <div>
+                                            <h6 class="text-md mb-0">@T("BackOffice.Submissions.FinalFiles.Title", "Tam Metin ve Sunum Dosyaları")</h6>
+                                            <small class="text-neutral-500">@T("BackOffice.Submissions.FinalFiles.EditorDescription", "Ödeme sonrası tam metin ve varsa video sunum dosyasını buradan yönetebilirsiniz.")</small>
+                                        </div>
+                                    </div>
+                                    <div class="card-body d-grid gap-3">
+                                        <div class="border rounded-3 p-14">
+                                            <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-12">
+                                                <div>
+                                                    <h6 class="text-sm mb-1">@T("BackOffice.Submissions.FinalFiles.FullTextTitle", "Tam Metin Dosyası")</h6>
+                                                    <small class="text-neutral-500">@T("BackOffice.Submissions.FinalFiles.FullTextHelp", "Yalnızca DOCX. Maksimum 50 MB.")</small>
+                                                </div>
+                                                <span class="badge bg-primary-50 text-primary-600 radius-8 px-10 py-6">@T("BackOffice.Submissions.Detail.Files.Kind.FullText", "Tam Metin")</span>
+                                            </div>
+                                            @if (Model.HasExistingFullTextFile)
+                                            {
+                                                <div class="bg-neutral-50 border rounded-3 p-12 mb-12">
+                                                    <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap">
+                                                        <div>
+                                                            <strong class="d-block text-sm mb-1">@existingFullTextDisplayName</strong>
+                                                            @if (Model.ExistingFullTextFileUploadedAt.HasValue)
+                                                            {
+                                                                <span class="text-sm text-neutral-500">@T("BackOffice.Submissions.Management.Editor.Files.UploadedAt", "Yüklenme"): @Model.ExistingFullTextFileUploadedAt.Value.ToString("dd.MM.yyyy HH:mm")</span>
+                                                            }
+                                                        </div>
+                                                        @if (!string.IsNullOrWhiteSpace(existingFullTextDownloadUrl))
+                                                        {
+                                                            <a href="@existingFullTextDownloadUrl" class="btn btn-outline-primary radius-8 px-14 py-8 d-inline-flex align-items-center gap-1"><i class="ri-download-2-line"></i> @T("BackOffice.Submissions.Management.Editor.Files.Download", "İndir")</a>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                            <input class="form-control" asp-for="FullTextFile" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                                            <span asp-validation-for="FullTextFile" class="text-danger d-block mt-2"></span>
+                                            <small class="text-neutral-500 d-block mt-2">@T("BackOffice.Submissions.FinalFiles.ReplaceHelp", "Yeni dosya seçmezseniz mevcut dosya korunur.")</small>
+                                        </div>
+
+                                        <div class="border rounded-3 p-14">
+                                            <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-12">
+                                                <div>
+                                                    <h6 class="text-sm mb-1">@T("BackOffice.Submissions.FinalFiles.VideoTitle", "Video Sunum Dosyası")</h6>
+                                                    <small class="text-neutral-500">@T("BackOffice.Submissions.FinalFiles.VideoHelp", "MP4, MOV veya WEBM. Maksimum 500 MB.")</small>
+                                                </div>
+                                                <span class="badge bg-neutral-100 text-neutral-700 radius-8 px-10 py-6">@T("BackOffice.Submissions.FinalFiles.Optional", "Gerekirse")</span>
+                                            </div>
+                                            @if (Model.HasExistingPresentationFile)
+                                            {
+                                                <div class="bg-neutral-50 border rounded-3 p-12 mb-12">
+                                                    <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap">
+                                                        <div>
+                                                            <strong class="d-block text-sm mb-1">@existingPresentationDisplayName</strong>
+                                                            @if (Model.ExistingPresentationFileUploadedAt.HasValue)
+                                                            {
+                                                                <span class="text-sm text-neutral-500">@T("BackOffice.Submissions.Management.Editor.Files.UploadedAt", "Yüklenme"): @Model.ExistingPresentationFileUploadedAt.Value.ToString("dd.MM.yyyy HH:mm")</span>
+                                                            }
+                                                        </div>
+                                                        @if (!string.IsNullOrWhiteSpace(existingPresentationDownloadUrl))
+                                                        {
+                                                            <a href="@existingPresentationDownloadUrl" class="btn btn-outline-primary radius-8 px-14 py-8 d-inline-flex align-items-center gap-1"><i class="ri-download-2-line"></i> @T("BackOffice.Submissions.Management.Editor.Files.Download", "İndir")</a>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                            <input class="form-control" asp-for="PresentationFile" type="file" accept=".mp4,.mov,.webm" />
+                                            <span asp-validation-for="PresentationFile" class="text-danger d-block mt-2"></span>
+                                            <small class="text-neutral-500 d-block mt-2">@T("BackOffice.Submissions.FinalFiles.VideoEditorHelp", "Yazar kongreye katılamayacaksa video sunum dosyası buradan yönetilir.")</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button class="btn btn-success-600 radius-8 px-20 py-11 d-flex align-items-center justify-content-center gap-2 w-100" type="submit" name="SubmitAction" value="draft">
+                                    <i class="ri-save-line"></i>
+                                    @T("BackOffice.Submissions.Management.Edit.SaveButton", "Değişiklikleri Kaydet")
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+        }
+        else
+        {
+        <div class="row gy-4">
+            <div class="col-xl-7">
+                <fieldset disabled="@(!canEdit)">
+                    @if (Model.IsExhibitionApplication)
+                    {
+                        <input asp-for="SubmissionTypeId" type="hidden" />
+                        <input asp-for="TopicId" type="hidden" />
+                        <input asp-for="Title" type="hidden" value="@Model.WorkName" />
+                        <input asp-for="Keywords" type="hidden" value="@Model.Technique" />
+                        <input asp-for="Abstract" type="hidden" value="@Model.Description" />
+
+                        <div class="card border shadow-none mb-4">
+                            <div class="card-header border-bottom d-flex align-items-center gap-3">
+                                <span class="w-36-px h-36-px rounded-circle bg-primary-50 text-primary-600 d-flex align-items-center justify-content-center fw-semibold">1</span>
+                                <div>
+                                    <h6 class="text-md mb-0">@T("BackOffice.ExhibitionApplications.Create.WorkInfoTitle", "Eser Bilgileri")</h6>
+                                    <small class="text-neutral-500">@T("BackOffice.ExhibitionApplications.Create.HeaderSubtitle", "Eser adı, ölçü, teknik, açıklama, adres ve dosya bilgilerini girin.")</small>
+                                </div>
+                            </div>
+                            <div class="card-body row gy-4">
+                                <div class="col-md-6">
+                                    <label class="form-label">@T("BackOffice.Submissions.Create.CongressLabel", "Kongre")</label>
+                                    <div class="border rounded-3 px-16 py-12 bg-neutral-50 fw-semibold text-neutral-900">
+                                        @Model.CongressName
+                                    </div>
+                                    <small class="text-neutral-500 d-block mt-1">@T("BackOffice.Submissions.Management.Edit.CongressReadOnlyHelp", "Bildiri kongresi değiştirilemez.")</small>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">@T("BackOffice.Submissions.Create.SubmissionTypeLabel", "Bildiri Türü")</label>
+                                    <div class="border rounded-3 px-16 py-12 bg-neutral-50 fw-semibold text-neutral-900">
+                                        @submissionTypeText
+                                    </div>
+                                    <small class="text-neutral-500 d-block mt-1">@T("BackOffice.Submissions.Management.Edit.ExhibitionTypeReadonlyHelp", "Sergi başvuru türü bu ekranda değiştirilemez.")</small>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label" asp-for="WorkName">@T("BackOffice.ExhibitionApplications.Create.WorkName", "Eserin Adı") <span class="text-danger">*</span></label>
+                                    <input class="form-control" asp-for="WorkName" maxlength="300" data-normalize-title-tr="true" />
+                                    <span asp-validation-for="WorkName" class="text-danger"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label" asp-for="Dimensions">@T("BackOffice.ExhibitionApplications.Create.Dimensions", "Eserin Ölçüleri")</label>
+                                    <input class="form-control" asp-for="Dimensions" maxlength="200" />
+                                    <span asp-validation-for="Dimensions" class="text-danger"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label" asp-for="Technique">@T("BackOffice.ExhibitionApplications.Create.Technique", "Uygulanan Teknik") <span class="text-danger">*</span></label>
+                                    <input class="form-control" asp-for="Technique" maxlength="250" />
+                                    <span asp-validation-for="Technique" class="text-danger"></span>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label" asp-for="Description">@T("BackOffice.ExhibitionApplications.Create.Description", "Açıklama")</label>
+                                    <textarea class="form-control" asp-for="Description" rows="5" maxlength="4000" placeholder='@T("BackOffice.ExhibitionApplications.Create.DescriptionPlaceholder", "Varsa vermek istediğiniz ek bilgi")'></textarea>
+                                    <span asp-validation-for="Description" class="text-danger"></span>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label" asp-for="Address">@T("BackOffice.ExhibitionApplications.Create.Address", "Adresiniz") <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" asp-for="Address" rows="4" maxlength="1000"></textarea>
+                                    <span asp-validation-for="Address" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="card border shadow-none mb-4">
+                            <div class="card-header border-bottom d-flex align-items-center gap-3">
+                                <span class="w-36-px h-36-px rounded-circle bg-primary-50 text-primary-600 d-flex align-items-center justify-content-center fw-semibold">1</span>
+                                <div>
+                                    <h6 class="text-md mb-0">@T("BackOffice.Submissions.Create.BasicInfo.Title", "Bildiri Bilgileri")</h6>
+                                    <small class="text-neutral-500">@T("BackOffice.Submissions.Management.Edit.BasicInfoSubtitle", "Bildiri türü, konu ve ORCID bilgisini güncelleyin.")</small>
+                                </div>
+                            </div>
+                            <div class="card-body row gy-4">
+                                <div class="col-12">
+                                    <label class="form-label">@T("BackOffice.Submissions.Create.CongressLabel", "Kongre")</label>
+                                    <input class="form-control" value="@Model.CongressName" readonly />
+                                    <small class="text-neutral-500 d-block mt-1">@T("BackOffice.Submissions.Management.Edit.CongressReadOnlyHelp", "Bildiri kongresi değiştirilemez.")</small>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label" asp-for="SubmissionTypeId">@T("BackOffice.Submissions.Create.SubmissionTypeLabel", "Bildiri Türü") <span class="text-danger">*</span></label>
+                                    <select class="form-control form-select" asp-for="SubmissionTypeId">
+                                        <option value="">@T("Common.Select", "Seçiniz")</option>
+                                        @foreach (var item in Model.SubmissionTypes)
+                                        {
+                                            <option value="@item.Id">@item.Text</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="SubmissionTypeId" class="text-danger"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label" asp-for="TopicId">@T("BackOffice.Submissions.Create.TopicLabel", "Konu") <span class="text-danger">*</span></label>
+                                    <select class="form-control form-select" asp-for="TopicId">
+                                        <option value="">@T("Common.Select", "Seçiniz")</option>
+                                        @foreach (var item in Model.Topics)
+                                        {
+                                            <option value="@item.Id">@item.Text</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="TopicId" class="text-danger"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label" asp-for="Orcid">@T("BackOffice.Submissions.Create.OrcidLabel", "ORCID")</label>
+                                    <input class="form-control" asp-for="Orcid" placeholder="0000-0000-0000-0000" />
+                                    <span asp-validation-for="Orcid" class="text-danger"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label" asp-for="LanguageId">@T("BackOffice.Submissions.Create.LanguageLabel", "Bildiri Dili")</label>
+                                    <select class="form-control form-select" asp-for="LanguageId">
+                                        <option value="">@T("Common.Select", "Seçiniz")</option>
+                                        @foreach (var item in Model.Languages)
+                                        {
+                                            <option value="@item.Id">@item.Text</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="LanguageId" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border shadow-none mb-4">
+                            <div class="card-header border-bottom d-flex align-items-center gap-3">
+                                <span class="w-36-px h-36-px rounded-circle bg-primary-50 text-primary-600 d-flex align-items-center justify-content-center fw-semibold">2</span>
+                                <div>
+                                    <h6 class="text-md mb-0">@T("BackOffice.Submissions.Create.ContentSection.Title", "Başlık, Anahtar Kelimeler ve Özet")</h6>
+                                    <small class="text-neutral-500">@T("BackOffice.Submissions.Create.ContentSection.Subtitle", "Türkçe alanları zorunludur. İngilizce alanları varsa doldurun.")</small>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <ul class="nav nav-pills mb-3" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" data-bs-target="#paperTr" data-bs-toggle="pill" role="tab" type="button">@T("BackOffice.Submissions.Create.Tab.Turkish", "Türkçe")</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" data-bs-target="#paperEn" data-bs-toggle="pill" role="tab" type="button">@T("BackOffice.Submissions.Create.Tab.English", "English")</button>
+                                    </li>
+                                </ul>
+                                <div class="tab-content">
+                                    <div class="tab-pane fade show active" id="paperTr" role="tabpanel" tabindex="0">
+                                        <div class="row gy-4">
+                                            <div class="col-12">
+                                                <label class="form-label" asp-for="Title">@T("BackOffice.Submissions.Create.TitleLabel", "Başlık") <span class="text-danger">*</span></label>
+                                                <input class="form-control" asp-for="Title" data-normalize-title-tr="true" placeholder='@T("BackOffice.Submissions.Create.TitlePlaceholder", "Bildiri başlığını yazın")' />
+                                                <span asp-validation-for="Title" class="text-danger"></span>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label" asp-for="Keywords">@T("BackOffice.Submissions.Create.KeywordsLabel", "Anahtar Kelimeler") <span class="text-danger">*</span></label>
+                                                <input class="form-control" asp-for="Keywords" placeholder='@T("BackOffice.Submissions.Create.KeywordsPlaceholder", "Örn: yapay zeka, sağlık, veri analizi")' />
+                                                <span asp-validation-for="Keywords" class="text-danger"></span>
+                                                <small class="text-neutral-500 d-block mt-1">@T("BackOffice.Submissions.Create.KeywordsHelp", "Kelimeleri virgül ile ayırın.")</small>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label" asp-for="Abstract">@T("BackOffice.Submissions.Create.AbstractLabel", "Özet") <span class="text-danger">*</span></label>
+                                                <textarea class="form-control"
+                                                          asp-for="Abstract"
+                                                          rows="10"
+                                                          placeholder='@T("BackOffice.Submissions.Create.AbstractPlaceholder", "Türkçe özet metnini yazın...")'
+                                                          data-symplify-editor
+                                                          data-editor-profile="simple"
+                                                          data-editor-height="320"
+                                                          data-editor-live-validation="false"
+                                                          data-editor-validation-debounce="700"></textarea>
+                                                <span asp-validation-for="Abstract" class="text-danger"></span>
+                                                <small class="text-neutral-500 d-block mt-1">@T("BackOffice.Submissions.Create.AbstractHelp", "Amaç, yöntem, bulgu ve sonuç bilgilerini ekleyin.")</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade" id="paperEn" role="tabpanel" tabindex="0">
+                                        <div class="row gy-4">
+                                            <div class="col-12">
+                                                <label class="form-label" asp-for="TitleEn">@T("BackOffice.Submissions.Create.TitleEnLabel", "İngilizce Başlık")</label>
+                                                <input class="form-control" asp-for="TitleEn" data-normalize-title-en="true" placeholder='@T("BackOffice.Submissions.Create.TitleEnPlaceholder", "English title")' />
+                                                <span asp-validation-for="TitleEn" class="text-danger"></span>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label" asp-for="KeywordsEn">@T("BackOffice.Submissions.Create.KeywordsEnLabel", "İngilizce Anahtar Kelimeler")</label>
+                                                <input class="form-control" asp-for="KeywordsEn" data-normalize-english-text="true" placeholder='@T("BackOffice.Submissions.Create.KeywordsEnPlaceholder", "artificial intelligence, health, data analysis")' />
+                                                <span asp-validation-for="KeywordsEn" class="text-danger"></span>
+                                                <small class="text-neutral-500 d-block mt-1">@T("BackOffice.Submissions.Create.KeywordsEnHelp", "Separate keywords with commas.")</small>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label" asp-for="AbstractEn">@T("BackOffice.Submissions.Create.AbstractEnLabel", "İngilizce Özet")</label>
+                                                <textarea class="form-control"
+                                                          asp-for="AbstractEn"
+                                                          data-normalize-english-text="true"
+                                                          rows="10"
+                                                          placeholder='@T("BackOffice.Submissions.Create.AbstractEnPlaceholder", "İngilizce özet...")'
+                                                          data-symplify-editor
+                                                          data-editor-profile="simple"
+                                                          data-editor-height="320"
+                                                          data-editor-live-validation="false"
+                                                          data-editor-validation-debounce="700"></textarea>
+                                                <span asp-validation-for="AbstractEn" class="text-danger"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border shadow-none">
+                            <div class="card-header border-bottom d-flex align-items-center gap-3">
+                                <span class="w-36-px h-36-px rounded-circle bg-info-50 text-info-600 d-flex align-items-center justify-content-center fw-semibold"><i class="ri-folder-upload-line"></i></span>
+                                <div>
+                                    <h6 class="text-md mb-0">@T("BackOffice.Submissions.FinalFiles.Title", "Tam Metin ve Sunum Dosyaları")</h6>
+                                    <small class="text-neutral-500">@T("BackOffice.Submissions.FinalFiles.EditorDescription", "Ödeme sonrası tam metin ve varsa video sunum dosyasını buradan yönetebilirsiniz.")</small>
+                                </div>
+                            </div>
+                            <div class="card-body row gy-4">
+                                <div class="col-md-6">
+                                    <div class="border rounded-3 p-14 h-100">
+                                        <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-12">
+                                            <div>
+                                                <h6 class="text-sm mb-1">@T("BackOffice.Submissions.FinalFiles.FullTextTitle", "Tam Metin Dosyası")</h6>
+                                                <small class="text-neutral-500">@T("BackOffice.Submissions.FinalFiles.FullTextHelp", "Yalnızca DOCX. Maksimum 50 MB.")</small>
+                                            </div>
+                                            <span class="badge bg-primary-50 text-primary-600 radius-8 px-10 py-6">@T("BackOffice.Submissions.Detail.Files.Kind.FullText", "Tam Metin")</span>
+                                        </div>
+
+                                        @if (Model.HasExistingFullTextFile)
+                                        {
+                                            <div class="bg-neutral-50 border rounded-3 p-12 mb-12">
+                                                <strong class="d-block text-sm mb-1">@existingFullTextDisplayName</strong>
+                                                @if (Model.ExistingFullTextFileUploadedAt.HasValue)
+                                                {
+                                                    <span class="text-sm text-neutral-500 d-block mb-2">@T("BackOffice.Submissions.Management.Editor.Files.UploadedAt", "Yüklenme"): @Model.ExistingFullTextFileUploadedAt.Value.ToString("dd.MM.yyyy HH:mm")</span>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(existingFullTextDownloadUrl))
+                                                {
+                                                    <a href="@existingFullTextDownloadUrl" class="btn btn-outline-primary radius-8 px-14 py-8 d-inline-flex align-items-center gap-1"><i class="ri-download-2-line"></i> @T("BackOffice.Submissions.Management.Editor.Files.Download", "İndir")</a>
+                                                }
+                                            </div>
+                                        }
+
+                                        <input class="form-control" asp-for="FullTextFile" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                                        <span asp-validation-for="FullTextFile" class="text-danger d-block mt-2"></span>
+                                        <small class="text-neutral-500 d-block mt-2">@T("BackOffice.Submissions.FinalFiles.ReplaceHelp", "Yeni dosya seçmezseniz mevcut dosya korunur.")</small>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="border rounded-3 p-14 h-100">
+                                        <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-12">
+                                            <div>
+                                                <h6 class="text-sm mb-1">@T("BackOffice.Submissions.FinalFiles.VideoTitle", "Video Sunum Dosyası")</h6>
+                                                <small class="text-neutral-500">@T("BackOffice.Submissions.FinalFiles.VideoHelp", "MP4, MOV veya WEBM. Maksimum 500 MB.")</small>
+                                            </div>
+                                            <span class="badge bg-neutral-100 text-neutral-700 radius-8 px-10 py-6">@T("BackOffice.Submissions.FinalFiles.Optional", "Gerekirse")</span>
+                                        </div>
+
+                                        @if (Model.HasExistingPresentationFile)
+                                        {
+                                            <div class="bg-neutral-50 border rounded-3 p-12 mb-12">
+                                                <strong class="d-block text-sm mb-1">@existingPresentationDisplayName</strong>
+                                                @if (Model.ExistingPresentationFileUploadedAt.HasValue)
+                                                {
+                                                    <span class="text-sm text-neutral-500 d-block mb-2">@T("BackOffice.Submissions.Management.Editor.Files.UploadedAt", "Yüklenme"): @Model.ExistingPresentationFileUploadedAt.Value.ToString("dd.MM.yyyy HH:mm")</span>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(existingPresentationDownloadUrl))
+                                                {
+                                                    <a href="@existingPresentationDownloadUrl" class="btn btn-outline-primary radius-8 px-14 py-8 d-inline-flex align-items-center gap-1"><i class="ri-download-2-line"></i> @T("BackOffice.Submissions.Management.Editor.Files.Download", "İndir")</a>
+                                                }
+                                            </div>
+                                        }
+
+                                        <input class="form-control" asp-for="PresentationFile" type="file" accept=".mp4,.mov,.webm" />
+                                        <span asp-validation-for="PresentationFile" class="text-danger d-block mt-2"></span>
+                                        <small class="text-neutral-500 d-block mt-2">@T("BackOffice.Submissions.FinalFiles.VideoEditorHelp", "Yazar kongreye katılamayacaksa video sunum dosyası buradan yönetilir.")</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </fieldset>
+            </div>
+
+            <div class="col-xl-5">
+                <div class="card border shadow-none mb-4" id="currentSubmissionStatusCard">
+                    <div class="card-header border-bottom">
+                        <h6 class="text-md mb-0">@statusTitle</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <span class="text-sm text-neutral-500">@T("BackOffice.Submissions.Management.Edit.SubmissionNumber", "Bildiri No")</span>
+                            <span class="fw-semibold text-primary-light">@Model.SubmissionNumber</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <span class="text-sm text-neutral-500">@T("BackOffice.Submissions.Management.Edit.SubmissionStatus", "Gönderim Durumu")</span>
+                            <span class="badge @statusBadgeClass rounded-pill">@statusLabel</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="text-sm text-neutral-500">@T("BackOffice.Submissions.Management.Edit.LastUpdate", "Son Güncelleme")</span>
+                            <span class="fw-semibold text-primary-light">@(Model.UpdatedDate?.ToString("dd.MM.yyyy HH:mm") ?? "-")</span>
+                        </div>
+                    </div>
+                </div>
+
+                <fieldset disabled="@(!canEdit)">
+                    <div class="card border shadow-none mb-4">
+                        <div class="card-header border-bottom d-flex align-items-center gap-3">
+                            <span class="w-36-px h-36-px rounded-circle bg-success-100 text-success-600 d-flex align-items-center justify-content-center fw-semibold">@authorStepNumber</span>
+                            <div>
+                                <h6 class="text-md mb-0">@T("BackOffice.Submissions.AuthorForm.Title", "Yazar Ekle")</h6>
+                                <small class="text-neutral-500">@T("BackOffice.Submissions.AuthorForm.Subtitle", "Yazar bilgilerini eksiksiz doldurun ve listeye ekleyin.")</small>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning bg-warning-100 border-warning-200 text-warning-700 d-flex align-items-start gap-2 mb-4">
+                                <i class="ri-error-warning-line text-lg mt-1"></i>
+                                <div>@Html.Raw(T("BackOffice.Submissions.AuthorForm.RequiredWarning", "En az <strong>1 sorumlu yazar</strong> eklenmelidir. Unvan, ad soyad, e-posta, kurum ve yazar rolü zorunludur."))</div>
+                            </div>
+                            <div class="row gy-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="authorTitleId">@T("BackOffice.Submissions.AuthorForm.TitleLabel", "Unvan") <span class="text-danger">*</span></label>
+                                    <select class="form-control form-select" id="authorTitleId" data-author-required="true" data-author-field="title" data-author-combobox="true" data-author-placeholder='@T("BackOffice.Submissions.AuthorForm.TitlePlaceholder", "Unvan seçiniz")' data-author-search-placeholder='@T("BackOffice.Submissions.AuthorForm.TitleSearchPlaceholder", "Unvan ara...")' data-author-no-results='@T("BackOffice.Submissions.AuthorForm.TitleNoResults", "Eşleşen unvan bulunamadı.")'>
+                                        <option value="">@T("BackOffice.Submissions.AuthorForm.TitlePlaceholder", "Unvan seçiniz")</option>
+                                        @foreach (var title in Model.TitleOptions)
+                                        {
+                                            <option value="@title.Id">@title.Text</option>
+                                        }
+                                    </select>
+                                    <span class="text-danger text-sm d-block mt-1" data-author-validation-for="title"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="authorFirstName">@T("BackOffice.Submissions.AuthorForm.FirstNameLabel", "Ad") <span class="text-danger">*</span></label>
+                                    <input class="form-control" id="authorFirstName" placeholder='@T("BackOffice.Submissions.AuthorForm.FirstNamePlaceholder", "Yazar adı")' type="text" data-author-required="true" data-author-field="firstName" autocomplete="given-name" data-normalize-person-name="true" />
+                                    <span class="text-danger text-sm d-block mt-1" data-author-validation-for="firstName"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="authorLastName">@T("BackOffice.Submissions.AuthorForm.LastNameLabel", "Soyad") <span class="text-danger">*</span></label>
+                                    <input class="form-control" id="authorLastName" placeholder='@T("BackOffice.Submissions.AuthorForm.LastNamePlaceholder", "Yazar soyadı")' type="text" data-author-required="true" data-author-field="lastName" autocomplete="family-name" data-normalize-surname="true" />
+                                    <input id="authorFullName" type="hidden" />
+                                    <span class="text-danger text-sm d-block mt-1" data-author-validation-for="lastName"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="authorEmail">@T("BackOffice.Submissions.AuthorForm.EmailLabel", "E-posta") <span class="text-danger">*</span></label>
+                                    <input class="form-control" id="authorEmail" placeholder='@T("BackOffice.Submissions.AuthorForm.EmailPlaceholder", "mail@ornek.com")' type="text" inputmode="email" autocomplete="email" data-author-required="true" data-author-field="email" />
+                                    <span class="text-danger text-sm d-block mt-1" data-author-validation-for="email"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="authorInstitution">@T("BackOffice.Submissions.AuthorForm.InstitutionLabel", "Kurum") <span class="text-danger">*</span></label>
+                                    <input class="form-control" id="authorInstitution" placeholder='@T("BackOffice.Submissions.AuthorForm.InstitutionPlaceholder", "Üniversite / kurum adı")' type="text" data-author-required="true" data-author-field="institution" autocomplete="organization" data-normalize-institution="true" />
+                                    <span class="text-danger text-sm d-block mt-1" data-author-validation-for="institution"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="authorOrcid">@T("BackOffice.Submissions.Create.OrcidLabel", "ORCID")</label>
+                                    <input class="form-control" id="authorOrcid" placeholder="0000-0000-0000-0000" type="text" inputmode="numeric" autocomplete="off" />
+                                    <small class="text-neutral-500 d-block mt-1">@T("BackOffice.Submissions.AuthorForm.OrcidHelp", "Varsa ORCID numarasını giriniz.")</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="authorRole">@T("BackOffice.Submissions.AuthorForm.RoleLabel", "Yazar Rolü") <span class="text-danger">*</span></label>
+                                    <select class="form-control form-select" id="authorRole" data-author-required="true" data-author-field="role">
+                                        <option value="">@T("BackOffice.Submissions.AuthorForm.RolePlaceholder", "Rol seçiniz")</option>
+                                        <option value="true">@T("BackOffice.Submissions.AuthorForm.RoleCorresponding", "Sorumlu Yazar")</option>
+                                        <option value="false">@T("BackOffice.Submissions.AuthorForm.RoleAuthor", "Yazar")</option>
+                                    </select>
+                                    <span class="text-danger text-sm d-block mt-1" data-author-validation-for="role"></span>
+                                </div>
+                                <div class="col-12 pt-1">
+                                    <button class="btn btn-success-600 radius-8 px-20 py-11 d-flex align-items-center justify-content-center gap-2 w-100" type="button" id="addAuthorButton">
+                                        <i class="ri-add-line"></i>
+                                        <span>@T("BackOffice.Submissions.AuthorForm.AddButton", "Yazarı Listeye Ekle")</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border shadow-none mb-4">
+                        <div class="card-header border-bottom d-flex align-items-center justify-content-between gap-3">
+                            <div>
+                                <h6 class="text-md mb-0">@T("BackOffice.Submissions.AuthorList.Title", "Eklenen Yazarlar")</h6>
+                                <small class="text-neutral-500">@T("BackOffice.Submissions.AuthorList.Subtitle", "Kaydetmeden önce listeyi kontrol edin.")</small>
+                            </div>
+                            <span class="badge bg-primary-50 text-primary-600 rounded-pill" id="authorCountBadge">@Model.Authors.Count @T("BackOffice.Submissions.AuthorList.CountSuffix", "Yazar")</span>
+                        </div>
+                        <div class="card-body">
+                            <span asp-validation-for="Authors" id="authorsValidationMessage" class="text-danger d-block mb-2" data-author-collection-validation></span>
+                            <div id="authorsHiddenContainer"></div>
+                            <div id="authorsList"
+                                 class="d-grid gap-3"
+                                 data-existing-authors='@System.Text.Json.JsonSerializer.Serialize(Model.Authors)'
+                                 data-title-options='@System.Text.Json.JsonSerializer.Serialize(Model.TitleOptions)'
+                                 data-allow-author-edit="true"></div>
+                        </div>
+                    </div>
+
+                    <div class="card border shadow-none">
+                        <div class="card-header border-bottom">
+                            <h6 class="text-md mb-0">@T("BackOffice.Submissions.Management.Edit.SaveTitle", "Kaydet")</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary-600 radius-8 px-20 py-11 d-flex align-items-center justify-content-center gap-2" type="submit" name="SubmitAction" value="draft">
+                                    <i class="ri-save-line"></i>
+                                    @T("BackOffice.Submissions.Management.Edit.SaveButton", "Değişiklikleri Kaydet")
+                                </button>
+                                <a class="btn btn-outline-neutral-900 radius-8 px-20 py-11 d-flex align-items-center justify-content-center gap-2" asp-action="Index" asp-controller="SubmissionManagement" asp-route-culture="@currentCulture">
+                                    <i class="ri-arrow-left-line"></i> @T("BackOffice.Submissions.Management.Edit.BackToList", "Listeye Dön")
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+        }
+    </form>
+</div>
+
+@if (Model.IsExhibitionApplication && Model.ExistingExhibitionFileIsImage && !string.IsNullOrWhiteSpace(existingExhibitionPreviewUrl))
+{
+    <div class="modal fade" id="existingExhibitionImageModal" tabindex="-1" aria-labelledby="existingExhibitionImageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content radius-16">
+                <div class="modal-header border-bottom">
+                    <div>
+                        <h6 class="modal-title mb-1" id="existingExhibitionImageModalLabel">@T("BackOffice.Submissions.Management.Editor.Exhibition.ImageTitle", "Sergi Görseli")</h6>
+                        <small class="text-neutral-500">@existingExhibitionDisplayName</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label='@T("Common.Close", "Kapat")'></button>
+                </div>
+                <div class="modal-body p-24">
+                    <div class="border rounded-3 overflow-hidden bg-neutral-50">
+                        <img src="@existingExhibitionPreviewUrl" alt='@T("BackOffice.Submissions.Management.Editor.Exhibition.ImageAlt", "Sergi görseli")' class="img-fluid w-100" />
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-outline-neutral-900 radius-8 px-16 py-10" data-bs-dismiss="modal">@T("Common.Close", "Kapat")</button>
+                    @if (!string.IsNullOrWhiteSpace(existingExhibitionDownloadUrl))
+                    {
+                        <a href="@existingExhibitionDownloadUrl" class="btn btn-primary radius-8 px-16 py-10 d-inline-flex align-items-center gap-1">
+                            <i class="ri-download-2-line"></i>
+                            @T("BackOffice.Submissions.Management.Editor.Files.Download", "İndir")
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/common/text-normalizer.js" asp-append-version="true"></script>
+    <script src="~/js/features/submissions/submissions-form.js" asp-append-version="true"></script>
+    @if (Model.IsExhibitionApplication)
+    {
+        <script>
+            (() => {
+                const input = document.querySelector('input[name="ExhibitionFile"]');
+                const preview = document.getElementById('selectedExhibitionFilePreview');
+                const imageContainer = document.getElementById('selectedExhibitionImageContainer');
+                const image = document.getElementById('selectedExhibitionImage');
+                const fallback = document.getElementById('selectedExhibitionFileFallback');
+                const fileName = document.getElementById('selectedExhibitionFileName');
+                let objectUrl = null;
+
+                if (!input || !preview || !imageContainer || !image || !fallback || !fileName) {
+                    return;
+                }
+
+                input.addEventListener('change', () => {
+                    const file = input.files && input.files.length > 0 ? input.files[0] : null;
+
+                    if (objectUrl) {
+                        URL.revokeObjectURL(objectUrl);
+                        objectUrl = null;
+                    }
+
+                    if (!file) {
+                        preview.classList.add('d-none');
+                        imageContainer.classList.add('d-none');
+                        fallback.classList.add('d-none');
+                        image.removeAttribute('src');
+                        fileName.textContent = '';
+                        return;
+                    }
+
+                    preview.classList.remove('d-none');
+                    fileName.textContent = file.name;
+
+                    if (file.type && file.type.startsWith('image/')) {
+                        objectUrl = URL.createObjectURL(file);
+                        image.src = objectUrl;
+                        imageContainer.classList.remove('d-none');
+                        fallback.classList.add('d-none');
+                    } else {
+                        image.removeAttribute('src');
+                        imageContainer.classList.add('d-none');
+                        fallback.classList.remove('d-none');
+                    }
+                });
+            })();
+        </script>
+    }
+
+}

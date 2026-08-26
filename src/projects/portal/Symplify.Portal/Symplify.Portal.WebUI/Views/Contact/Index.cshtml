@@ -1,0 +1,187 @@
+@model ContactIndexViewModel
+@{
+    string currentCulture = ViewData["CurrentCulture"] as string ?? "tr-TR";
+    string T(string key) => Html.Text(key);
+    string cultureQuery = "?culture=" + Uri.EscapeDataString(currentCulture);
+
+    var contact = Model.Data;
+
+    string pageTitle = T("Portal.Contact.PageTitle");
+    string contactName = FirstNonEmpty(contact.ContactName, contact.ContactTitle, T("Portal.Contact.DefaultContactName"))!;
+    string contactPhone = FirstNonEmpty(contact.ContactPhone, "")!;
+
+    string locationText = string.Join(" / ", new[]
+    {
+        contact.StateName,
+        contact.CountryName
+    }.Where(value => !string.IsNullOrWhiteSpace(value)));
+
+    string addressText = FirstNonEmpty(contact.ContactAddress, locationText) ?? string.Empty;
+    string mapQuery = FirstNonEmpty(contact.ContactAddress, contact.VenueName, locationText) ?? string.Empty;
+    string mapQueryEncoded = Uri.EscapeDataString(mapQuery);
+    string telHref = NormalizePhoneForTel(contactPhone);
+    bool hasPhone = !string.IsNullOrWhiteSpace(contactPhone);
+    bool hasAddress = !string.IsNullOrWhiteSpace(addressText);
+    bool hasMap = !string.IsNullOrWhiteSpace(mapQuery);
+
+    List<PublicContactEmailResponse> contactEmails = contact.ContactEmails
+        .Where(item => item.IsVisibleOnPortal && !string.IsNullOrWhiteSpace(item.Email))
+        .OrderByDescending(item => item.IsPrimary)
+        .ThenBy(item => item.Order)
+        .ThenBy(item => item.Email)
+        .ToList();
+
+    if (contactEmails.Count == 0 && !string.IsNullOrWhiteSpace(contact.ContactEmail))
+    {
+        contactEmails.Add(new PublicContactEmailResponse
+        {
+            Email = contact.ContactEmail.Trim(),
+            IsPrimary = true,
+            IsVisibleOnPortal = true
+        });
+    }
+}
+
+<div class="page-title light-background">
+    <div class="container d-lg-flex justify-content-between align-items-center">
+        <h1 class="mb-2 mb-lg-0">@pageTitle</h1>
+        <nav class="breadcrumbs">
+            <ol>
+                <li><a href="/@(cultureQuery)">@T("Portal.Navigation.Home")</a></li>
+                <li class="current">@pageTitle</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section id="contact" class="section">
+    <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="row g-4">
+            @if (hasMap)
+            {
+                <div class="col-lg-5">
+                    <div class="card card--flat overflow-hidden">
+                        <div class="ratio ratio-4x3">
+                            <iframe src="https://www.google.com/maps?q=@mapQueryEncoded&output=embed"
+                                    style="border:0;"
+                                    allowfullscreen=""
+                                    loading="lazy"
+                                    referrerpolicy="no-referrer-when-downgrade"
+                                    title="@addressText"></iframe>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div class="@(hasMap ? "col-lg-7" : "col-12")">
+
+                <div class="card mb-4" data-aos="fade-up" data-aos-delay="300">
+                    <div class="card__body">
+                        <h3 class="h5 fw-bold mb-4">@T("Portal.Contact.InfoTitle")</h3>
+
+                        <div class="d-flex flex-column gap-4">
+                            <div class="d-flex gap-3 align-items-center">
+                                <div class="card__icon"><i class="bi bi-person"></i></div>
+                                <div class="card__desc mb-0">@contactName</div>
+                            </div>
+
+                            @if (hasPhone)
+                            {
+                                <div class="d-flex gap-3 align-items-center">
+                                    <div class="card__icon"><i class="bi bi-telephone"></i></div>
+                                    <div class="card__desc mb-0"><a href="tel:@telHref">@contactPhone</a></div>
+                                </div>
+                            }
+
+                            @foreach (PublicContactEmailResponse email in contactEmails)
+                            {
+                                <div class="d-flex gap-3 align-items-center">
+                                    <div class="card__icon"><i class="bi bi-envelope"></i></div>
+                                    <div class="card__desc mb-0">
+                                        <a href="mailto:@email.Email">@email.Email</a>
+                                        @if (!string.IsNullOrWhiteSpace(email.Label))
+                                        {
+                                            <small class="d-block text-muted">@email.Label</small>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            @if (hasAddress)
+                            {
+                                <div class="d-flex gap-3 align-items-center">
+                                    <div class="card__icon"><i class="bi bi-geo-alt"></i></div>
+                                    <div class="card__desc mb-0">@addressText</div>
+                                </div>
+                            }
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="card" data-aos="fade-up" data-aos-delay="400">
+                    <div class="card__body">
+                        <h3 class="h5 fw-bold mb-2">@T("Portal.Contact.FormTitle")</h3>
+                        <p class="text-muted mb-3">@T("Portal.Contact.FormDescription")</p>
+
+                        <form action="#" method="post" class="php-email-form form">
+                            <div class="row">
+                                <div class="col-md-6 form-group">
+                                    <input type="text" name="name" class="form-control" id="name" placeholder='@T("Portal.Contact.NamePlaceholder")' required="" />
+                                </div>
+                                <div class="col-md-6 form-group mt-3 mt-md-0">
+                                    <input type="email" class="form-control" name="email" id="email" placeholder='@T("Portal.Contact.EmailPlaceholder")' required="" />
+                                </div>
+                            </div>
+                            <div class="form-group mt-3">
+                                <input type="text" class="form-control" name="subject" id="subject" placeholder='@T("Portal.Contact.SubjectPlaceholder")' required="" />
+                            </div>
+                            <div class="form-group mt-3">
+                                <textarea class="form-control" name="message" rows="5" placeholder='@T("Portal.Contact.MessagePlaceholder")' required=""></textarea>
+                            </div>
+
+                            <div class="my-3">
+                                <div class="loading">@T("Portal.Contact.Loading")</div>
+                                <div class="error-message"></div>
+                                <div class="sent-message">@T("Portal.Contact.SentMessage")</div>
+                            </div>
+
+                            <div class="form__actions">
+                                <button class="btn btn-primary" type="submit">@T("Portal.Contact.SendButton")</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@functions {
+    private static string? FirstNonEmpty(params string?[] values)
+    {
+        foreach (string? value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value.Trim();
+            }
+        }
+
+        return null;
+    }
+
+    private static string NormalizePhoneForTel(string? phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone))
+        {
+            return string.Empty;
+        }
+
+        return phone
+            .Replace(" ", string.Empty)
+            .Replace("(", string.Empty)
+            .Replace(")", string.Empty)
+            .Replace("-", string.Empty);
+    }
+}

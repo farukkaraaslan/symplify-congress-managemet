@@ -1,0 +1,86 @@
+$font-family-base: '"Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"';
+$font-family-heading: '"Plus Jakarta Sans", sans-serif';
+
+$fonts: (
+  default: $font-family-base,
+  heading: $font-family-heading,
+  nav: $font-family-base
+);
+
+$colors: (
+  background: #f7f4ee,
+  default: #2b2f33,
+  heading: #0b1d3a,
+  accent: #ff5a4f,
+  surface: #ffffff,
+  contrast: #ffffff
+);
+
+$nav-colors: (
+  nav: #0b1d3a,
+  nav-hover: #ff5a4f,
+  nav-mobile-background: #ffffff,
+  nav-dropdown-background: #ffffff,
+  nav-dropdown-color: #2b2f33,
+  nav-dropdown-hover: #ff5a4f
+);
+
+$radii: (
+  bs: (
+    base: 0.35rem,
+    sm: 0.25rem,
+    lg: 0.5rem,
+    xl: 0.65rem,
+    xxl: 0.75rem,
+    pill: 0.75rem
+  )
+);
+
+$shadows: (
+  1: 0 5px 15px rgba(0, 0, 0, 0.05),
+  2: 0 10px 30px rgba(0, 0, 0, 0.12),
+  3: 0 14px 45px rgba(0, 0, 0, 0.18),
+  4: 0 20px 60px rgba(0, 0, 0, 0.1)
+);
+
+$presets: (
+  light-background: (
+    background: #f7f4ee,
+    default: #2b2f33,
+    heading: #0b1d3a,
+    surface: #ffffff,
+    contrast: #ffffff
+  ),
+  dark-background: (
+    background: #0f1317,
+    default: #e8eef6,
+    heading: #ffffff,
+    surface: #161f28,
+    contrast: #ffffff
+  ),
+  accent-background: (
+    background: #0b1d3a,
+    default: #ffffff,
+    heading: #ffffff,
+    accent: #ff5a4f,
+    surface: #10284f,
+    contrast: #ffffff
+  )
+);
+
+$breakpoints: (
+  sm: 576px,
+  md: 768px,
+  lg: 992px,
+  xl: 1200px,
+  xxl: 1400px
+);
+
+$z-index: (
+  header: 997,
+  nav: 9997,
+  nav-list: 9998,
+  nav-toggle: 9999,
+  scroll-top: 99999,
+  preloader: 999999
+);

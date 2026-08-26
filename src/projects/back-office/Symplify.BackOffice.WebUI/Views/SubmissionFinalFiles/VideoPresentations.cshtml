@@ -1,0 +1,12 @@
+@model Symplify.BackOffice.WebUI.Models.SubmissionFinalFiles.SubmissionFinalFilesIndexViewModel
+@using Symplify.BackOffice.Domain.Enums
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+@{
+    ViewData["Title"] = L.GetStringValue(Model.PageTitleKey);
+}
+
+@await Html.PartialAsync("_FinalFilesTable", Model)
+
+@section Scripts {
+    <script src="~/js/features/submission-final-files/submission-final-files.js" asp-append-version="true"></script>
+}

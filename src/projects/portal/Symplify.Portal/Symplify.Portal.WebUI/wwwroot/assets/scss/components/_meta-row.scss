@@ -1,0 +1,19 @@
+@use "../abstracts" as a;
+
+.meta-row {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  color: color-mix(in srgb, var(--default-color), transparent 30%);
+}
+
+.meta-row__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+
+  i {
+    color: var(--accent-color);
+  }
+}

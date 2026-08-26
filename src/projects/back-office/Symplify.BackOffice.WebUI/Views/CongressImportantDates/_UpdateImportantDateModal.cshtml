@@ -1,0 +1,166 @@
+@model Symplify.BackOffice.WebUI.Models.CongressImportantDates.UpdateCongressImportantDateViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    string defaultLanguageLabel = L.GetStringValue("Common.Default");
+    if (string.IsNullOrWhiteSpace(defaultLanguageLabel) || string.Equals(defaultLanguageLabel, "Common.Default", StringComparison.OrdinalIgnoreCase))
+    {
+        defaultLanguageLabel = "Varsayılan";
+    }
+}
+
+<div class="modal fade" id="updateImportantDateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content radius-16">
+            <form id="updateCongressImportantDateForm"
+                  asp-controller="CongressImportantDates"
+                  asp-action="Update"
+                  asp-route-culture="@currentCulture"
+                  method="post"
+                  autocomplete="off">
+                @Html.AntiForgeryToken()
+
+                <input asp-for="Id" type="hidden" />
+                <input asp-for="CongressId" type="hidden" />
+                <input asp-for="Order" type="hidden" />
+
+                <div class="modal-header border-bottom">
+                    <div>
+                        <h6 class="modal-title mb-1">@L.GetStringValue("BackOffice.CongressImportantDates.Update.Title")</h6>
+                        <small class="text-neutral-500">@L.GetStringValue("BackOffice.CongressImportantDates.Update.Description")</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label='@L.GetStringValue("Common.Close")'></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="alert alert-danger d-none" data-symplify-validation-summary></div>
+
+                    <div class="row gy-4 mb-24">
+                        <div class="col-lg-4">
+                            <label asp-for="StartDateText" class="form-label">
+                                @L.GetStringValue("BackOffice.CongressImportantDates.Fields.StartDate") <required-mark></required-mark>
+                            </label>
+                            <input asp-for="StartDateText"
+                                   type="text"
+                                   class="form-control radius-8"
+                                   placeholder='@L.GetStringValue("BackOffice.CongressImportantDates.Placeholders.StartDate")'
+                                   data-symplify-datetime
+                                   data-datetime-format="dd.MM.yyyy HH:mm"
+                                   data-val="true"
+                                   data-val-required='@L.GetStringValue("BackOffice.CongressImportantDates.Validation.StartDateRequired")' />
+                            <span asp-validation-for="StartDateText" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-lg-4">
+                            <label asp-for="EndDateText" class="form-label">
+                                @L.GetStringValue("BackOffice.CongressImportantDates.Fields.EndDate") <required-mark></required-mark>
+                            </label>
+                            <input asp-for="EndDateText"
+                                   type="text"
+                                   class="form-control radius-8"
+                                   placeholder='@L.GetStringValue("BackOffice.CongressImportantDates.Placeholders.EndDate")'
+                                   data-symplify-datetime
+                                   data-datetime-format="dd.MM.yyyy HH:mm"
+                                   data-val="true"
+                                   data-val-required='@L.GetStringValue("BackOffice.CongressImportantDates.Validation.EndDateRequired")' />
+                            <span asp-validation-for="EndDateText" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-lg-4 d-flex align-items-end">
+                            <div class="form-switch switch-primary d-flex align-items-center gap-3 mb-10">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" role="switch" />
+                                <label asp-for="IsActive" class="form-check-label line-height-1 fw-medium text-secondary-light">
+                                    @L.GetStringValue("BackOffice.CongressImportantDates.Fields.IsActive")
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border shadow-none">
+                        <div class="card-header border-bottom">
+                            <h6 class="text-md mb-0">@L.GetStringValue("Common.Translations")</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="nav nav-pills mb-3" role="tablist">
+                                @for (int i = 0; i < Model.Translations.Count; i++)
+                                {
+                                    string paneId = "update-important-date-lang-" + i;
+                                    string tabId = paneId + "-tab";
+
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link @(i == 0 ? "active" : string.Empty)"
+                                                id="@tabId"
+                                                data-bs-toggle="pill"
+                                                data-bs-target="#@paneId"
+                                                type="button"
+                                                role="tab"
+                                                aria-controls="@paneId"
+                                                aria-selected="@(i == 0 ? "true" : "false")">
+                                            <span class="d-inline-flex align-items-center gap-2">
+                                                <span>@Model.Translations[i].LanguageName</span>
+                                                @if (Model.Translations[i].IsDefault)
+                                                {
+                                                    <span class="badge bg-primary-50 text-primary-600 rounded-pill">@defaultLanguageLabel</span>
+                                                }
+                                            </span>
+                                        </button>
+                                    </li>
+                                }
+                            </ul>
+
+                        <div class="tab-content">
+                            @for (int i = 0; i < Model.Translations.Count; i++)
+                            {
+                                <div class="tab-pane fade @(i == 0 ? "show active" : null)" id="update-important-date-lang-@i" role="tabpanel" aria-labelledby="update-important-date-lang-@i-tab" tabindex="0">
+                                    <input asp-for="Translations[i].LanguageId" type="hidden" />
+                                    <input asp-for="Translations[i].Culture" type="hidden" />
+                                    <input asp-for="Translations[i].LanguageName" type="hidden" />
+                                    <input asp-for="Translations[i].IsDefault" type="hidden" />
+                                    <input asp-for="Translations[i].Exists" type="hidden" />
+
+                                    <div class="row gy-3">
+                                        <div class="col-12">
+                                            <label asp-for="Translations[i].Title" class="form-label">
+                                                @L.GetStringValue("BackOffice.CongressImportantDates.Fields.Title")
+                                                <required-mark visible="@Model.Translations[i].IsDefault"></required-mark>
+                                            </label>
+                                            <input asp-for="Translations[i].Title"
+                                                   class="form-control radius-8"
+                                                   maxlength="300"
+                                                   placeholder='@L.GetStringValue("BackOffice.CongressImportantDates.Placeholders.Title")' />
+                                            <span asp-validation-for="Translations[i].Title" class="text-danger"></span>
+                                        </div>
+
+                                        <div class="col-12">
+                                            <label asp-for="Translations[i].Description" class="form-label">
+                                                @L.GetStringValue("BackOffice.CongressImportantDates.Fields.Description")
+                                            </label>
+                                            <textarea asp-for="Translations[i].Description"
+                                                      class="form-control radius-8"
+                                                      rows="3"
+                                                      maxlength="1000"
+                                                      placeholder='@L.GetStringValue("BackOffice.CongressImportantDates.Placeholders.Description")'></textarea>
+                                            <span asp-validation-for="Translations[i].Description" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-light-100 text-dark radius-8 px-20 py-11" data-bs-dismiss="modal">
+                        @L.GetStringValue("Common.Cancel")
+                    </button>
+                    <button type="submit" class="btn btn-primary-600 radius-8 px-20 py-11">
+                        @L.GetStringValue("BackOffice.CongressImportantDates.Buttons.Update")
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+

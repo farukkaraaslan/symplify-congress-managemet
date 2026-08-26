@@ -1,0 +1,54 @@
+{
+  "templateFile": "acceptance-letter-acroform-template.pdf",
+  "templateType": "PDF AcroForm",
+  "sourcePath": "Services/Workflow/Templates/AcceptanceLetters/acceptance-letter-acroform-template.pdf",
+  "runtimeTargetPath": "Templates/AcceptanceLetters/acceptance-letter-acroform-template.pdf",
+  "visibleTextFields": [
+    "CongressTitle",
+    "CongressLocation",
+    "CongressDateRange",
+    "BodyContent",
+    "SignatoryName",
+    "SignatoryDuty",
+    "VerificationEmail",
+    "VerificationCode"
+  ],
+  "visibleImagePlaceholders": [
+    "OrganizationLogoImageLeft",
+    "OrganizationLogoImageRight",
+    "SignatureImage",
+    "QrCodeImage"
+  ],
+  "hiddenCompatibilityFields": [
+    "OrganizationLogoImage",
+    "SubmissionNumber",
+    "SubmissionCode",
+    "VerificationUrl",
+    "HeaderTitle",
+    "AuthorFullName",
+    "SubmissionTypeName",
+    "SubmissionTitle",
+    "CongressTitleInline",
+    "CongressDateRangeInline",
+    "OrganizationShortName",
+    "OrganizationName",
+    "OrganizationEmail",
+    "SignatoryFullName",
+    "SignatoryTitle",
+    "SignerName",
+    "SignerDuty",
+    "SignerTitleOrDuty"
+  ],
+  "dataRules": [
+    "BodyContent is populated by the application text.",
+    "Submission code remains hidden.",
+    "VerificationUrl remains hidden because QR carries it.",
+    "Signer academic title must be resolved from TitleTranslation.Description when possible."
+  ],
+  "styleRules": [
+    "Static letter heading displays ACCEPTANCE LETTER only. OFFICIAL is removed from the PDF content layer.",
+    "Congress venue/date block is moved closer to the congress title.",
+    "Logo placeholders are kept large but image overscale is reduced to avoid blurry/broken logo rendering.",
+    "Signature block remains bottom-right."
+  ]
+}

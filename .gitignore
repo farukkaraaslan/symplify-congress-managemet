@@ -1,0 +1,159 @@
+# ============================================================
+# Symplify - .gitignore
+# ============================================================
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+.vscode/
+*.suo
+*.user
+*.rsuser
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+
+# .NET build outputs
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+publish/
+TestResults/
+[Tt]est[Rr]esult*/
+*.pdb
+*.dll
+*.exe
+*.cache
+*.tmp
+*.log
+*.binlog
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+# Node / frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files / secrets
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# ASP.NET Core development / local / secret configs
+appsettings.Development.json
+appsettings.Development.*.json
+**/appsettings.Development.json
+**/appsettings.Development.*.json
+
+appsettings.Local.json
+appsettings.*.local.json
+appsettings.Secrets.json
+**/appsettings.Local.json
+**/appsettings.*.local.json
+**/appsettings.Secrets.json
+
+appsettings.*.user.json
+**/appsettings.*.user.json
+
+# Docker / deployment files
+Dockerfile
+Dockerfile.*
+**/Dockerfile
+**/Dockerfile.*
+
+docker-compose.yml
+docker-compose.yaml
+docker-compose.*.yml
+docker-compose.*.yaml
+**/docker-compose.yml
+**/docker-compose.yaml
+**/docker-compose.*.yml
+**/docker-compose.*.yaml
+
+# Secret / certificate / credential material
+secrets/
+**/secrets/
+credentials.json
+**/credentials.json
+*.pem
+*.key
+*.pfx
+*.p12
+*.crt
+*.cer
+*.jks
+*.keystore
+
+# AWS credentials accidentally copied into repo
+.aws/
+**/.aws/
+aws-credentials*
+*aws-access-key*
+*aws-secret*
+
+# Archive / compressed files - entire repository
+*.zip
+*.rar
+*.7z
+*.tar
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tgz
+*.gz
+*.bz2
+*.xz
+*.cab
+*.iso
+
+# SQL files - entire repository
+*.sql
+
+# Backups / database dumps
+*.bak
+*.backup
+*.dump
+*.mdf
+*.ldf
+*.ndf
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Coverage / test artifacts
+coverage*.json
+coverage*.xml
+coverage*.info
+*.coverage
+*.coveragexml
+BenchmarkDotNet.Artifacts/
+
+# Misc tooling
+_ReSharper*/
+_NCrunch_*
+.localhistory/
+.ionide/
+.mfractor/
+FodyWeavers.xsd
+
+# Temporary/generated
+~$*
+*~
+*.swp
+*.swo

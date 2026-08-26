@@ -1,0 +1,771 @@
+@model Symplify.BackOffice.WebUI.Models.Congresses.UpdateCongressViewModel
+@using Symplify.BackOffice.WebUI.Models.Congresses
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    Guid? listOrganizationId = Model.OrganizationId == Guid.Empty ? (Guid?)null : Model.OrganizationId;
+
+    ViewData["Title"] = L.GetStringValue("BackOffice.Congresses.Edit.PageTitle");
+    ViewData["ClientResourcePrefixes"] = new[] { "BackOffice.Congresses." };
+
+    string GetLocalizedText(string key, string fallback)
+    {
+        string value = L.GetStringValue(key);
+
+        return string.IsNullOrWhiteSpace(value) || string.Equals(value, key, StringComparison.OrdinalIgnoreCase)
+            ? fallback
+            : value;
+    }
+
+    string listUrl = Url.Action("Index", "Congresses", new { culture = currentCulture, organizationId = listOrganizationId })
+        ?? $"/{currentCulture}/congresses/index";
+
+    string formActionUrl = Url.Action("Edit", "Congresses", new { culture = currentCulture, id = Model.Id })
+        ?? $"/{currentCulture}/congresses/edit/{Model.Id}";
+
+    string statesUrl = Url.Action("States", "Congresses", new { culture = currentCulture })
+        ?? $"/{currentCulture}/congresses/states";
+
+    string organizationRequiredMessage = L.GetStringValue("BackOffice.Congresses.Validation.OrganizationRequired");
+    string startDateRequiredMessage = L.GetStringValue("BackOffice.Congresses.Validation.StartDateRequired");
+    string endDateRequiredMessage = L.GetStringValue("BackOffice.Congresses.Validation.EndDateRequired");
+    string titleRequiredMessage = L.GetStringValue("BackOffice.Congresses.Validation.TitleRequired");
+    string welcomeContentRequiredMessage = L.GetStringValue("BackOffice.Congresses.Validation.WelcomeContentRequired");
+    string contentAssetUploadUrl = Url.Action("Upload", "ContentAssets", new { culture = currentCulture })
+        ?? $"/{currentCulture}/ContentAssets/Upload";
+    string contentAssetUploadButtonText = GetLocalizedText("BackOffice.ContentAssets.Buttons.UploadAndInsert", "Dosya Yükle");
+    string contentAssetUploadingText = GetLocalizedText("BackOffice.ContentAssets.Messages.Uploading", "Dosya yükleniyor...");
+    string contentAssetUploadedText = GetLocalizedText("BackOffice.ContentAssets.Messages.Uploaded", "Dosya yüklendi ve bağlantı hazırlandı.");
+    string contentAssetUploadErrorText = GetLocalizedText("BackOffice.ContentAssets.Messages.UploadFailed", "Dosya yüklenemedi.");
+    string contentAssetInvalidFileText = GetLocalizedText("BackOffice.ContentAssets.Validation.FileInvalid", "Bu dosya türüne izin verilmiyor.");
+    string contentAssetFileTooLargeText = GetLocalizedText("BackOffice.ContentAssets.Validation.FileTooLarge", "Dosya boyutu en fazla 25 MB olabilir.");
+
+    string defaultLanguageLabel = L.GetStringValue("Common.Default");
+    if (string.IsNullOrWhiteSpace(defaultLanguageLabel) ||
+        string.Equals(defaultLanguageLabel, "Common.Default", StringComparison.OrdinalIgnoreCase))
+    {
+        defaultLanguageLabel = "Varsayılan";
+    }
+}
+
+<div class="dashboard-main-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <h6 class="fw-semibold mb-0">@L["BackOffice.Congresses.Edit.PageTitle"]</h6>
+
+        <ul class="d-flex align-items-center gap-2 mb-0">
+            <li class="fw-medium">
+                <a class="d-flex align-items-center gap-1 hover-text-primary text-neutral-600"
+                   href="@listUrl">
+                    <iconify-icon icon="solar:home-smile-angle-outline"
+                                  class="icon text-lg"></iconify-icon>
+                    @L["Common.Panel"]
+                </a>
+            </li>
+            <li>-</li>
+            <li class="fw-medium">
+                <a class="hover-text-primary text-neutral-600"
+                   href="@listUrl">
+                    @L["BackOffice.Congresses.PageTitle"]
+                </a>
+            </li>
+            <li>-</li>
+            <li class="fw-medium">@L["BackOffice.Congresses.Edit.PageTitle"]</li>
+        </ul>
+    </div>
+
+    <form id="congressUpdateForm"
+          action="@formActionUrl"
+          method="post"
+          enctype="multipart/form-data"
+          autocomplete="off"
+          novalidate
+          data-redirect-url="@listUrl"
+          data-states-url="@statesUrl">
+
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="Code" />
+        <input type="hidden" asp-for="ExistingLogoLightPath" />
+        <input type="hidden" asp-for="ExistingLogoDarkPath" />
+        <input type="hidden"
+               id="congressSubmitMode"
+               name="submitMode"
+               value="save" />
+
+        <div asp-validation-summary="ModelOnly"
+             class="alert alert-danger d-none js-congress-validation-summary"></div>
+
+        <div class="card border shadow-none radius-12">
+            <div class="card-header border-bottom bg-base py-12 px-20">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <span class="badge bg-primary-focus text-primary-600 rounded-pill px-12 py-7">
+                        <i class="ri-edit-line me-1"></i>
+                        @Model.Code
+                    </span>
+
+                    <div class="d-flex align-items-center flex-wrap gap-2">
+                        <a href="@listUrl"
+                           class="btn btn-sm btn-outline-secondary-light radius-8 px-12 py-7">
+                            <i class="ri-arrow-left-line me-1"></i>
+                            @L["BackOffice.Congresses.Buttons.BackToList"]
+                        </a>
+
+                        <button type="button"
+                                class="btn btn-sm btn-outline-primary-600 radius-8 px-12 py-7 js-congress-submit"
+                                data-submit-mode="draft">
+                            <i class="ri-save-line me-1"></i>
+                            @L["BackOffice.Congresses.Buttons.UpdateAsDraft"]
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-sm btn-primary-600 radius-8 px-12 py-7 js-congress-submit"
+                                data-submit-mode="save">
+                            <i class="ri-check-line me-1"></i>
+                            @L["BackOffice.Congresses.Buttons.Update"]
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body p-20">
+                <section class="border rounded-3 mb-20"
+                         aria-labelledby="basicInformationTitle">
+                    <div class="border-bottom px-20 py-14">
+                        <h6 class="mb-0 text-md"
+                            id="basicInformationTitle">
+                            @L["BackOffice.Congresses.Create.BasicInfo"]
+                        </h6>
+                    </div>
+
+                    <div class="p-20">
+                        <div class="row g-3">
+                            <div class="col-12 col-lg-5">
+                                <label class="form-label text-sm fw-semibold mb-1"
+                                       asp-for="OrganizationId">
+                                    @L["BackOffice.Congresses.Fields.Organization"]
+                                    <required-mark></required-mark>
+                                </label>
+
+                                <select class="form-select radius-8 h-48-px"
+                                        asp-for="OrganizationId"
+                                        asp-items="Model.OrganizationOptions"
+                                        data-val="true"
+                                        data-val-required="@organizationRequiredMessage">
+                                    <option value="">@L["Common.SelectPlease"]</option>
+                                </select>
+
+                                <span asp-validation-for="OrganizationId"
+                                      class="text-danger text-sm"></span>
+                            </div>
+
+                            <div class="col-12 col-sm-6 col-lg-2">
+                                <label class="form-label text-sm fw-semibold mb-1"
+                                       asp-for="EditionNumber">
+                                    @L["BackOffice.Congresses.Fields.EditionNumber"]
+                                </label>
+
+                                <input class="form-control radius-8 h-48-px"
+                                       asp-for="EditionNumber"
+                                       type="number"
+                                       min="1"
+                                       inputmode="numeric" />
+
+                                <span asp-validation-for="EditionNumber"
+                                      class="text-danger text-sm"></span>
+                            </div>
+
+                            <div class="col-12 col-sm-6 col-lg-2">
+                                <label class="form-label text-sm fw-semibold mb-1"
+                                       asp-for="Status">
+                                    @L["BackOffice.Congresses.Fields.Status"]
+                                </label>
+
+                                <select class="form-select radius-8 h-48-px"
+                                        asp-for="Status"
+                                        asp-items="Model.StatusOptions"></select>
+
+                                <span asp-validation-for="Status"
+                                      class="text-danger text-sm"></span>
+                            </div>
+
+                            <div class="col-12 col-lg-3">
+                                <label class="form-label text-sm fw-semibold mb-1">
+                                    @L["BackOffice.Congresses.Fields.Code"]
+                                </label>
+
+                                <input type="text"
+                                       class="form-control radius-8 h-48-px"
+                                       value="@Model.Code"
+                                       readonly />
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label text-sm fw-semibold mb-1"
+                                       asp-for="StartDate">
+                                    @L["BackOffice.Congresses.Fields.StartDate"]
+                                    <required-mark></required-mark>
+                                </label>
+
+                                <input class="form-control radius-8 h-48-px"
+                                       asp-for="StartDate"
+                                       type="date"
+                                       data-val="true"
+                                       data-val-required="@startDateRequiredMessage" />
+
+                                <span asp-validation-for="StartDate"
+                                      class="text-danger text-sm"></span>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label text-sm fw-semibold mb-1"
+                                       asp-for="EndDate">
+                                    @L["BackOffice.Congresses.Fields.EndDate"]
+                                    <required-mark></required-mark>
+                                </label>
+
+                                <input class="form-control radius-8 h-48-px"
+                                       asp-for="EndDate"
+                                       type="date"
+                                       data-val="true"
+                                       data-val-required="@endDateRequiredMessage" />
+
+                                <span asp-validation-for="EndDate"
+                                      class="text-danger text-sm"></span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="row gy-4 mb-20">
+                    <div class="col-12 col-xl-7">
+                        <section class="border rounded-3 h-100"
+                                 aria-labelledby="contactInformationTitle">
+                            <div class="border-bottom px-20 py-14">
+                                <h6 class="mb-0 text-md"
+                                    id="contactInformationTitle">
+                                    İletişim Bilgileri
+                                </h6>
+                            </div>
+
+                            <div class="p-20">
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label text-sm fw-semibold mb-1"
+                                               asp-for="ContactName">
+                                            İletişim Yetkilisi
+                                        </label>
+
+                                        <input class="form-control radius-8 h-48-px"
+                                               asp-for="ContactName"
+                                               autocomplete="name" />
+
+                                        <span asp-validation-for="ContactName"
+                                              class="text-danger text-sm"></span>
+                                    </div>
+
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label text-sm fw-semibold mb-1"
+                                               asp-for="ContactTitle">
+                                            Görevi
+                                        </label>
+
+                                        <input class="form-control radius-8 h-48-px"
+                                               asp-for="ContactTitle" />
+
+                                        <span asp-validation-for="ContactTitle"
+                                              class="text-danger text-sm"></span>
+                                    </div>
+
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label text-sm fw-semibold mb-1"
+                                               asp-for="ContactPhone">
+                                            Telefon
+                                        </label>
+
+                                        <input class="form-control radius-8 h-48-px"
+                                               asp-for="ContactPhone"
+                                               type="tel"
+                                               autocomplete="tel" />
+
+                                        <span asp-validation-for="ContactPhone"
+                                              class="text-danger text-sm"></span>
+                                    </div>
+                                </div>
+
+                                <div class="border-top mt-20 pt-20">
+                                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-16">
+                                        <h6 class="text-md mb-0">İletişim E-posta Adresleri</h6>
+
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-primary-600 radius-8 px-12 py-7"
+                                                data-contact-email-add>
+                                            <i class="ri-add-line me-1"></i>
+                                            E-posta Ekle
+                                        </button>
+                                    </div>
+
+                                    <div class="d-flex flex-column gap-12"
+                                         data-contact-email-list>
+                                        @for (int emailIndex = 0; emailIndex < Model.ContactEmails.Count; emailIndex++)
+                                        {
+                                            <div class="border rounded-3 p-16"
+                                                 data-contact-email-row>
+                                                <div class="row g-3 align-items-end">
+                                                    <div class="col-12 col-lg-3">
+                                                        <label class="form-label text-sm fw-semibold mb-1">
+                                                            Etiket
+                                                        </label>
+
+                                                        <input class="form-control radius-8 h-48-px"
+                                                               asp-for="ContactEmails[emailIndex].Label"
+                                                               placeholder="Örn: Genel Bilgi" />
+
+                                                        <span asp-validation-for="ContactEmails[emailIndex].Label"
+                                                              class="text-danger text-sm"></span>
+                                                    </div>
+
+                                                    <div class="col-12 col-lg-4">
+                                                        <label class="form-label text-sm fw-semibold mb-1">
+                                                            E-posta
+                                                            <required-mark></required-mark>
+                                                        </label>
+
+                                                        <input class="form-control radius-8 h-48-px"
+                                                               asp-for="ContactEmails[emailIndex].Email"
+                                                               type="email"
+                                                               placeholder="info@example.com"
+                                                               autocomplete="email" />
+
+                                                        <span asp-validation-for="ContactEmails[emailIndex].Email"
+                                                              class="text-danger text-sm"></span>
+                                                    </div>
+
+                                                    <div class="col-12 col-lg-4">
+                                                        <div class="d-flex flex-wrap gap-3 pb-2">
+                                                            <label class="form-check d-inline-flex align-items-center gap-2 mb-0">
+                                                                <input class="form-check-input"
+                                                                       asp-for="ContactEmails[emailIndex].IsPrimary"
+                                                                       data-contact-email-primary />
+                                                                <span class="form-check-label text-sm">Ana adres</span>
+                                                            </label>
+
+                                                            <label class="form-check d-inline-flex align-items-center gap-2 mb-0">
+                                                                <input class="form-check-input"
+                                                                       asp-for="ContactEmails[emailIndex].IsVisibleOnPortal" />
+                                                                <span class="form-check-label text-sm">Portalda göster</span>
+                                                            </label>
+
+                                                            <label class="form-check d-inline-flex align-items-center gap-2 mb-0">
+                                                                <input class="form-check-input"
+                                                                       asp-for="ContactEmails[emailIndex].ReceivesContactMessages" />
+                                                                <span class="form-check-label text-sm">Mesajları alsın</span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-12 col-lg-1 text-lg-end">
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-outline-danger radius-8 w-40-px h-40-px d-inline-flex align-items-center justify-content-center"
+                                                                data-contact-email-remove
+                                                                title="E-posta adresini kaldır"
+                                                                aria-label="E-posta adresini kaldır">
+                                                            <i class="ri-delete-bin-line"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <span asp-validation-for="ContactEmails"
+                                          class="text-danger text-sm d-block mt-2"></span>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div class="col-12 col-xl-5">
+                        <section class="border rounded-3 h-100"
+                                 aria-labelledby="congressLocationTitle">
+                            <div class="border-bottom px-20 py-14">
+                                <h6 class="mb-0 text-md"
+                                    id="congressLocationTitle">
+                                    Kongre Lokasyonu
+                                </h6>
+                            </div>
+
+                            <div class="p-20">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label text-sm fw-semibold mb-1"
+                                               asp-for="VenueName">
+                                            Kongre Mekânı
+                                        </label>
+
+                                        <input class="form-control radius-8 h-48-px"
+                                               asp-for="VenueName"
+                                               placeholder="Örn: Ankara HiltonSA" />
+
+                                        <span asp-validation-for="VenueName"
+                                              class="text-danger text-sm"></span>
+                                    </div>
+
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label text-sm fw-semibold mb-1"
+                                               asp-for="CountryId">
+                                            Ülke
+                                        </label>
+
+                                        <select class="form-select radius-8 h-48-px"
+                                                asp-for="CountryId"
+                                                asp-items="Model.CountryOptions"
+                                                data-congress-select2
+                                                data-country-select>
+                                            <option value="">@L["Common.SelectPlease"]</option>
+                                        </select>
+
+                                        <span asp-validation-for="CountryId"
+                                              class="text-danger text-sm"></span>
+                                    </div>
+
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label text-sm fw-semibold mb-1"
+                                               asp-for="StateId">
+                                            İl / Eyalet
+                                        </label>
+
+                                        <select class="form-select radius-8 h-48-px"
+                                                asp-for="StateId"
+                                                asp-items="Model.StateOptions"
+                                                data-congress-select2
+                                                data-state-select
+                                                disabled="@(Model.CountryId.HasValue ? null : "disabled")">
+                                            <option value="">@L["Common.SelectPlease"]</option>
+                                        </select>
+
+                                        <span asp-validation-for="StateId"
+                                              class="text-danger text-sm"></span>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="form-label text-sm fw-semibold mb-1"
+                                               asp-for="ContactAddress">
+                                            Açık Adres
+                                        </label>
+
+                                        <textarea class="form-control radius-8"
+                                                  asp-for="ContactAddress"
+                                                  rows="5"
+                                                  placeholder="Cadde, sokak, bina ve salon bilgileri"
+                                                  autocomplete="street-address"></textarea>
+
+                                        <span asp-validation-for="ContactAddress"
+                                              class="text-danger text-sm"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                <section class="border rounded-3 mb-20"
+                         aria-labelledby="congressImagesTitle">
+                    <div class="border-bottom px-20 py-14">
+                        <h6 class="mb-0 text-md"
+                            id="congressImagesTitle">
+                            @L.GetStringValue("BackOffice.Congresses.Edit.OrganizationImagesTitle")
+                        </h6>
+                    </div>
+
+                    <div class="p-20">
+                        <div class="row g-3">
+                            <div class="col-12 col-lg-6">
+                                <label class="form-label text-sm fw-semibold mb-2"
+                                       asp-for="LogoLightFile">
+                                    @L["BackOffice.Congresses.Fields.LogoLight"]
+                                </label>
+
+                                <label for="congressLogoLight"
+                                       data-symplify-dropzone
+                                       data-dropzone-input="#congressLogoLight"
+                                       data-dropzone-file-name-target=".js-congress-logo-light-name"
+                                       data-dropzone-preview-target=".js-congress-logo-light-preview"
+                                       data-dropzone-error-target=".js-congress-logo-light-error"
+                                       data-dropzone-preview-url="@(Model.ExistingLogoLightUrl ?? Model.ExistingLogoLightPath)"
+                                       data-dropzone-current-text='@L.GetStringValue("BackOffice.Congresses.Help.LogoLight")'
+                                       data-dropzone-empty-text='@L.GetStringValue("BackOffice.Congresses.Help.LogoLight")'
+                                       data-dropzone-max-size-mb="5"
+                                       data-dropzone-show-image-preview="true"
+                                       class="border border-neutral-200 rounded-3 p-24 d-flex flex-column align-items-center justify-content-center text-center bg-neutral-50 cursor-pointer min-h-180-px">
+                                    <img src="@(Model.ExistingLogoLightUrl ?? Model.ExistingLogoLightPath)"
+                                         alt="Logo"
+                                         class="w-160-px h-90-px rounded-2 object-fit-contain mb-3 js-congress-logo-light-preview @(string.IsNullOrWhiteSpace(Model.ExistingLogoLightUrl ?? Model.ExistingLogoLightPath) ? "d-none" : string.Empty)" />
+
+                                    <i class="ri-sun-line text-3xl text-neutral-400 mb-2"></i>
+
+                                    <span class="btn btn-sm btn-outline-primary-600 radius-8 px-14 py-8 mt-2">
+                                        @L.GetStringValue("BackOffice.Congresses.Buttons.SelectLogoLight")
+                                    </span>
+
+                                    <span class="text-xs text-neutral-500 mt-2 js-congress-logo-light-name">
+                                        @L.GetStringValue("BackOffice.Congresses.Help.LogoLight")
+                                    </span>
+
+                                    <span class="text-danger text-xs mt-2 d-none js-congress-logo-light-error"></span>
+                                </label>
+
+                                <input asp-for="LogoLightFile"
+                                       id="congressLogoLight"
+                                       class="visually-hidden"
+                                       type="file"
+                                       accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" />
+
+                                <span asp-validation-for="LogoLightFile"
+                                      class="text-danger text-sm"></span>
+                            </div>
+
+                            <div class="col-12 col-lg-6">
+                                <label class="form-label text-sm fw-semibold mb-2"
+                                       asp-for="LogoDarkFile">
+                                    @L["BackOffice.Congresses.Fields.LogoDark"]
+                                </label>
+
+                                <label for="congressLogoDark"
+                                       data-symplify-dropzone
+                                       data-dropzone-input="#congressLogoDark"
+                                       data-dropzone-file-name-target=".js-congress-logo-dark-name"
+                                       data-dropzone-preview-target=".js-congress-logo-dark-preview"
+                                       data-dropzone-error-target=".js-congress-logo-dark-error"
+                                       data-dropzone-preview-url="@(Model.ExistingLogoDarkUrl ?? Model.ExistingLogoDarkPath)"
+                                       data-dropzone-current-text='@L.GetStringValue("BackOffice.Congresses.Help.LogoDark")'
+                                       data-dropzone-empty-text='@L.GetStringValue("BackOffice.Congresses.Help.LogoDark")'
+                                       data-dropzone-max-size-mb="5"
+                                       data-dropzone-show-image-preview="true"
+                                       class="border border-neutral-200 rounded-3 p-24 d-flex flex-column align-items-center justify-content-center text-center bg-neutral-900 cursor-pointer min-h-180-px">
+                                    <img src="@(Model.ExistingLogoDarkUrl ?? Model.ExistingLogoDarkPath)"
+                                         alt="Logo"
+                                         class="w-160-px h-90-px rounded-2 object-fit-contain mb-3 js-congress-logo-dark-preview @(string.IsNullOrWhiteSpace(Model.ExistingLogoDarkUrl ?? Model.ExistingLogoDarkPath) ? "d-none" : string.Empty)" />
+
+                                    <i class="ri-moon-line text-3xl text-white-50 mb-2"></i>
+
+                                    <span class="btn btn-sm btn-outline-light radius-8 px-14 py-8 mt-2">
+                                        @L.GetStringValue("BackOffice.Congresses.Buttons.SelectLogoDark")
+                                    </span>
+
+                                    <span class="text-xs text-white-50 mt-2 js-congress-logo-dark-name">
+                                        @L.GetStringValue("BackOffice.Congresses.Help.LogoDark")
+                                    </span>
+
+                                    <span class="text-danger text-xs mt-2 d-none js-congress-logo-dark-error"></span>
+                                </label>
+
+                                <input asp-for="LogoDarkFile"
+                                       id="congressLogoDark"
+                                       class="visually-hidden"
+                                       type="file"
+                                       accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" />
+
+                                <span asp-validation-for="LogoDarkFile"
+                                      class="text-danger text-sm"></span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="border rounded-3"
+                         aria-labelledby="translationsTitle">
+                    <div class="border-bottom px-20 py-14">
+                        <h6 class="mb-0 text-md"
+                            id="translationsTitle">
+                            @L["BackOffice.Congresses.Create.Translations"]
+                        </h6>
+                    </div>
+
+                    <div class="p-20">
+                        <ul class="nav nav-tabs mb-20"
+                            role="tablist">
+                            @for (int i = 0; i < Model.Translations.Count; i++)
+                            {
+                                string paneId = $"congressTranslationTab{i}";
+                                string tabId = paneId + "-tab";
+
+                                <li class="nav-item"
+                                    role="presentation">
+                                    <button class="nav-link @(i == 0 ? "active" : string.Empty)"
+                                            id="@tabId"
+                                            data-bs-toggle="tab"
+                                            data-bs-target="#@paneId"
+                                            type="button"
+                                            role="tab"
+                                            aria-controls="@paneId"
+                                            aria-selected="@(i == 0 ? "true" : "false")">
+                                        <span class="d-inline-flex align-items-center gap-2">
+                                            <span>@Model.Translations[i].LanguageName</span>
+
+                                            @if (Model.Translations[i].IsDefault)
+                                            {
+                                                <span class="badge bg-primary-focus text-primary-600 rounded-pill">
+                                                    @defaultLanguageLabel
+                                                </span>
+                                            }
+                                        </span>
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+
+                        <div class="tab-content">
+                            @for (int i = 0; i < Model.Translations.Count; i++)
+                            {
+                                string paneId = $"congressTranslationTab{i}";
+                                string tabId = paneId + "-tab";
+
+                                <div class="tab-pane fade @(i == 0 ? "show active" : string.Empty)"
+                                     id="@paneId"
+                                     role="tabpanel"
+                                     aria-labelledby="@tabId"
+                                     tabindex="0">
+
+                                    <input type="hidden" asp-for="Translations[i].LanguageId" />
+                                    <input type="hidden" asp-for="Translations[i].Culture" />
+                                    <input type="hidden" asp-for="Translations[i].LanguageName" />
+                                    <input type="hidden" asp-for="Translations[i].IsDefault" />
+                                    <input type="hidden" asp-for="Translations[i].Exists" />
+
+                                    <div class="row g-3">
+                                        <div class="col-12 col-lg-8">
+                                            <label class="form-label text-sm fw-semibold mb-1"
+                                                   asp-for="Translations[i].Title">
+                                                @L["BackOffice.Congresses.Fields.Title"]
+                                                <required-mark visible="@Model.Translations[i].IsDefault"></required-mark>
+                                            </label>
+
+                                            <input class="form-control radius-8 h-48-px"
+                                                   asp-for="Translations[i].Title"
+                                                   placeholder="@L["BackOffice.Congresses.Placeholders.Title"]"
+                                                   data-val="@(Model.Translations[i].IsDefault ? "true" : null)"
+                                                   data-val-required="@(Model.Translations[i].IsDefault ? titleRequiredMessage : null)" />
+
+                                            <span asp-validation-for="Translations[i].Title"
+                                                  class="text-danger text-sm"></span>
+                                        </div>
+
+                                        <div class="col-12 col-lg-4">
+                                            <label class="form-label text-sm fw-semibold mb-1"
+                                                   asp-for="Translations[i].ShortTitle">
+                                                Kısa Kongre Başlığı
+                                            </label>
+
+                                            <input class="form-control radius-8 h-48-px"
+                                                   asp-for="Translations[i].ShortTitle"
+                                                   maxlength="300"
+                                                   placeholder="Örn: 23. UTSAK Kongresi" />
+
+                                            <span asp-validation-for="Translations[i].ShortTitle"
+                                                  class="text-danger text-sm"></span>
+                                        </div>
+
+                                        <div class="col-12">
+                                            <label class="form-label text-sm fw-semibold mb-1"
+                                                   asp-for="Translations[i].WelcomeContent">
+                                                @L["BackOffice.Congresses.Fields.WelcomeContent"]
+                                                <required-mark visible="@Model.Translations[i].IsDefault"></required-mark>
+                                            </label>
+
+                                            <textarea class="form-control radius-8 js-congress-welcome-editor @(Model.Translations[i].IsDefault ? "js-default-congress-welcome-content" : null)"
+                                                      asp-for="Translations[i].WelcomeContent"
+                                                      rows="8"
+                                                      data-val="@(Model.Translations[i].IsDefault ? "true" : null)"
+                                                      data-val-required="@(Model.Translations[i].IsDefault ? welcomeContentRequiredMessage : null)"
+                                                      data-symplify-editor
+                                                      data-editor-height="360"
+                                                      data-editor-profile="content"
+                                                      data-editor-asset-upload-enabled="true"
+                                                      data-editor-asset-upload-url="@contentAssetUploadUrl"
+                                                      data-editor-asset-upload-button-text="@contentAssetUploadButtonText"
+                                                      data-editor-asset-upload-uploading-text="@contentAssetUploadingText"
+                                                      data-editor-asset-upload-success-text="@contentAssetUploadedText"
+                                                      data-editor-asset-upload-error-text="@contentAssetUploadErrorText"
+                                                      data-editor-asset-upload-invalid-file-text="@contentAssetInvalidFileText"
+                                                      data-editor-asset-upload-file-too-large-text="@contentAssetFileTooLargeText"
+                                                      data-editor-asset-upload-allowed-extensions=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.webp"
+                                                      data-editor-asset-upload-max-size-mb="25"></textarea>
+
+                                            <span asp-validation-for="Translations[i].WelcomeContent"
+                                                  class="text-danger text-sm"></span>
+                                        </div>
+
+                                        <div class="col-12 col-lg-6">
+                                            <label class="form-label text-sm fw-semibold mb-1"
+                                                   asp-for="Translations[i].SeoTitle">
+                                                @L["BackOffice.Congresses.Fields.SeoTitle"]
+                                            </label>
+
+                                            <input class="form-control radius-8 h-48-px"
+                                                   asp-for="Translations[i].SeoTitle"
+                                                   maxlength="300"
+                                                   placeholder="Arama motoru ve sosyal medya başlığı" />
+
+                                            <span asp-validation-for="Translations[i].SeoTitle"
+                                                  class="text-danger text-sm"></span>
+                                        </div>
+
+                                        <div class="col-12 col-lg-6">
+                                            <label class="form-label text-sm fw-semibold mb-1"
+                                                   asp-for="Translations[i].SeoDescription">
+                                                @L["BackOffice.Congresses.Fields.SeoDescription"]
+                                            </label>
+
+                                            <textarea class="form-control radius-8"
+                                                      asp-for="Translations[i].SeoDescription"
+                                                      rows="3"
+                                                      maxlength="500"
+                                                      placeholder="Arama motoru ve sosyal medya açıklaması"></textarea>
+
+                                            <span asp-validation-for="Translations[i].SeoDescription"
+                                                  class="text-danger text-sm"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="card-footer bg-base border-top py-12 px-20">
+                <div class="d-flex align-items-center justify-content-end flex-wrap gap-2">
+                    <a href="@listUrl"
+                       class="btn btn-sm btn-outline-secondary-light radius-8 px-14 py-8">
+                        Vazgeç
+                    </a>
+
+                    <button type="button"
+                            class="btn btn-sm btn-outline-primary-600 radius-8 px-14 py-8 js-congress-submit"
+                            data-submit-mode="draft">
+                        <i class="ri-save-line me-1"></i>
+                        @L["BackOffice.Congresses.Buttons.UpdateAsDraft"]
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-sm btn-primary-600 radius-8 px-14 py-8 js-congress-submit"
+                            data-submit-mode="save">
+                        <i class="ri-check-line me-1"></i>
+                        @L["BackOffice.Congresses.Buttons.Update"]
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_LocalizationScripts")
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+
+    <script src="~/lib/select2/dist/js/select2.min.js" asp-append-version="true"></script>
+    <script src="~/lib/select2/dist/js/i18n/tr.min.js" asp-append-version="true"></script>
+    <script src="~/js/features/congresses/congresses.update.js" asp-append-version="true"></script>
+}

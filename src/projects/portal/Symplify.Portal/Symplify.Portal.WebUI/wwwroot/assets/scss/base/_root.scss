@@ -1,0 +1,305 @@
+@use "sass:map";
+@use "../abstracts" as a;
+
+:root {
+  --default-font: #{a.font(default)};
+  --heading-font: #{a.font(heading)};
+  --nav-font: #{a.font(nav)};
+  --bs-body-font-family: "Plus Jakarta Sans", sans-serif;
+  --bs-heading-font-family: "Plus Jakarta Sans", sans-serif;
+
+  --bs-border-radius: #{a.radius(bs, base)};
+  --bs-border-radius-sm: #{a.radius(bs, sm)};
+  --bs-border-radius-lg: #{a.radius(bs, lg)};
+  --bs-border-radius-xl: #{a.radius(bs, xl)};
+  --bs-border-radius-xxl: #{a.radius(bs, xxl)};
+  --bs-border-radius-pill: #{a.radius(bs, pill)};
+
+  --background-color: #{a.color(background)};
+  --default-color: #{a.color(default)};
+  --heading-color: #{a.color(heading)};
+  --accent-color: #{a.color(accent)};
+  --surface-color: #{a.color(surface)};
+  --contrast-color: #{a.color(contrast)};
+
+  --shadow-1: #{a.shadow(1)};
+  --shadow-2: #{a.shadow(2)};
+  --shadow-3: #{a.shadow(3)};
+  --shadow-4: #{a.shadow(4)};
+
+  --nav-color: #{a.nav-color(nav)};
+  --nav-hover-color: #{a.nav-color(nav-hover)};
+  --nav-mobile-background-color: #{a.nav-color(nav-mobile-background)};
+  --nav-dropdown-background-color: #{a.nav-color(nav-dropdown-background)};
+  --nav-dropdown-color: #{a.nav-color(nav-dropdown-color)};
+  --nav-dropdown-hover-color: #{a.nav-color(nav-dropdown-hover)};
+
+  --header-background-color: #{a.color(surface)};
+  --header-accent-color: #{a.color(accent)};
+  --header-text-color: #{a.color(heading)};
+
+  $p-light: map.get(a.$presets, light-background);
+  $p-dark: map.get(a.$presets, dark-background);
+  $p-accent: map.get(a.$presets, accent-background);
+
+  --preset-light-background-bg: #{map.get($p-light, background)};
+  --preset-light-background-default: #{map.get($p-light, default)};
+  --preset-light-background-heading: #{map.get($p-light, heading)};
+  --preset-light-background-surface: #{map.get($p-light, surface)};
+  --preset-light-background-contrast: #{map.get($p-light, contrast)};
+
+  --preset-dark-background-bg: #{map.get($p-dark, background)};
+  --preset-dark-background-default: #{map.get($p-dark, default)};
+  --preset-dark-background-heading: #{map.get($p-dark, heading)};
+  --preset-dark-background-surface: #{map.get($p-dark, surface)};
+  --preset-dark-background-contrast: #{map.get($p-dark, contrast)};
+
+  --preset-accent-background-bg: #{map.get($p-accent, background)};
+  --preset-accent-background-default: #{map.get($p-accent, default)};
+  --preset-accent-background-heading: #{map.get($p-accent, heading)};
+  --preset-accent-background-accent: #{map.get($p-accent, accent)};
+  --preset-accent-background-surface: #{map.get($p-accent, surface)};
+  --preset-accent-background-contrast: #{map.get($p-accent, contrast)};
+
+  scroll-behavior: smooth;
+}
+
+.light-background {
+  --background-color: var(--preset-light-background-bg);
+  --default-color: var(--preset-light-background-default);
+  --heading-color: var(--preset-light-background-heading);
+  --surface-color: var(--preset-light-background-surface);
+  --contrast-color: var(--preset-light-background-contrast);
+}
+
+.dark-background {
+  --background-color: var(--preset-dark-background-bg);
+  --default-color: var(--preset-dark-background-default);
+  --heading-color: var(--preset-dark-background-heading);
+  --surface-color: var(--preset-dark-background-surface);
+  --contrast-color: var(--preset-dark-background-contrast);
+}
+
+.accent-background {
+  --background-color: var(--preset-accent-background-bg);
+  --default-color: var(--preset-accent-background-default);
+  --heading-color: var(--preset-accent-background-heading);
+  --accent-color: var(--preset-accent-background-accent);
+  --surface-color: var(--preset-accent-background-surface);
+  --contrast-color: var(--preset-accent-background-contrast);
+}
+
+/* =========================================================
+   PAGE LAYOUT FIX
+   Footer'ın alta yapışması için gerekli ana iskelet
+   ========================================================= */
+
+html {
+  color-scheme: light;
+  height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  background-color: var(--background-color);
+  color: var(--default-color);
+}
+
+/* Eğer footer body altında ise bu yeterli */
+main {
+  flex: 1 0 auto;
+  display: block;
+  min-width: 0;
+}
+
+/* Projede wrapper varsa onları da güvenceye al */
+body > .page-wrapper,
+body > .site-wrapper,
+body > .app-wrapper,
+body > #app,
+body > .wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Wrapper içindeki içerik alanı büyüsün */
+.page-wrapper > main,
+.site-wrapper > main,
+.app-wrapper > main,
+#app > main,
+.wrapper > main,
+.page-wrapper > .main,
+.site-wrapper > .main,
+.app-wrapper > .main,
+#app > .main,
+.wrapper > .main,
+.page-wrapper > .content,
+.site-wrapper > .content,
+.app-wrapper > .content,
+#app > .content,
+.wrapper > .content {
+  flex: 1 0 auto;
+  min-width: 0;
+}
+
+/* Flex/grid parent içindeki taşmaları önler */
+main,
+.main,
+.content,
+section,
+.container,
+.container-fluid {
+  min-width: 0;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --background-color: #{a.color(background)};
+  --default-color: #{a.color(default)};
+  --heading-color: #{a.color(heading)};
+  --accent-color: #{a.color(accent)};
+  --surface-color: #{a.color(surface)};
+  --contrast-color: #{a.color(contrast)};
+
+  --nav-color: #{a.nav-color(nav)};
+  --nav-hover-color: #{a.nav-color(nav-hover)};
+  --nav-mobile-background-color: #{a.nav-color(nav-mobile-background)};
+  --nav-dropdown-background-color: #{a.nav-color(nav-dropdown-background)};
+  --nav-dropdown-color: #{a.nav-color(nav-dropdown-color)};
+  --nav-dropdown-hover-color: #{a.nav-color(nav-dropdown-hover)};
+
+  --header-background-color: #{a.color(surface)};
+  --header-accent-color: #{a.color(accent)};
+  --header-text-color: #{a.color(heading)};
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme]) {
+    color-scheme: dark;
+    --background-color: #0f1317;
+    --default-color: #e8eef6;
+    --heading-color: #ffffff;
+    --accent-color: #ff5a4f;
+    --surface-color: #161f28;
+    --contrast-color: #ffffff;
+
+    --nav-color: rgba(255, 255, 255, 0.86);
+    --nav-hover-color: #ffffff;
+    --nav-mobile-background-color: #161f28;
+    --nav-dropdown-background-color: #161f28;
+    --nav-dropdown-color: #e8eef6;
+    --nav-dropdown-hover-color: #ff5a4f;
+
+    --header-background-color: #08162e;
+    --header-accent-color: #ff5a4f;
+    --header-text-color: #ffffff;
+
+    --preset-light-background-bg: #111820;
+    --preset-light-background-default: #e8eef6;
+    --preset-light-background-heading: #ffffff;
+    --preset-light-background-surface: #161f28;
+    --preset-light-background-contrast: #ffffff;
+
+    --preset-dark-background-bg: #0b0f13;
+    --preset-dark-background-default: #e8eef6;
+    --preset-dark-background-heading: #ffffff;
+    --preset-dark-background-surface: #121a22;
+    --preset-dark-background-contrast: #ffffff;
+
+    --preset-accent-background-bg: #08162e;
+    --preset-accent-background-default: #ffffff;
+    --preset-accent-background-heading: #ffffff;
+    --preset-accent-background-accent: #ff5a4f;
+    --preset-accent-background-surface: #10284f;
+    --preset-accent-background-contrast: #ffffff;
+  }
+
+  html:not([data-theme]) {
+    .bg-white {
+      background-color: var(--surface-color) !important;
+    }
+
+    .border,
+    .border-top,
+    .border-end,
+    .border-bottom,
+    .border-start {
+      border-color: color-mix(in srgb, var(--default-color), transparent 80%) !important;
+    }
+
+    .text-muted {
+      color: color-mix(in srgb, var(--default-color), transparent 35%) !important;
+    }
+
+    .shadow-sm {
+      box-shadow: 0 10px 28px color-mix(in srgb, var(--heading-color), transparent 90%) !important;
+    }
+  }
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --background-color: #0f1317;
+  --default-color: #e8eef6;
+  --heading-color: #ffffff;
+  --accent-color: #ff5a4f;
+  --surface-color: #161f28;
+  --contrast-color: #ffffff;
+
+  --nav-color: rgba(255, 255, 255, 0.86);
+  --nav-hover-color: #ffffff;
+  --nav-mobile-background-color: #161f28;
+  --nav-dropdown-background-color: #161f28;
+  --nav-dropdown-color: #e8eef6;
+  --nav-dropdown-hover-color: #ff5a4f;
+
+  --header-background-color: #08162e;
+  --header-accent-color: #ff5a4f;
+  --header-text-color: #ffffff;
+
+  --preset-light-background-bg: #111820;
+  --preset-light-background-default: #e8eef6;
+  --preset-light-background-heading: #ffffff;
+  --preset-light-background-surface: #161f28;
+  --preset-light-background-contrast: #ffffff;
+
+  --preset-dark-background-bg: #0b0f13;
+  --preset-dark-background-default: #e8eef6;
+  --preset-dark-background-heading: #ffffff;
+  --preset-dark-background-surface: #121a22;
+  --preset-dark-background-contrast: #ffffff;
+
+  --preset-accent-background-bg: #08162e;
+  --preset-accent-background-default: #ffffff;
+  --preset-accent-background-heading: #ffffff;
+  --preset-accent-background-accent: #ff5a4f;
+  --preset-accent-background-surface: #10284f;
+  --preset-accent-background-contrast: #ffffff;
+}
+
+html[data-theme="dark"] {
+  .bg-white {
+    background-color: var(--surface-color) !important;
+  }
+
+  .border,
+  .border-top,
+  .border-end,
+  .border-bottom,
+  .border-start {
+    border-color: color-mix(in srgb, var(--default-color), transparent 80%) !important;
+  }
+
+  .text-muted {
+    color: color-mix(in srgb, var(--default-color), transparent 35%) !important;
+  }
+
+  .shadow-sm {
+    box-shadow: 0 10px 28px color-mix(in srgb, var(--heading-color), transparent 90%) !important;
+  }
+}

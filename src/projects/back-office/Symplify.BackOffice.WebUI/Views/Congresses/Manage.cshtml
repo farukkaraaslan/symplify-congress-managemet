@@ -1,0 +1,120 @@
+@model Symplify.BackOffice.WebUI.Models.Congresses.ManageCongressViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    string listUrl = Url.Action("Index", "Congresses", new { culture = currentCulture }) ?? $"/{currentCulture}/congresses/index";
+    string homeUrl = Url.Action("Index", "Home", new { culture = currentCulture }) ?? $"/{currentCulture}/home/index";
+
+    ViewData["Title"] = L.GetStringValue("BackOffice.Congresses.Manage.PageTitle");
+    ViewData["ClientResourcePrefixes"] = new[] { "BackOffice.CongressSliders.", "BackOffice.CongressSections.", "BackOffice.CongressAnnouncements.", "BackOffice.CongressImportantDates.", "BackOffice.CongressDocuments.", "BackOffice.CongressBoardMembers.", "BackOffice.CongressPaymentPlans.", "BackOffice.CongressTopics.", "BackOffice.CongressSubmissionTypes.", "BackOffice.Congresses.", "Common.", "DataTable." };
+}
+
+@Html.AntiForgeryToken()
+
+<div class="dashboard-main-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <a class="btn btn-outline-primary-600 radius-8 px-16 py-8 d-inline-flex align-items-center gap-2" href="@listUrl">
+            <i class="ri-arrow-left-line"></i>
+            @L["BackOffice.Congresses.Buttons.BackToList"]
+        </a>
+
+        <ul class="d-flex align-items-center gap-2 mb-0">
+            <li class="fw-medium">
+                <a class="d-flex align-items-center gap-1 hover-text-primary text-neutral-600" href="@homeUrl">
+                    <iconify-icon class="icon text-lg" icon="solar:home-smile-angle-outline"></iconify-icon>
+                    @L["Common.Panel"]
+                </a>
+            </li>
+            <li>-</li>
+            <li class="fw-medium">
+                <a class="hover-text-primary text-neutral-600" href="@listUrl">@L["BackOffice.Congresses.PageTitle"]</a>
+            </li>
+            <li>-</li>
+            <li class="fw-medium">@L["BackOffice.Congresses.Manage.PageTitle"]</li>
+        </ul>
+    </div>
+
+    <div class="alert alert-info bg-primary-50 border-primary-100 text-primary-700 d-flex align-items-start gap-3 mb-24">
+        <i class="ri-information-line text-xl mt-1"></i>
+        <div>
+            <h6 class="text-md mb-1">@L["BackOffice.Congresses.Manage.InfoTitle"]</h6>
+            <p class="mb-0">@L["BackOffice.Congresses.Manage.InfoDescription"]</p>
+        </div>
+    </div>
+
+    <div class="mb-24">
+        <h6 class="fw-semibold mb-0">@L["BackOffice.Congresses.Manage.PageTitle"]</h6>
+        <small class="text-neutral-500">@(string.IsNullOrWhiteSpace(Model.Title) ? Model.Name : Model.Title)</small>
+    </div>
+
+    <div class="row gy-4">
+        <div class="col-xxl-12">
+            <div class="card p-0 overflow-hidden position-relative radius-12 h-100">
+                <div class="card-header py-16 px-24 bg-base border border-end-0 border-start-0 border-top-0">
+                    <h6 class="text-lg mb-0">@L["BackOffice.Congresses.Manage.ListsTitle"]</h6>
+                    <small class="text-neutral-500">@L["BackOffice.Congresses.Manage.ListsDescription"]</small>
+                </div>
+                <div class="card-body p-24 pt-10">
+                    @await Html.PartialAsync("_ManageTabs", Model)
+
+                    <div class="tab-content" id="congressManageTabContent">
+                        <div class="tab-pane fade @(Model.ActiveTab == "congress" ? "show active" : null)" id="pills-congress" role="tabpanel" aria-labelledby="pills-congress-tab" tabindex="0">
+                            @await Html.PartialAsync("_CongressSummaryTab", Model)
+                        </div>
+
+                        <div class="tab-pane fade @(Model.ActiveTab == "slider" ? "show active" : null)" id="pills-slider" role="tabpanel" aria-labelledby="pills-slider-tab" tabindex="0">
+                            @await Html.PartialAsync("_SliderTab", Model)
+                        </div>
+
+                        <div class="tab-pane fade @(Model.ActiveTab == "sections" ? "show active" : null)" id="pills-sections" role="tabpanel" aria-labelledby="pills-sections-tab" tabindex="0">
+                            @await Html.PartialAsync("_SectionTab", Model)
+                        </div>
+                        <div class="tab-pane fade @(Model.ActiveTab == "announcements" ? "show active" : null)" id="pills-announcements" role="tabpanel" aria-labelledby="pills-announcements-tab" tabindex="0">
+                            @await Html.PartialAsync("_AnnouncementTab", Model)
+                        </div>
+                        <div class="tab-pane fade @(Model.ActiveTab == "boards" ? "show active" : null)" id="pills-boards" role="tabpanel" aria-labelledby="pills-boards-tab" tabindex="0">
+                            @await Html.PartialAsync("_BoardTab", Model)
+                        </div>
+                        <div class="tab-pane fade @(Model.ActiveTab == "important-dates" ? "show active" : null)" id="pills-important-dates" role="tabpanel" aria-labelledby="pills-important-dates-tab" tabindex="0">
+                            @await Html.PartialAsync("_ImportantDateTab", Model)
+                        </div>
+                        <div class="tab-pane fade @(Model.ActiveTab == "payment-plans" ? "show active" : null)" id="pills-payment-plans" role="tabpanel" aria-labelledby="pills-payment-plans-tab" tabindex="0">
+                            @await Html.PartialAsync("_PaymentPlanTab", Model)
+                        </div>
+                        <div class="tab-pane fade @(Model.ActiveTab == "documents" ? "show active" : null)" id="pills-documents" role="tabpanel" aria-labelledby="pills-documents-tab" tabindex="0">
+                            @await Html.PartialAsync("_DocumentTab", Model)
+                        </div>
+                        <div class="tab-pane fade @(Model.ActiveTab == "workflow" ? "show active" : null)" id="pills-workflow" role="tabpanel" aria-labelledby="pills-workflow-tab" tabindex="0">
+                            @await Html.PartialAsync("_WorkflowTab", Model)
+                        </div>
+                        <div class="tab-pane fade @(Model.ActiveTab == "topics" ? "show active" : null)" id="pills-topics" role="tabpanel" aria-labelledby="pills-topics-tab" tabindex="0">
+                            @await Html.PartialAsync("_TopicTab", Model)
+                        </div>
+                        <div class="tab-pane fade @(Model.ActiveTab == "submission-types" ? "show active" : null)" id="pills-submission-types" role="tabpanel" aria-labelledby="pills-submission-types-tab" tabindex="0">
+                            @await Html.PartialAsync("_SubmissionTypeTab", Model)
+                        </div>
+                        <div class="tab-pane fade" id="pills-evaluation-criteria" role="tabpanel" aria-labelledby="pills-evaluation-criteria-tab" tabindex="0">
+                            @await Html.PartialAsync("_PlaceholderManageTab", L["BackOffice.Congresses.Manage.Tabs.EvaluationCriteria"].ToString())
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_LocalizationScripts")
+    <partial name="_ValidationScriptsPartial" />
+<script src="~/js/features/congress-sliders/congress-sliders.index.js" asp-append-version="true"></script>
+<script src="~/js/features/congress-sections/congress-sections.index.js" asp-append-version="true"></script>
+<script src="~/js/features/congress-announcements/congress-announcements.index.js" asp-append-version="true"></script>
+<script src="~/js/features/congress-important-dates/congress-important-dates.index.js" asp-append-version="true"></script>
+<script src="~/js/features/congress-documents/congress-documents.index.js" asp-append-version="true"></script>
+<script src="~/js/features/congress-board-members/congress-board-members.index.js" asp-append-version="true"></script>
+<script src="~/js/features/congress-payment-plans/congress-payment-plans.index.js" asp-append-version="true"></script>
+<script src="~/js/features/congress-workflows/congress-workflows.index.js" asp-append-version="true"></script>
+<script src="~/js/features/congress-topics/congress-topics.index.js" asp-append-version="true"></script>
+<script src="~/js/features/congress-submission-types/congress-submission-types.index.js" asp-append-version="true"></script>
+}

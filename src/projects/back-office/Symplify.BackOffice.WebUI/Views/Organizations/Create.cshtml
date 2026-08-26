@@ -1,0 +1,257 @@
+@model Symplify.BackOffice.WebUI.Models.Organizations.CreateOrganizationViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    string indexUrl = Url.Action("Index", "Organizations", new { culture = currentCulture })
+        ?? $"/{currentCulture}/organizations/index";
+
+    string brandColor = string.IsNullOrWhiteSpace(Model.BrandColor) ? "#487FFF" : Model.BrandColor;
+
+    ViewData["Title"] = L.GetStringValue("BackOffice.Organizations.CreatePageTitle");
+}
+
+<div class="dashboard-main-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-0">@L["BackOffice.Organizations.CreateTitle"]</h6>
+            <small class="text-neutral-500">@L["BackOffice.Organizations.CreateDescription"]</small>
+        </div>
+
+        <ul class="d-flex align-items-center gap-2">
+            <li class="fw-medium">
+                <a href="@indexUrl" class="d-flex align-items-center gap-1 hover-text-primary text-neutral-600">
+                    <i class="ri-arrow-left-line"></i>
+                    @L["BackOffice.Organizations.Buttons.BackToList"]
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="alert alert-info bg-primary-50 border-primary-100 text-primary-700 d-flex align-items-start gap-3 mb-24">
+        <i class="ri-information-line text-xl mt-1"></i>
+        <div>
+            <h6 class="text-md mb-1">@L["BackOffice.Organizations.Sections.OrganizationCreate"]</h6>
+            <p class="mb-0">@L["BackOffice.Organizations.Sections.OrganizationCreateInfo"]</p>
+        </div>
+    </div>
+
+    <form id="createOrganizationForm" asp-controller="Organizations" asp-action="Create" asp-route-culture="@currentCulture" method="post" enctype="multipart/form-data" autocomplete="off" data-redirect-url="@indexUrl">
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger d-none js-validation-summary mb-3"></div>
+
+        <div class="row gy-4">
+            <div class="col-lg-8">
+                <div class="card border shadow-none mb-4">
+                    <div class="card-header border-bottom">
+                        <h6 class="text-md mb-0">@L["BackOffice.Organizations.Sections.BasicInformation"]</h6>
+                    </div>
+
+                    <div class="card-body row gy-4">
+                        <div class="col-md-6">
+                            <label asp-for="Name" class="form-label">@L["BackOffice.Organizations.Fields.Name"] <required-mark></required-mark></label>
+                            <input asp-for="Name"
+                                   id="organizationName"
+                                   class="form-control"
+                                   placeholder="@L.GetStringValue("BackOffice.Organizations.Placeholders.Name")"
+                                   data-val="true"
+                                   data-val-required="@L.GetStringValue("BackOffice.Organizations.Validation.NameRequired")"
+                                   data-val-maxlength="@L.GetStringValue("BackOffice.Organizations.Validation.NameMaxLength")"
+                                   data-val-maxlength-max="200" />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Code" class="form-label">@L["BackOffice.Organizations.Fields.Code"] <required-mark></required-mark></label>
+                            <input asp-for="Code"
+                                   id="organizationCode"
+                                   class="form-control"
+                                   placeholder="@L.GetStringValue("BackOffice.Organizations.Placeholders.Code")"
+                                   data-val="true"
+                                   data-val-required="@L.GetStringValue("BackOffice.Organizations.Validation.CodeRequired")"
+                                   data-val-maxlength="@L.GetStringValue("BackOffice.Organizations.Validation.CodeMaxLength")"
+                                   data-val-maxlength-max="80"
+                                   data-val-regex="@L.GetStringValue("BackOffice.Organizations.Validation.InvalidCode")"
+                                   data-val-regex-pattern="^[a-zA-Z0-9-]+$" />
+                            <small class="text-neutral-500">@L["BackOffice.Organizations.Helper.Code"]</small>
+                            <span asp-validation-for="Code" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="ShortName" class="form-label">@L["BackOffice.Organizations.Fields.ShortName"]</label>
+                            <input asp-for="ShortName" class="form-control" />
+                            <span asp-validation-for="ShortName" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="IsActive" class="form-label">@L["BackOffice.Organizations.Fields.IsActive"]</label>
+                            <select asp-for="IsActive" class="form-control form-select">
+                                <option value="true">@L["Common.Active"]</option>
+                                <option value="false">@L["Common.Passive"]</option>
+                            </select>
+                            <span asp-validation-for="IsActive" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="WebsiteUrl" class="form-label">@L["BackOffice.Organizations.Fields.WebsiteUrl"]</label>
+                            <input asp-for="WebsiteUrl"
+                                   class="form-control"
+                                   placeholder="@L.GetStringValue("BackOffice.Organizations.Placeholders.WebsiteUrl")"
+                                   data-val="true"
+                                   data-val-url="@L.GetStringValue("BackOffice.Organizations.Validation.InvalidWebsiteUrl")" />
+                            <span asp-validation-for="WebsiteUrl" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Description" class="form-label">@L["BackOffice.Organizations.Fields.Description"]</label>
+                            <textarea asp-for="Description" class="form-control" rows="3" placeholder="@L.GetStringValue("BackOffice.Organizations.Placeholders.Description")"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border shadow-none mb-4">
+                    <div class="card-header border-bottom">
+                        <h6 class="text-md mb-0">@L["BackOffice.Organizations.Sections.ContactInformation"]</h6>
+                    </div>
+
+                    <div class="card-body row gy-4">
+                        <div class="col-md-6">
+                            <label asp-for="ContactName" class="form-label">@L["BackOffice.Organizations.Fields.ContactName"]</label>
+                            <input asp-for="ContactName" class="form-control" />
+                            <span asp-validation-for="ContactName" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="ContactTitle" class="form-label">@L["BackOffice.Organizations.Fields.ContactTitle"]</label>
+                            <input asp-for="ContactTitle" class="form-control" />
+                            <span asp-validation-for="ContactTitle" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="ContactEmail" class="form-label">@L["BackOffice.Organizations.Fields.ContactEmail"]</label>
+                            <input asp-for="ContactEmail"
+                                   class="form-control"
+                                   data-val="true"
+                                   data-val-email="@L.GetStringValue("BackOffice.Organizations.Validation.InvalidContactEmail")" />
+                            <span asp-validation-for="ContactEmail" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="ContactPhone" class="form-label">@L["BackOffice.Organizations.Fields.ContactPhone"]</label>
+                            <input asp-for="ContactPhone" class="form-control" />
+                            <span asp-validation-for="ContactPhone" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="ContactNote" class="form-label">@L["BackOffice.Organizations.Fields.ContactNote"]</label>
+                            <textarea asp-for="ContactNote" class="form-control" rows="2" placeholder="@L.GetStringValue("BackOffice.Organizations.Placeholders.ContactNote")"></textarea>
+                            <span asp-validation-for="ContactNote" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border shadow-none">
+                    <div class="card-footer border-top d-flex justify-content-end gap-2">
+                        <a href="@indexUrl" class="btn btn-outline-neutral-900 radius-8 px-20 py-11">@L["Common.Cancel"]</a>
+                        <button class="btn btn-primary-600 radius-8 px-20 py-11" type="submit">@L["BackOffice.Organizations.Buttons.Save"]</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card border shadow-none mb-4">
+                    <div class="card-header border-bottom">
+                        <h6 class="text-md mb-0">@L["BackOffice.Organizations.Sections.Logo"]</h6>
+                    </div>
+
+                    <div class="card-body row gy-4">
+                        <div class="col-12">
+                            <label class="form-label text-sm fw-medium" asp-for="LogoLightFile">
+                                @L["BackOffice.Organizations.Fields.LogoLight"]
+                            </label>
+
+                            <label for="organizationLogoLight"
+                                   data-symplify-dropzone
+                                   data-dropzone-input="#organizationLogoLight"
+                                   data-dropzone-file-name-target=".js-organization-logo-light-name"
+                                   data-dropzone-preview-target=".js-organization-logo-light-preview"
+                                   data-dropzone-error-target=".js-organization-logo-light-error"
+                                   data-dropzone-empty-text="@L.GetStringValue("BackOffice.Organizations.Helper.LogoLight")"
+                                   data-dropzone-max-size-mb="5"
+                                   data-dropzone-show-image-preview="true"
+                                   class="border border-neutral-200 rounded-3 p-40 d-flex flex-column align-items-center justify-content-center text-center bg-neutral-50 cursor-pointer">
+                                <img alt="Logo" class="w-160-px h-90-px rounded-2 object-fit-contain mb-3 js-organization-logo-light-preview d-none" />
+                                <i class="ri-sun-line text-3xl text-neutral-400 mb-2"></i>
+                                <span class="btn btn-outline-primary-600 radius-8 px-20 py-11 d-inline-flex align-items-center gap-2 mt-2">
+                                    @L["BackOffice.Organizations.Buttons.SelectLogoLight"]
+                                </span>
+                                <span class="text-xs text-neutral-500 mt-2 js-organization-logo-light-name">
+                                    @L["BackOffice.Organizations.Helper.LogoLight"]
+                                </span>
+                                <span class="text-danger text-xs mt-2 d-none js-organization-logo-light-error"></span>
+                            </label>
+
+                            <input asp-for="LogoLightFile"
+                                   id="organizationLogoLight"
+                                   class="visually-hidden"
+                                   type="file"
+                                   accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" />
+
+                            <span asp-validation-for="LogoLightFile" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label text-sm fw-medium" asp-for="LogoDarkFile">
+                                @L["BackOffice.Organizations.Fields.LogoDark"]
+                            </label>
+
+                            <label for="organizationLogoDark"
+                                   data-symplify-dropzone
+                                   data-dropzone-input="#organizationLogoDark"
+                                   data-dropzone-file-name-target=".js-organization-logo-dark-name"
+                                   data-dropzone-preview-target=".js-organization-logo-dark-preview"
+                                   data-dropzone-error-target=".js-organization-logo-dark-error"
+                                   data-dropzone-empty-text="@L.GetStringValue("BackOffice.Organizations.Helper.LogoDark")"
+                                   data-dropzone-max-size-mb="5"
+                                   data-dropzone-show-image-preview="true"
+                                   class="border border-neutral-200 rounded-3 p-40 d-flex flex-column align-items-center justify-content-center text-center bg-neutral-900 cursor-pointer">
+                                <img alt="Logo" class="w-160-px h-90-px rounded-2 object-fit-contain mb-3 js-organization-logo-dark-preview d-none" />
+                                <i class="ri-moon-line text-3xl text-white-50 mb-2"></i>
+                                <span class="btn btn-outline-light radius-8 px-20 py-11 d-inline-flex align-items-center gap-2 mt-2">
+                                    @L["BackOffice.Organizations.Buttons.SelectLogoDark"]
+                                </span>
+                                <span class="text-xs text-white-50 mt-2 js-organization-logo-dark-name">
+                                    @L["BackOffice.Organizations.Helper.LogoDark"]
+                                </span>
+                                <span class="text-danger text-xs mt-2 d-none js-organization-logo-dark-error"></span>
+                            </label>
+
+                            <input asp-for="LogoDarkFile"
+                                   id="organizationLogoDark"
+                                   class="visually-hidden"
+                                   type="file"
+                                   accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" />
+
+                            <span asp-validation-for="LogoDarkFile" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="BrandColor" class="form-label">@L["BackOffice.Organizations.Fields.BrandColor"]</label>
+                            <input id="BrandColor" name="BrandColor" class="form-control form-control-color w-100" type="color" value="@brandColor" />
+                            <span asp-validation-for="BrandColor" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_LocalizationScripts")
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+
+    <script src="~/js/features/organizations/organizations.form.js" asp-append-version="true"></script>
+}

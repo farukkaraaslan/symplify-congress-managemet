@@ -1,0 +1,191 @@
+@model Symplify.BackOffice.WebUI.Models.BulkEmails.BulkEmailHistoryViewModel
+@using Symplify.BackOffice.Domain.Enums
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string culture = ViewContext.RouteData.Values["culture"]?.ToString() ?? Model.Culture;
+
+    string T(string key, string fallback)
+    {
+        string value = L.GetStringValue(key);
+        return string.IsNullOrWhiteSpace(value) || string.Equals(value, key, StringComparison.Ordinal)
+            ? fallback
+            : value;
+    }
+
+    ViewData["Title"] = T("BackOffice.BulkEmails.History.Title", "Gönderim Geçmişi");
+    string historyDataUrl = Url.Action("GetHistoryData", "BulkEmails", new { culture }) ?? "";
+    string composeUrl = Url.Action("Index", "BulkEmails", new { culture, congressId = Model.CongressId == Guid.Empty ? (Guid?)null : Model.CongressId }) ?? "";
+}
+
+<div class="dashboard-main-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-1">@T("BackOffice.BulkEmails.History.Title", "Gönderim Geçmişi")</h6>
+            <p class="text-secondary-light mb-0">@T("BackOffice.BulkEmails.History.Description", "Kuyruk, SMTP gönderim ve yaklaşık açılma durumlarını alıcı bazında takip edin.")</p>
+        </div>
+        <a href="@composeUrl" class="btn btn-primary-600 radius-8">
+            <i class="ri-mail-add-line me-1"></i>@T("BackOffice.BulkEmails.History.NewEmail", "Yeni E-Posta Gönder")
+        </a>
+    </div>
+
+    <div class="card mb-24">
+        <div class="card-body p-24">
+            <div class="row align-items-end gy-12">
+                <div class="col-xl-8 col-lg-10">
+                    <label for="bulkEmailHistoryCongressId" class="form-label fw-semibold">
+                        @T("BackOffice.BulkEmails.Fields.Congress", "Kongre")
+                    </label>
+                    <select asp-for="CongressId"
+                            asp-items="Model.CongressOptions"
+                            id="bulkEmailHistoryCongressId"
+                            class="form-select radius-8">
+                        <option value="">@T("BackOffice.BulkEmails.Placeholders.SelectCongress", "Kongre seçiniz")</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-24"
+         id="bulkEmailHistoryCard"
+         data-history-url="@historyDataUrl"
+         data-culture="@culture"
+         data-select-congress="@T("BackOffice.BulkEmails.Client.SelectCongress", "Lütfen bir kongre seçiniz.")"
+         data-loading="@T("BackOffice.BulkEmails.History.Loading", "Gönderim geçmişi yükleniyor...")"
+         data-refresh-loading="@T("BackOffice.BulkEmails.Loading", "İşlem yapılıyor...")"
+         data-empty="@T("BackOffice.BulkEmails.History.Empty", "Bu kongre için henüz toplu e-posta kaydı bulunmuyor.")"
+         data-load-error="@T("BackOffice.BulkEmails.History.LoadError", "Gönderim geçmişi yüklenemedi.")"
+         data-status-pending="@T("BackOffice.BulkEmails.Status.Pending", "Kuyrukta")"
+         data-status-sent="@T("BackOffice.BulkEmails.Status.Sent", "Gönderildi")"
+         data-status-failed="@T("BackOffice.BulkEmails.Status.Failed", "Başarısız")"
+         data-status-cancelled="@T("BackOffice.BulkEmails.Status.Cancelled", "İptal Edildi")"
+         data-opened="@T("BackOffice.BulkEmails.OpenStatus.Opened", "Açıldı")"
+         data-not-opened="@T("BackOffice.BulkEmails.OpenStatus.NotOpened", "Açılmadı")"
+         data-open-pending="@T("BackOffice.BulkEmails.OpenStatus.Pending", "Henüz gönderilmedi")"
+         data-audience-all="@T("BackOffice.BulkEmails.Audience.AllRegistered", "Tüm Kayıt Olanlara")"
+         data-audience-accepted-corresponding="@T("BackOffice.BulkEmails.Audience.AcceptedCorrespondingAuthors", "Sadece Kabul Alanlara")"
+         data-audience-accepted-all="@T("BackOffice.BulkEmails.Audience.AcceptedAllAuthors", "Kabul Alan Tüm Yazarlara")"
+         data-audience-payment-pending="@T("BackOffice.BulkEmails.Audience.PaymentPending", "Ücret Ödemeyenlere")"
+         data-audience-payment-completed="@T("BackOffice.BulkEmails.Audience.PaymentCompleted", "Ücret Ödeyenlere")"
+         data-page-summary="@T("BackOffice.BulkEmails.History.PageSummary", "Sayfa {0} / {1} · Toplam {2} kayıt")"
+         data-no-error="@T("BackOffice.BulkEmails.History.NoError", "-")"
+         data-open-count="@T("BackOffice.BulkEmails.History.OpenCount", "{0} kez")">
+        <div class="card-header border-bottom bg-base py-16 px-24 d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+                <h6 class="text-lg mb-1">@T("BackOffice.BulkEmails.History.RecordsTitle", "Gönderim Kayıtları")</h6>
+                <p class="text-secondary-light text-sm mb-0">@T("BackOffice.BulkEmails.History.Description", "Kuyruk, SMTP gönderim ve yaklaşık açılma durumlarını alıcı bazında takip edin.")</p>
+            </div>
+            <button type="button" class="btn btn-outline-primary-600 radius-8" id="bulkEmailHistoryRefreshButton">
+                <i class="ri-refresh-line me-1"></i>@T("BackOffice.BulkEmails.History.Refresh", "Yenile")
+            </button>
+        </div>
+
+        <div class="card-body p-24">
+            <div class="row gy-16 mb-24">
+                <div class="col-6 col-lg">
+                    <div class="p-16 border radius-8 h-100">
+                        <div class="text-secondary-light text-sm">@T("BackOffice.BulkEmails.History.Total", "Toplam")</div>
+                        <div class="text-xl fw-semibold" id="bulkEmailHistoryTotalCount">0</div>
+                    </div>
+                </div>
+                <div class="col-6 col-lg">
+                    <div class="p-16 border radius-8 h-100">
+                        <div class="text-secondary-light text-sm">@T("BackOffice.BulkEmails.Status.Pending", "Kuyrukta")</div>
+                        <div class="text-xl fw-semibold text-warning-600" id="bulkEmailHistoryPendingCount">0</div>
+                    </div>
+                </div>
+                <div class="col-6 col-lg">
+                    <div class="p-16 border radius-8 h-100">
+                        <div class="text-secondary-light text-sm">@T("BackOffice.BulkEmails.Status.Sent", "Gönderildi")</div>
+                        <div class="text-xl fw-semibold text-success-600" id="bulkEmailHistorySentCount">0</div>
+                    </div>
+                </div>
+                <div class="col-6 col-lg">
+                    <div class="p-16 border radius-8 h-100">
+                        <div class="text-secondary-light text-sm">@T("BackOffice.BulkEmails.Status.Failed", "Başarısız")</div>
+                        <div class="text-xl fw-semibold text-danger-600" id="bulkEmailHistoryFailedCount">0</div>
+                    </div>
+                </div>
+                <div class="col-6 col-lg">
+                    <div class="p-16 border radius-8 h-100">
+                        <div class="text-secondary-light text-sm">@T("BackOffice.BulkEmails.OpenStatus.Opened", "Açıldı")</div>
+                        <div class="text-xl fw-semibold text-info-600" id="bulkEmailHistoryOpenedCount">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row gy-12 align-items-end mb-20">
+                <div class="col-lg-5">
+                    <label for="bulkEmailHistorySearch" class="form-label fw-semibold">@T("BackOffice.BulkEmails.History.Search", "Ara")</label>
+                    <input type="search"
+                           id="bulkEmailHistorySearch"
+                           class="form-control radius-8"
+                           maxlength="200"
+                           placeholder="@T("BackOffice.BulkEmails.History.SearchPlaceholder", "Alıcı adı, e-posta veya konu...")" />
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <label for="bulkEmailHistoryStatus" class="form-label fw-semibold">@T("BackOffice.BulkEmails.History.StatusFilter", "Gönderim Durumu")</label>
+                    <select id="bulkEmailHistoryStatus" class="form-select radius-8">
+                        <option value="">@T("Common.All", "Tümü")</option>
+                        <option value="@((int)MailOutboxStatus.Pending)">@T("BackOffice.BulkEmails.Status.Pending", "Kuyrukta")</option>
+                        <option value="@((int)MailOutboxStatus.Sent)">@T("BackOffice.BulkEmails.Status.Sent", "Gönderildi")</option>
+                        <option value="@((int)MailOutboxStatus.Failed)">@T("BackOffice.BulkEmails.Status.Failed", "Başarısız")</option>
+                        <option value="@((int)MailOutboxStatus.Cancelled)">@T("BackOffice.BulkEmails.Status.Cancelled", "İptal Edildi")</option>
+                    </select>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <label for="bulkEmailHistoryOpened" class="form-label fw-semibold">@T("BackOffice.BulkEmails.History.OpenFilter", "Açılma Durumu")</label>
+                    <select id="bulkEmailHistoryOpened" class="form-select radius-8">
+                        <option value="">@T("Common.All", "Tümü")</option>
+                        <option value="true">@T("BackOffice.BulkEmails.OpenStatus.Opened", "Açıldı")</option>
+                        <option value="false">@T("BackOffice.BulkEmails.OpenStatus.NotOpened", "Açılmadı")</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table bordered-table mb-0 align-middle">
+                    <thead>
+                    <tr>
+                        <th>@T("BackOffice.BulkEmails.History.Columns.CreatedAt", "Kuyruğa Alınma")</th>
+                        <th>@T("BackOffice.BulkEmails.History.Columns.Recipient", "Alıcı")</th>
+                        <th>@T("BackOffice.BulkEmails.History.Columns.Subject", "Konu")</th>
+                        <th>@T("BackOffice.BulkEmails.History.Columns.Audience", "Alıcı Grubu")</th>
+                        <th>@T("BackOffice.BulkEmails.History.Columns.SendStatus", "Gönderim")</th>
+                        <th>@T("BackOffice.BulkEmails.History.Columns.OpenStatus", "Açılma")</th>
+                        <th>@T("BackOffice.BulkEmails.History.Columns.SentAt", "Gönderilme")</th>
+                        <th>@T("BackOffice.BulkEmails.History.Columns.Error", "Hata")</th>
+                    </tr>
+                    </thead>
+                    <tbody id="bulkEmailHistoryTableBody">
+                    <tr>
+                        <td colspan="8" class="text-center text-secondary-light py-24">@T("BackOffice.BulkEmails.History.Loading", "Gönderim geçmişi yükleniyor...")</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mt-20">
+                <div class="text-secondary-light text-sm" id="bulkEmailHistoryPageSummary"></div>
+                <div class="btn-group" role="group" aria-label="@T("BackOffice.BulkEmails.History.Pagination", "Sayfalama")">
+                    <button type="button" class="btn btn-outline-neutral-400" id="bulkEmailHistoryPreviousButton">
+                        <i class="ri-arrow-left-s-line"></i> @T("BackOffice.BulkEmails.History.Previous", "Önceki")
+                    </button>
+                    <button type="button" class="btn btn-outline-neutral-400" id="bulkEmailHistoryNextButton">
+                        @T("BackOffice.BulkEmails.History.Next", "Sonraki") <i class="ri-arrow-right-s-line"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="alert alert-info radius-8 mt-20 mb-0 text-sm" role="note">
+                <strong>@T("BackOffice.BulkEmails.History.TrackingNoteTitle", "Durum bilgisi hakkında:")</strong>
+                @T("BackOffice.BulkEmails.History.TrackingNote", "Gönderildi durumu SMTP sunucusunun mesajı kabul ettiğini gösterir; alıcının posta kutusuna kesin teslim garantisi değildir. Açıldı bilgisi görünmez izleme pikseline dayanır ve bazı e-posta istemcileri görselleri engellediği veya önceden yüklediği için yaklaşık sonuç verir.")
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/features/bulk-emails/bulk-emails.history.js" asp-append-version="true"></script>
+}

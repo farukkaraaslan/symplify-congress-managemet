@@ -1,0 +1,397 @@
+@using Symplify.BackOffice.WebUI.Localization
+@inject IBackOfficeViewLocalizer L
+
+@model Symplify.BackOffice.WebUI.Models.Submissions.SubmissionUpdateViewModel
+
+@{
+    string T(string key, string fallback)
+    {
+        var value = L.GetStringValue(key);
+
+        return string.IsNullOrWhiteSpace(value) ||
+               string.Equals(value, key, StringComparison.OrdinalIgnoreCase)
+            ? fallback
+            : value;
+    }
+
+    ViewData["Title"] = T("BackOffice.Submissions.Edit.PageTitle", "Bildiri Düzenle");
+    ViewData["ClientResourcePrefixes"] = new[] { "BackOffice.Submissions." };
+    ViewData["SuppressSidebar"] = true;
+    ViewData["UseAuthorTemplate"] = true;
+    string? currentCulture = Context.Request.RouteValues["culture"]?.ToString();
+    bool canEdit = Model.CanEdit;
+    string? returnUrl = ViewData["ReturnUrl"]?.ToString();
+    string backUrl = string.IsNullOrWhiteSpace(returnUrl)
+        ? Url.Action("Index", "Submissions", new { culture = currentCulture }) ?? "#"
+        : returnUrl;
+    string statusBadgeClass = canEdit ? "bg-warning-100 text-warning-700" : "bg-neutral-200 text-neutral-700";
+    string statusLabel = string.IsNullOrWhiteSpace(Model.TransactionStatusName)
+        ? (Model.IsSubmitted ? "Gönderildi" : "Gönderilmedi")
+        : Model.TransactionStatusName;
+}
+
+<div class="author-container">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <a href="@backUrl"
+           class="btn btn-outline-primary-600 radius-8 px-16 py-8 d-inline-flex align-items-center gap-2">
+            <i class="ri-arrow-left-line"></i>
+            Listeye Dön
+        </a>
+
+        <ul class="d-flex align-items-center gap-2 mb-0">
+            <li class="fw-medium">
+                <a class="d-flex align-items-center gap-1 hover-text-primary text-neutral-600" asp-controller="Congresses" asp-action="Index" asp-route-culture="@currentCulture">
+                    <iconify-icon class="icon text-lg" icon="solar:home-smile-angle-outline"></iconify-icon>
+                    Panel
+                </a>
+            </li>
+            <li>-</li>
+            <li class="fw-medium">
+                <a class="hover-text-primary text-neutral-600" href="@backUrl">Bildirilerim</a>
+            </li>
+            <li>-</li>
+            <li class="fw-medium">Bildiri Düzenle</li>
+        </ul>
+    </div>
+
+    @if (!canEdit)
+    {
+        <div class="alert alert-warning bg-warning-100 border-warning-200 text-warning-700 d-flex align-items-start gap-3 mb-24">
+            <i class="ri-error-warning-line text-xl mt-1"></i>
+            <div>
+                <h6 class="text-md mb-1">Bildiri düzenlenemez</h6>
+                <p class="mb-0">Bu bildiri mevcut iş akışı durumunda yazar tarafından güncellenemez. Sadece taslak veya revizyon beklenen durumlarda düzenleme yapılabilir.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info bg-primary-50 border-primary-100 text-primary-700 d-flex align-items-start gap-3 mb-24">
+            <i class="ri-information-line text-xl mt-1"></i>
+            <div>
+                <h6 class="text-md mb-1">Bildiri düzenleme</h6>
+                <p class="mb-0">Bildiri kongresi değiştirilemez. Bildiri türü, konu, içerik ve yazar bilgilerini güncelleyebilirsiniz.</p>
+            </div>
+        </div>
+    }
+
+    <div class="mb-24">
+        <h6 class="fw-semibold mb-0">Bildiri Düzenle</h6>
+        <small class="text-neutral-500">@Model.SubmissionNumber numaralı bildiri bilgilerini güncelleyin.</small>
+    </div>
+
+    <form asp-action="Edit" asp-route-culture="@currentCulture" asp-route-id="@Model.Id" asp-route-returnUrl="@returnUrl" method="post" enctype="multipart/form-data" autocomplete="off" id="submissionEditForm">
+        @Html.AntiForgeryToken()
+        <input asp-for="Id" type="hidden" />
+        <input asp-for="CongressId" type="hidden" />
+        <input asp-for="SubmissionNumber" type="hidden" />
+        <input asp-for="IsSubmitted" type="hidden" />
+        <div asp-validation-summary="All"
+             class="alert alert-danger bg-danger-50 border-danger-200 text-danger-700 mb-3 @(ViewData.ModelState.IsValid ? "d-none" : string.Empty)"
+             role="alert"
+             aria-live="polite"
+             data-submission-validation-summary></div>
+
+        <div class="row gy-4">
+            <div class="col-xl-7">
+                <fieldset disabled="@(!canEdit)">
+                    <div class="card border shadow-none mb-4">
+                        <div class="card-header border-bottom d-flex align-items-center gap-3">
+                            <span class="w-36-px h-36-px rounded-circle bg-primary-50 text-primary-600 d-flex align-items-center justify-content-center fw-semibold">1</span>
+                            <div>
+                                <h6 class="text-md mb-0">Bildiri Bilgileri</h6>
+                                <small class="text-neutral-500">Bildiri türü, konu ve ORCID bilgisini güncelleyin.</small>
+                            </div>
+                        </div>
+                        <div class="card-body row gy-4">
+                            <div class="col-12">
+                                <label class="form-label">Kongre</label>
+                                <input class="form-control" value="@Model.CongressName" readonly />
+                                <small class="text-neutral-500 d-block mt-1">Bildiri kongresi değiştirilemez.</small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label" asp-for="SubmissionTypeId">Bildiri Türü <span class="text-danger">*</span></label>
+                                <select class="form-control form-select" asp-for="SubmissionTypeId" data-val-required='@T("BackOffice.Submissions.Create.Validation.SubmissionTypeRequired", "Bildiri türü zorunludur.")'>
+                                    <option value="">Seçiniz</option>
+                                    @foreach (var item in Model.SubmissionTypes)
+                                    {
+                                        <option value="@item.Id">@item.Text</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="SubmissionTypeId" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label" asp-for="TopicId">Konu <span class="text-danger">*</span></label>
+                                <select class="form-control form-select" asp-for="TopicId" data-val-required='@T("BackOffice.Submissions.Create.Validation.TopicRequired", "Konu seçimi zorunludur.")'>
+                                    <option value="">Seçiniz</option>
+                                    @foreach (var item in Model.Topics)
+                                    {
+                                        <option value="@item.Id">@item.Text</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="TopicId" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label" asp-for="Orcid">ORCID</label>
+                                <input class="form-control" asp-for="Orcid" placeholder="0000-0000-0000-0000" />
+                                <span asp-validation-for="Orcid" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label" asp-for="LanguageId">Bildiri Dili</label>
+                                <select class="form-control form-select" asp-for="LanguageId">
+                                    <option value="">Seçiniz</option>
+                                    @foreach (var item in Model.Languages)
+                                    {
+                                        <option value="@item.Id">@item.Text</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="LanguageId" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border shadow-none mb-4">
+                        <div class="card-header border-bottom d-flex align-items-center gap-3">
+                            <span class="w-36-px h-36-px rounded-circle bg-primary-50 text-primary-600 d-flex align-items-center justify-content-center fw-semibold">2</span>
+                            <div>
+                                <h6 class="text-md mb-0">@T("BackOffice.Submissions.Create.ContentSection.Title", "Başlık, Anahtar Kelimeler ve Özet")</h6>
+                                <small class="text-neutral-500">@T("BackOffice.Submissions.Create.ContentSection.Subtitle", "Türkçe alanları zorunludur. İngilizce alanları varsa doldurun.")</small>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <ul class="nav nav-pills mb-3" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" data-bs-target="#paperTr" data-bs-toggle="pill" role="tab" type="button">@T("BackOffice.Submissions.Create.Tab.Turkish", "Türkçe")</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-bs-target="#paperEn" data-bs-toggle="pill" role="tab" type="button">@T("BackOffice.Submissions.Create.Tab.English", "English")</button>
+                                </li>
+                            </ul>
+                            <div class="tab-content">
+                                <div class="tab-pane fade show active" id="paperTr" role="tabpanel" tabindex="0">
+                                    <div class="row gy-4">
+                                        <div class="col-12">
+                                            <label class="form-label" asp-for="Title">@T("BackOffice.Submissions.Create.TitleLabel", "Başlık") <span class="text-danger">*</span></label>
+                                            <input class="form-control" asp-for="Title" data-normalize-title-tr="true" placeholder='@T("BackOffice.Submissions.Create.TitlePlaceholder", "Bildiri başlığını yazın")' data-val-required='@T("BackOffice.Submissions.Create.Validation.TitleRequired", "Bildiri başlığı zorunludur.")' />
+                                            <span asp-validation-for="Title" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label" asp-for="Keywords">@T("BackOffice.Submissions.Create.KeywordsLabel", "Anahtar Kelimeler") <span class="text-danger">*</span></label>
+                                            <input class="form-control" asp-for="Keywords" placeholder='@T("BackOffice.Submissions.Create.KeywordsPlaceholder", "Örn: yapay zeka, sağlık, veri analizi")' data-val-required='@T("BackOffice.Submissions.Create.Validation.KeywordsRequired", "Anahtar kelimeler zorunludur.")' />
+                                            <span asp-validation-for="Keywords" class="text-danger"></span>
+                                            <small class="text-neutral-500 d-block mt-1">@T("BackOffice.Submissions.Create.KeywordsHelp", "Kelimeleri virgül ile ayırın.")</small>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label" asp-for="Abstract">@T("BackOffice.Submissions.Create.AbstractLabel", "Özet") <span class="text-danger">*</span></label>
+                                            <textarea class="form-control"
+                                                      asp-for="Abstract"
+                                                      rows="10"
+                                                      placeholder='@T("BackOffice.Submissions.Create.AbstractPlaceholder", "Türkçe özet metnini yazın...")'
+                                                      data-val-required='@T("BackOffice.Submissions.Create.Validation.AbstractRequired", "Özet zorunludur.")'
+                                                      data-symplify-editor
+                                                      data-editor-profile="simple"
+                                                      data-editor-height="320"
+                                                      data-editor-live-validation="false"
+                                                      data-editor-validation-debounce="700"></textarea>
+                                            <span asp-validation-for="Abstract" class="text-danger" data-richtext-validation-for="Abstract"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="paperEn" role="tabpanel" tabindex="0">
+                                    <div class="row gy-4">
+                                        <div class="col-12">
+                                            <label class="form-label" asp-for="TitleEn">@T("BackOffice.Submissions.Create.TitleEnLabel", "Title")</label>
+                                            <input class="form-control" asp-for="TitleEn" data-normalize-title-en="true" placeholder='@T("BackOffice.Submissions.Create.TitleEnPlaceholder", "English title")' />
+                                            <span asp-validation-for="TitleEn" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label" asp-for="KeywordsEn">@T("BackOffice.Submissions.Create.KeywordsEnLabel", "Keywords")</label>
+                                            <input class="form-control" asp-for="KeywordsEn" data-normalize-english-text="true" placeholder='@T("BackOffice.Submissions.Create.KeywordsEnPlaceholder", "artificial intelligence, health, data analysis")' />
+                                            <span asp-validation-for="KeywordsEn" class="text-danger"></span>
+                                            <small class="text-neutral-500 d-block mt-1">@T("BackOffice.Submissions.Create.KeywordsHelp", "Kelimeleri virgül ile ayırın.")</small>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label" asp-for="AbstractEn">@T("BackOffice.Submissions.Create.AbstractEnLabel", "Abstract")</label>
+                                            <textarea class="form-control"
+                                                      asp-for="AbstractEn"
+                                                      data-normalize-english-text="true"
+                                                      rows="10"
+                                                      placeholder='@T("BackOffice.Submissions.Create.AbstractEnPlaceholder", "English abstract...")'
+                                                      data-symplify-editor
+                                                      data-editor-profile="simple"
+                                                      data-editor-height="320"
+                                                      data-editor-live-validation="false"
+                                                      data-editor-validation-debounce="700"></textarea>
+                                            <span asp-validation-for="AbstractEn" class="text-danger" data-richtext-validation-for="AbstractEn"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border shadow-none">
+                        <div class="card-header border-bottom d-flex align-items-center gap-3">
+                            <span class="w-36-px h-36-px rounded-circle bg-primary-50 text-primary-600 d-flex align-items-center justify-content-center fw-semibold">3</span>
+                            <div>
+                                <h6 class="text-md mb-0">Dosyalar</h6>
+                                <small class="text-neutral-500">Dosya güncelleme entegrasyonu sonraki fazda bağlanacaktır.</small>
+                            </div>
+                        </div>
+                        <div class="card-body row gy-4">
+                            <div class="col-md-6">
+                                <label class="form-label" asp-for="FullTextFile">Tam Metin Dosyası</label>
+                                <input class="form-control" asp-for="FullTextFile" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" asp-for="PresentationFile">Sunum Dosyası</label>
+                                <input class="form-control" asp-for="PresentationFile" type="file" />
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+
+            <div class="col-xl-5">
+                <div class="card border shadow-none mb-4" id="currentSubmissionStatusCard">
+                    <div class="card-header border-bottom">
+                        <h6 class="text-md mb-0">Mevcut Bildiri Durumu</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <span class="text-sm text-neutral-500">Bildiri No</span>
+                            <span class="fw-semibold text-primary-light">@Model.SubmissionNumber</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <span class="text-sm text-neutral-500">Gönderim Durumu</span>
+                            <span class="badge @statusBadgeClass rounded-pill">@statusLabel</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="text-sm text-neutral-500">Son Güncelleme</span>
+                            <span class="fw-semibold text-primary-light">@(Model.UpdatedDate?.ToString("dd.MM.yyyy HH:mm") ?? "-")</span>
+                        </div>
+                    </div>
+                </div>
+
+                <fieldset disabled="@(!canEdit)">
+                    <div class="card border shadow-none mb-4">
+                        <div class="card-header border-bottom d-flex align-items-center gap-3">
+                            <span class="w-36-px h-36-px rounded-circle bg-success-100 text-success-600 d-flex align-items-center justify-content-center fw-semibold">4</span>
+                            <div>
+                                <h6 class="text-md mb-0">@T("BackOffice.Submissions.AuthorForm.Title", "Yazar Ekle")</h6>
+                                <small class="text-neutral-500">@T("BackOffice.Submissions.AuthorForm.Subtitle", "Yazar bilgilerini eksiksiz doldurun ve listeye ekleyin.")</small>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning bg-warning-100 border-warning-200 text-warning-700 d-flex align-items-start gap-2 mb-4">
+                                <i class="ri-error-warning-line text-lg mt-1"></i>
+                                <div>@Html.Raw(T("BackOffice.Submissions.AuthorForm.RequiredWarning", "En az <strong>1 sorumlu yazar</strong> eklenmelidir. Unvan, ad soyad, e-posta, kurum ve yazar rolü zorunludur."))</div>
+                            </div>
+                            <div class="row gy-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="authorTitleId">@T("BackOffice.Submissions.AuthorForm.TitleLabel", "Unvan") <span class="text-danger">*</span></label>
+                                    <select class="form-control form-select" id="authorTitleId" data-author-required="true" data-author-field="title" data-author-combobox="true" data-author-placeholder='@T("BackOffice.Submissions.AuthorForm.TitlePlaceholder", "Unvan seçiniz")' data-author-search-placeholder='@T("BackOffice.Submissions.AuthorForm.TitleSearchPlaceholder", "Unvan ara...")' data-author-no-results='@T("BackOffice.Submissions.AuthorForm.TitleNoResults", "Eşleşen unvan bulunamadı.")'>
+                                        <option value="">@T("BackOffice.Submissions.AuthorForm.TitlePlaceholder", "Unvan seçiniz")</option>
+                                        @foreach (var title in Model.TitleOptions)
+                                        {
+                                            <option value="@title.Id">@title.Text</option>
+                                        }
+                                    </select>
+                                    <span class="text-danger text-sm d-block mt-1" data-author-validation-for="title"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="authorFirstName">@T("BackOffice.Submissions.AuthorForm.FirstNameLabel", "Ad") <span class="text-danger">*</span></label>
+                                    <input class="form-control" id="authorFirstName" placeholder='@T("BackOffice.Submissions.AuthorForm.FirstNamePlaceholder", "Yazar adı")' type="text" data-author-required="true" data-author-field="firstName" autocomplete="given-name" data-normalize-person-name="true" />
+                                    <span class="text-danger text-sm d-block mt-1" data-author-validation-for="firstName"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="authorLastName">@T("BackOffice.Submissions.AuthorForm.LastNameLabel", "Soyad") <span class="text-danger">*</span></label>
+                                    <input class="form-control" id="authorLastName" placeholder='@T("BackOffice.Submissions.AuthorForm.LastNamePlaceholder", "Yazar soyadı")' type="text" data-author-required="true" data-author-field="lastName" autocomplete="family-name" data-normalize-surname="true" />
+                                    <input id="authorFullName" type="hidden" />
+                                    <span class="text-danger text-sm d-block mt-1" data-author-validation-for="lastName"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="authorEmail">@T("BackOffice.Submissions.AuthorForm.EmailLabel", "E-posta") <span class="text-danger">*</span></label>
+                                    <input class="form-control" id="authorEmail" placeholder='@T("BackOffice.Submissions.AuthorForm.EmailPlaceholder", "mail@ornek.com")' type="text" inputmode="email" autocomplete="email" data-author-required="true" data-author-field="email" />
+                                <span class="text-danger text-sm d-block mt-1" data-author-validation-for="email"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="authorInstitution">@T("BackOffice.Submissions.AuthorForm.InstitutionLabel", "Kurum") <span class="text-danger">*</span></label>
+                                    <input class="form-control" id="authorInstitution" placeholder='@T("BackOffice.Submissions.AuthorForm.InstitutionPlaceholder", "Üniversite / kurum adı")' type="text" data-author-required="true" data-author-field="institution" autocomplete="organization" data-normalize-institution="true" />
+                                <span class="text-danger text-sm d-block mt-1" data-author-validation-for="institution"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="authorOrcid">@T("BackOffice.Submissions.Create.OrcidLabel", "ORCID")</label>
+                                    <input class="form-control" id="authorOrcid" placeholder="0000-0000-0000-0000" type="text" inputmode="numeric" autocomplete="off" />
+                                    <small class="text-neutral-500 d-block mt-1">@T("BackOffice.Submissions.AuthorForm.OrcidHelp", "Varsa ORCID numarasını giriniz.")</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="authorRole">@T("BackOffice.Submissions.AuthorForm.RoleLabel", "Yazar Rolü") <span class="text-danger">*</span></label>
+                                    <select class="form-control form-select" id="authorRole" data-author-required="true" data-author-field="role">
+                                        <option value="">@T("BackOffice.Submissions.AuthorForm.RolePlaceholder", "Rol seçiniz")</option>
+                                        <option value="true">@T("BackOffice.Submissions.AuthorForm.RoleCorresponding", "Sorumlu Yazar")</option>
+                                        <option value="false">@T("BackOffice.Submissions.AuthorForm.RoleAuthor", "Yazar")</option>
+                                    </select>
+                                    <span class="text-danger text-sm d-block mt-1" data-author-validation-for="role"></span>
+                                </div>
+                                <div class="col-12 pt-1">
+                                    <button class="btn btn-success-600 radius-8 px-20 py-11 d-flex align-items-center justify-content-center gap-2 w-100" type="button" id="addAuthorButton">
+                                        <i class="ri-add-line"></i>
+                                        <span>@T("BackOffice.Submissions.AuthorForm.AddButton", "Yazarı Listeye Ekle")</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border shadow-none mb-4">
+                        <div class="card-header border-bottom d-flex align-items-center justify-content-between gap-3">
+                            <div>
+                                <h6 class="text-md mb-0">@T("BackOffice.Submissions.AuthorList.Title", "Eklenen Yazarlar")</h6>
+                                <small class="text-neutral-500">@T("BackOffice.Submissions.AuthorList.Subtitle", "Kaydetmeden önce listeyi kontrol edin.")</small>
+                            </div>
+                            <span class="badge bg-primary-50 text-primary-600 rounded-pill" id="authorCountBadge">@Model.Authors.Count @T("BackOffice.Submissions.AuthorList.CountSuffix", "Yazar")</span>
+                        </div>
+                        <div class="card-body">
+                            <span asp-validation-for="Authors" id="authorsValidationMessage" class="text-danger d-block mb-2" data-author-collection-validation></span>
+                            <div id="authorsHiddenContainer"></div>
+                            <div id="authorsList"
+                             class="d-grid gap-3"
+                             data-existing-authors='@System.Text.Json.JsonSerializer.Serialize(Model.Authors)'
+                             data-title-options='@System.Text.Json.JsonSerializer.Serialize(Model.TitleOptions)'
+                             data-allow-author-edit="true"></div>
+                        </div>
+                    </div>
+
+                    <div class="card border shadow-none">
+                        <div class="card-header border-bottom">
+                            <h6 class="text-md mb-0">Kaydet</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary-600 radius-8 px-20 py-11 d-flex align-items-center justify-content-center gap-2" type="submit" name="SubmitAction" value="draft">
+                                    <i class="ri-save-line"></i>
+                                    Değişiklikleri Kaydet
+                                </button>
+                                <a class="btn btn-outline-neutral-900 radius-8 px-20 py-11 d-flex align-items-center justify-content-center gap-2" asp-action="Index" asp-route-culture="@currentCulture">
+                                    <i class="ri-arrow-left-line"></i> Listeye Dön
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_LocalizationScripts")
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/common/text-normalizer.js" asp-append-version="true"></script>
+    <script src="~/js/features/submissions/submissions-form.js" asp-append-version="true"></script>
+}

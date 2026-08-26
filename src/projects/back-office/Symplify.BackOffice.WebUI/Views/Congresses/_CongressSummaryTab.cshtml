@@ -1,0 +1,147 @@
+@model Symplify.BackOffice.WebUI.Models.Congresses.ManageCongressViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+@using Symplify.BackOffice.Domain.Enums
+
+@{
+    string statusClass = Model.Status switch
+    {
+        CongressStatus.Published => "bg-success-light text-success",
+        CongressStatus.Archived => "bg-neutral-200 text-neutral-700",
+        CongressStatus.Cancelled => "bg-danger-light text-danger",
+        _ => "bg-warning-light text-warning"
+    };
+
+    string statusText = Model.Status switch
+    {
+        CongressStatus.Published => L.GetStringValue("BackOffice.Congresses.Status.Published"),
+        CongressStatus.Archived => L.GetStringValue("BackOffice.Congresses.Status.Archived"),
+        CongressStatus.Cancelled => L.GetStringValue("BackOffice.Congresses.Status.Cancelled"),
+        _ => L.GetStringValue("BackOffice.Congresses.Status.Draft")
+    };
+
+    string dateRange = $"{Model.StartDate?.ToString("dd.MM.yyyy") ?? "-"} - {Model.EndDate?.ToString("dd.MM.yyyy") ?? "-"}";
+    string displayTitle = string.IsNullOrWhiteSpace(Model.Title) ? Model.Name : Model.Title;
+}
+
+<div class="card border shadow-none mb-4">
+    <div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <h6 class="text-md mb-0">@L["BackOffice.Congresses.Manage.CongressInfoTitle"]</h6>
+            <small class="text-neutral-500">@L["BackOffice.Congresses.Manage.CongressInfoDescription"]</small>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="row gy-4">
+            <div class="col-xl-8">
+                <div class="row gy-3">
+                    <div class="col-12">
+                        <span class="text-sm text-neutral-500 d-block mb-2">@L["BackOffice.Congresses.Fields.LogoLight"] / @L["BackOffice.Congresses.Fields.LogoDark"]</span>
+
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="border rounded-3 p-12 bg-neutral-50 d-flex align-items-center gap-3 min-w-180-px">
+                                <span class="badge bg-primary-50 text-primary-600 rounded-pill">Light</span>
+
+                                @if (!string.IsNullOrWhiteSpace(Model.LogoLightUrl ?? Model.LogoLightPath))
+                                {
+                                    <img src="@(Model.LogoLightUrl ?? Model.LogoLightPath)"
+                                         alt="Light Logo"
+                                         class="w-80-px h-48-px object-fit-contain rounded-2" />
+                                }
+                                else
+                                {
+                                    <span class="text-neutral-500">-</span>
+                                }
+                            </div>
+
+                            <div class="border rounded-3 p-12 bg-dark text-white d-flex align-items-center gap-3 min-w-180-px">
+                                <span class="badge bg-neutral-700 text-white rounded-pill">Dark</span>
+
+                                @if (!string.IsNullOrWhiteSpace(Model.LogoDarkUrl ?? Model.LogoDarkPath))
+                                {
+                                    <img src="@(Model.LogoDarkUrl ?? Model.LogoDarkPath)"
+                                         alt="Dark Logo"
+                                         class="w-80-px h-48-px object-fit-contain rounded-2" />
+                                }
+                                else
+                                {
+                                    <span class="text-white-50">-</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <span class="text-sm text-neutral-500 d-block mb-1">@L["BackOffice.Congresses.Fields.Code"]</span>
+                        <span class="fw-medium text-neutral-900">@Model.Code</span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <span class="text-sm text-neutral-500 d-block mb-1">@L["BackOffice.Congresses.Fields.Status"]</span>
+                        <span class="badge @statusClass rounded-pill">@statusText</span>
+                    </div>
+
+                    <div class="col-12">
+                        <span class="text-sm text-neutral-500 d-block mb-1">@L["BackOffice.Congresses.Fields.Title"]</span>
+                        <span class="fw-medium text-neutral-900">@displayTitle</span>
+                    </div>
+
+                    <div class="col-12">
+                        <span class="text-sm text-neutral-500 d-block mb-1">@L["BackOffice.Congresses.Fields.Subtitle"]</span>
+                        <span class="fw-medium text-neutral-900">@(string.IsNullOrWhiteSpace(Model.Subtitle) ? "-" : Model.Subtitle)</span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <span class="text-sm text-neutral-500 d-block mb-1">@L["BackOffice.Congresses.Fields.DateRange"]</span>
+                        <span class="fw-medium text-neutral-900">@dateRange</span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <span class="text-sm text-neutral-500 d-block mb-1">@L["BackOffice.Congresses.Create.Translations"]</span>
+
+                        <div class="d-flex flex-wrap gap-1">
+                            @if (Model.TranslationCultures.Count > 0)
+                            {
+                                foreach (string culture in Model.TranslationCultures)
+                                {
+                                    <span class="badge bg-primary-50 text-primary-600 rounded-pill">@culture</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-neutral-500">-</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <span class="text-sm text-neutral-500 d-block mb-1">@L["BackOffice.Congresses.Fields.ShortDescription"]</span>
+                        <span class="fw-medium text-neutral-900">@(string.IsNullOrWhiteSpace(Model.ShortDescription) ? "-" : Model.ShortDescription)</span>
+                    </div>
+
+                    <div class="col-12">
+                        <span class="text-sm text-neutral-500 d-block mb-1">@L["BackOffice.Congresses.Fields.WelcomeTitle"]</span>
+                        <span class="fw-medium text-neutral-900">@(string.IsNullOrWhiteSpace(Model.WelcomeTitle) ? "-" : Model.WelcomeTitle)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-4">
+                <div class="border rounded-3 p-16 bg-neutral-50 h-100 congress-welcome-preview">
+                    <span class="text-sm text-neutral-500 d-block mb-2">@L["BackOffice.Congresses.Fields.WelcomeContent"]</span>
+
+                    @if (string.IsNullOrWhiteSpace(Model.WelcomeContent))
+                    {
+                        <p class="mb-0 text-neutral-700">-</p>
+                    }
+                    else
+                    {
+                        <div class="text-neutral-700 symplify-rich-content">
+                            @Html.Raw(Model.WelcomeContent)
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

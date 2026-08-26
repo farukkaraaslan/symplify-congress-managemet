@@ -1,0 +1,24 @@
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.list__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  color: var(--default-color);
+}
+
+.list__item i {
+  flex: 0 0 auto;
+  margin-top: 0.15rem;
+  color: var(--accent-color);
+}
+
+.list--icon {
+  gap: 0.9rem;
+}

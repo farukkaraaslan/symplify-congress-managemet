@@ -1,0 +1,95 @@
+@use "../abstracts" as a;
+
+.tabs__nav {
+  gap: 0.75rem;
+
+  .nav-link {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.15rem;
+    border-radius: var(--bs-border-radius-xxl);
+    font-weight: 800;
+    background: var(--surface-color);
+    border: 1px solid color-mix(in srgb, var(--default-color), transparent 88%);
+    color: var(--heading-color);
+    transition: all 0.3s ease;
+    text-align: left;
+  }
+
+  .nav-link:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-1);
+    border-color: color-mix(in srgb, var(--accent-color), transparent 70%);
+  }
+
+  .nav-link.active {
+    background: color-mix(in srgb, var(--accent-color), transparent 88%);
+    border-color: color-mix(in srgb, var(--accent-color), transparent 40%);
+    box-shadow: var(--shadow-1);
+  }
+
+  @include a.mq-down(lg) {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 0.5rem;
+    padding-bottom: 0.25rem;
+    -webkit-overflow-scrolling: touch;
+
+    .nav-link {
+      width: auto;
+      min-width: 220px;
+      padding: 0.75rem 0.85rem;
+      border-radius: var(--bs-border-radius-lg);
+    }
+  }
+
+  @include a.mq-up(lg) {
+    position: sticky;
+    top: 110px;
+  }
+}
+
+.tabs__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--bs-border-radius);
+  background: color-mix(in srgb, var(--accent-color), transparent 88%);
+  color: var(--accent-color);
+  font-weight: 900;
+  flex: 0 0 40px;
+
+  @include a.mq-down(lg) {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+.tabs__label {
+  font-size: 1rem;
+  line-height: 1.2;
+
+  @include a.mq-down(lg) {
+    font-size: 0.95rem;
+  }
+}
+
+.tabs__content {
+  .tab-pane {
+    background: var(--surface-color);
+    border-radius: var(--bs-border-radius-xxl);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-1);
+    border: 1px solid color-mix(in srgb, var(--default-color), transparent 92%);
+
+    @include a.mq-down(sm) {
+      padding: 1.25rem;
+    }
+  }
+}

@@ -1,0 +1,350 @@
+@using Symplify.BackOffice.Application.Features.AbstractBook.Models
+@using Symplify.BackOffice.Application.Features.ProgramManagement.Models
+@using Symplify.BackOffice.WebUI.Localization
+@model Symplify.BackOffice.WebUI.Models.AbstractBook.AbstractBookIndexViewModel
+@inject IBackOfficeViewLocalizer L
+
+@{
+    ViewData["Title"] = L["BackOffice.AbstractBook.PageTitle"];
+    string culture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    ProgramGenerationSourceDto? source = Model.Page.Source;
+}
+
+<div class="dashboard-main-body"
+     id="abstractBookRoot"
+     data-no-results-message="@L["BackOffice.AbstractBook.NoFilteredSubmissions"]"
+     data-content-language-message="@L["BackOffice.AbstractBook.ContentLanguageRequired"]"
+     data-validation-title="@L["BackOffice.AbstractBook.ValidationTitle"]">
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-1">@L["BackOffice.AbstractBook.PageTitle"]</h6>
+            <p class="text-neutral-500 mb-0">@L["BackOffice.AbstractBook.PageDescription"]</p>
+        </div>
+        <span class="badge bg-primary-50 text-primary-600 px-16 py-8 radius-8 d-inline-flex align-items-center gap-2">
+            <i class="ri-book-2-line"></i>
+            @L["BackOffice.AbstractBook.Badge"]
+        </span>
+    </div>
+
+    <div class="card border-0 radius-12 mb-24">
+        <div class="card-body p-24">
+            <form method="get"
+                  asp-action="Index"
+                  asp-controller="AbstractBook"
+                  asp-route-culture="@culture"
+                  class="row g-3 align-items-end">
+                <div class="col-lg-9">
+                    <label class="form-label fw-semibold">@L["BackOffice.AbstractBook.Congress"]</label>
+                    <select class="form-select" name="congressId" onchange="this.form.submit()">
+                        @foreach (ProgramCongressOptionDto congress in Model.Page.Congresses)
+                        {
+                            bool selected = congress.Id == Model.Page.SelectedCongressId;
+                            string dateText = congress.StartDate.HasValue
+                                ? $" ({congress.StartDate:dd.MM.yyyy}{(congress.EndDate.HasValue ? $" - {congress.EndDate:dd.MM.yyyy}" : string.Empty)})"
+                                : string.Empty;
+                            <option value="@congress.Id" selected="@selected">@congress.Name@dateText</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-lg-3">
+                    <div class="border radius-8 bg-neutral-50 p-16 d-flex align-items-center justify-content-between gap-3">
+                        <span>@L["BackOffice.AbstractBook.TotalSubmissions"]</span>
+                        <strong>@(source?.AllSubmissions.Count ?? 0)</strong>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (source is null)
+    {
+        <div class="card border-0 radius-12">
+            <div class="card-body p-40 text-center text-neutral-500">
+                <i class="ri-calendar-close-line text-3xl d-block mb-12"></i>
+                @L["BackOffice.AbstractBook.NoCongress"]
+            </div>
+        </div>
+    }
+    else
+    {
+        <form method="post" id="abstractBookExportForm" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Export.CongressId" />
+            <input type="hidden"
+                   id="abstractBookCoverImageSelected"
+                   name="coverImageSelected"
+                   value="false" />
+
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-24"></div>
+
+            <div class="card border-0 radius-12 mb-24">
+                <div class="card-header bg-base border-bottom py-16 px-24">
+                    <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
+                        <div>
+                            <h6 class="mb-1">
+                                <i class="ri-filter-3-line me-1"></i>
+                                @L["BackOffice.ProgramManagement.SubmissionScope"]
+                            </h6>
+                            <p class="text-sm text-neutral-500 mb-0">
+                                @L["BackOffice.ProgramManagement.SubmissionScopeDescription"]
+                            </p>
+                        </div>
+                        <div class="badge bg-primary-50 text-primary-600 px-12 py-8 radius-8 d-inline-flex align-items-center gap-1">
+                            <span>@L["BackOffice.ProgramManagement.FilteredSubmissionCount"]</span>
+                            <strong id="abstractBookFilteredCount">0</strong>
+                            <small>/ @source.AllSubmissions.Count</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-24">
+                    <div class="row g-3">
+                        <div class="col-lg-4">
+                            <label asp-for="Export.SubmissionScopePreset" class="form-label fw-semibold">
+                                @L["BackOffice.ProgramManagement.ScopePreset"]
+                            </label>
+                            <select asp-for="Export.SubmissionScopePreset"
+                                    class="form-select js-abstract-book-filter">
+                                <option value="@((int)ProgramSubmissionScopePreset.AllActive)">@L["BackOffice.ProgramManagement.ScopeAllActive"]</option>
+                                <option value="@((int)ProgramSubmissionScopePreset.AcceptedOnly)">@L["BackOffice.ProgramManagement.ScopeAcceptedOnly"]</option>
+                                <option value="@((int)ProgramSubmissionScopePreset.PaidOnly)">@L["BackOffice.ProgramManagement.ScopePaidOnly"]</option>
+                                <option value="@((int)ProgramSubmissionScopePreset.AcceptedAndPaid)">@L["BackOffice.ProgramManagement.ScopeAcceptedAndPaid"]</option>
+                            </select>
+                        </div>
+
+                        <div class="col-lg-8">
+                            <label asp-for="Export.SubmissionSearchText" class="form-label fw-semibold">
+                                @L["BackOffice.ProgramManagement.SearchSubmissions"]
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="ri-search-line"></i></span>
+                                <input asp-for="Export.SubmissionSearchText"
+                                       class="form-control js-abstract-book-filter"
+                                       placeholder="@L["BackOffice.ProgramManagement.SearchSubmissionsPlaceholder"]" />
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-xl-3">
+                            <label asp-for="Export.WorkflowStatusCodes" class="form-label fw-semibold">
+                                @L["BackOffice.ProgramManagement.WorkflowStatuses"]
+                            </label>
+                            <select asp-for="Export.WorkflowStatusCodes"
+                                    multiple
+                                    class="form-select js-abstract-book-filter js-abstract-book-filter-multi"
+                                    data-placeholder="@L["BackOffice.ProgramManagement.WorkflowStatuses"]"
+                                    data-search-placeholder="@L["BackOffice.ProgramManagement.FilterSearchPlaceholder"]"
+                                    data-select-all-text="@L["BackOffice.ProgramManagement.FilterSelectAll"]"
+                                    data-clear-text="@L["BackOffice.ProgramManagement.FilterClearSelection"]"
+                                    data-no-options-text="@L["BackOffice.ProgramManagement.FilterNoOptions"]">
+                                @foreach (ProgramStringFilterOptionDto option in source.FilterOptions.WorkflowStatuses)
+                                {
+                                    <option value="@option.Value">@option.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 col-xl-3">
+                            <label asp-for="Export.PaymentStatusIds" class="form-label fw-semibold">
+                                @L["BackOffice.ProgramManagement.PaymentStatuses"]
+                            </label>
+                            <select asp-for="Export.PaymentStatusIds"
+                                    multiple
+                                    class="form-select js-abstract-book-filter js-abstract-book-filter-multi"
+                                    data-placeholder="@L["BackOffice.ProgramManagement.PaymentStatuses"]"
+                                    data-search-placeholder="@L["BackOffice.ProgramManagement.FilterSearchPlaceholder"]"
+                                    data-select-all-text="@L["BackOffice.ProgramManagement.FilterSelectAll"]"
+                                    data-clear-text="@L["BackOffice.ProgramManagement.FilterClearSelection"]"
+                                    data-no-options-text="@L["BackOffice.ProgramManagement.FilterNoOptions"]">
+                                @foreach (ProgramIntFilterOptionDto option in source.FilterOptions.PaymentStatuses)
+                                {
+                                    <option value="@option.Id">@option.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 col-xl-3">
+                            <label asp-for="Export.SubmissionTypeIds" class="form-label fw-semibold">
+                                @L["BackOffice.ProgramManagement.SubmissionTypes"]
+                            </label>
+                            <select asp-for="Export.SubmissionTypeIds"
+                                    multiple
+                                    class="form-select js-abstract-book-filter js-abstract-book-filter-multi"
+                                    data-placeholder="@L["BackOffice.ProgramManagement.SubmissionTypes"]"
+                                    data-search-placeholder="@L["BackOffice.ProgramManagement.FilterSearchPlaceholder"]"
+                                    data-select-all-text="@L["BackOffice.ProgramManagement.FilterSelectAll"]"
+                                    data-clear-text="@L["BackOffice.ProgramManagement.FilterClearSelection"]"
+                                    data-no-options-text="@L["BackOffice.ProgramManagement.FilterNoOptions"]">
+                                @foreach (ProgramGuidFilterOptionDto option in source.FilterOptions.SubmissionTypes)
+                                {
+                                    <option value="@option.Id">@option.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 col-xl-3">
+                            <label asp-for="Export.TopicIds" class="form-label fw-semibold">
+                                @L["BackOffice.ProgramManagement.Topics"]
+                            </label>
+                            <select asp-for="Export.TopicIds"
+                                    multiple
+                                    class="form-select js-abstract-book-filter js-abstract-book-filter-multi"
+                                    data-placeholder="@L["BackOffice.ProgramManagement.Topics"]"
+                                    data-search-placeholder="@L["BackOffice.ProgramManagement.FilterSearchPlaceholder"]"
+                                    data-select-all-text="@L["BackOffice.ProgramManagement.FilterSelectAll"]"
+                                    data-clear-text="@L["BackOffice.ProgramManagement.FilterClearSelection"]"
+                                    data-no-options-text="@L["BackOffice.ProgramManagement.FilterNoOptions"]">
+                                @foreach (ProgramGuidFilterOptionDto option in source.FilterOptions.Topics)
+                                {
+                                    <option value="@option.Id">@option.Name</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3">
+                        <small class="text-neutral-500">@L["BackOffice.ProgramManagement.MultiSelectHelp"]</small>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="clearAbstractBookFilters">
+                            <i class="ri-filter-off-line me-1"></i>
+                            @L["BackOffice.ProgramManagement.ClearAdditionalFilters"]
+                        </button>
+                    </div>
+
+                    <div id="abstractBookCandidatesData" class="d-none" aria-hidden="true">
+                        @foreach (ProgramSubmissionSourceDto submission in source.AllSubmissions)
+                        {
+                            string searchableText = $"{submission.SubmissionNumber} {submission.Title} {submission.Authors} {submission.TopicName} {submission.SubmissionTypeName} {submission.WorkflowStatusName} {submission.PaymentStatusName}";
+                            <span data-abstract-book-candidate
+                                  data-workflow-status="@submission.WorkflowStatusCode"
+                                  data-payment-status-id="@(submission.PaymentStatusId?.ToString() ?? string.Empty)"
+                                  data-submission-type-id="@(submission.SubmissionTypeId?.ToString() ?? string.Empty)"
+                                  data-topic-id="@(submission.TopicId?.ToString() ?? string.Empty)"
+                                  data-is-accepted="@submission.IsAccepted.ToString().ToLowerInvariant()"
+                                  data-is-paid="@submission.IsPaid.ToString().ToLowerInvariant()"
+                                  data-search="@searchableText"></span>
+                        }
+                    </div>
+
+                    <div class="alert alert-warning py-2 px-3 mt-3 mb-0 d-none" id="abstractBookNoCandidates">
+                        <i class="ri-alert-line me-1"></i>
+                        @L["BackOffice.AbstractBook.NoFilteredSubmissions"]
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-24 mb-24">
+                <div class="col-xl-7">
+                    <div class="card border-0 radius-12 h-100">
+                        <div class="card-header bg-base border-bottom py-16 px-24">
+                            <h6 class="mb-1">@L["BackOffice.AbstractBook.ContentSettings"]</h6>
+                            <p class="text-sm text-neutral-500 mb-0">@L["BackOffice.AbstractBook.ContentSettingsDescription"]</p>
+                        </div>
+                        <div class="card-body p-24">
+                            <div class="row g-3">
+                                <label class="col-md-6 d-flex align-items-start gap-3 border radius-8 p-16 bg-base cursor-pointer">
+                                    <input asp-for="Export.IncludeBoards" class="form-check-input" />
+                                    <span class="d-flex flex-column gap-1"><strong>@L["BackOffice.AbstractBook.IncludeBoards"]</strong><small class="text-neutral-500">@L["BackOffice.AbstractBook.IncludeBoardsHelp"]</small></span>
+                                </label>
+                                <label class="col-md-6 d-flex align-items-start gap-3 border radius-8 p-16 bg-base cursor-pointer">
+                                    <input asp-for="Export.IncludeTableOfContents" class="form-check-input" />
+                                    <span class="d-flex flex-column gap-1"><strong>@L["BackOffice.AbstractBook.IncludeTableOfContents"]</strong><small class="text-neutral-500">@L["BackOffice.AbstractBook.IncludeTableOfContentsHelp"]</small></span>
+                                </label>
+                                <label class="col-md-6 d-flex align-items-start gap-3 border radius-8 p-16 bg-base cursor-pointer">
+                                    <input asp-for="Export.StartEachSubmissionOnNewPage" class="form-check-input" />
+                                    <span class="d-flex flex-column gap-1"><strong>@L["BackOffice.AbstractBook.StartEachSubmissionOnNewPage"]</strong><small class="text-neutral-500">@L["BackOffice.AbstractBook.StartEachSubmissionOnNewPageHelp"]</small></span>
+                                </label>
+                                <label class="col-md-6 d-flex align-items-start gap-3 border radius-8 p-16 bg-base cursor-pointer">
+                                    <input asp-for="Export.IncludeTurkishContent" class="form-check-input" />
+                                    <span class="d-flex flex-column gap-1"><strong>@L["BackOffice.AbstractBook.IncludeTurkishContent"]</strong><small class="text-neutral-500">@L["BackOffice.AbstractBook.IncludeTurkishContentHelp"]</small></span>
+                                </label>
+                                <label class="col-md-6 d-flex align-items-start gap-3 border radius-8 p-16 bg-base cursor-pointer">
+                                    <input asp-for="Export.IncludeEnglishContent" class="form-check-input" />
+                                    <span class="d-flex flex-column gap-1"><strong>@L["BackOffice.AbstractBook.IncludeEnglishContent"]</strong><small class="text-neutral-500">@L["BackOffice.AbstractBook.IncludeEnglishContentHelp"]</small></span>
+                                </label>
+                                <label class="col-md-6 d-flex align-items-start gap-3 border radius-8 p-16 bg-base cursor-pointer">
+                                    <input asp-for="Export.IncludeOrcid" class="form-check-input" />
+                                    <span class="d-flex flex-column gap-1"><strong>@L["BackOffice.AbstractBook.IncludeOrcid"]</strong><small class="text-neutral-500">@L["BackOffice.AbstractBook.IncludeOrcidHelp"]</small></span>
+                                </label>
+                                <label class="col-md-6 d-flex align-items-start gap-3 border radius-8 p-16 bg-base cursor-pointer">
+                                    <input asp-for="Export.IncludeInstitutions" class="form-check-input" />
+                                    <span class="d-flex flex-column gap-1"><strong>@L["BackOffice.AbstractBook.IncludeInstitutions"]</strong><small class="text-neutral-500">@L["BackOffice.AbstractBook.IncludeInstitutionsHelp"]</small></span>
+                                </label>
+                                <label class="col-md-6 d-flex align-items-start gap-3 border radius-8 p-16 bg-base cursor-pointer">
+                                    <input asp-for="Export.IncludeCorrespondingAuthor" class="form-check-input" />
+                                    <span class="d-flex flex-column gap-1"><strong>@L["BackOffice.AbstractBook.IncludeCorrespondingAuthor"]</strong><small class="text-neutral-500">@L["BackOffice.AbstractBook.IncludeCorrespondingAuthorHelp"]</small></span>
+                                </label>
+                            </div>
+
+                            <div class="mt-20">
+                                <label asp-for="Export.SortMode" class="form-label fw-semibold">@L["BackOffice.AbstractBook.SortMode"]</label>
+                                <select asp-for="Export.SortMode" class="form-select">
+                                    <option value="@((int)AbstractBookSortMode.SubmissionNumber)">@L["BackOffice.AbstractBook.SortSubmissionNumber"]</option>
+                                    <option value="@((int)AbstractBookSortMode.Title)">@L["BackOffice.AbstractBook.SortTitle"]</option>
+                                    <option value="@((int)AbstractBookSortMode.Topic)">@L["BackOffice.AbstractBook.SortTopic"]</option>
+                                    <option value="@((int)AbstractBookSortMode.SubmissionType)">@L["BackOffice.AbstractBook.SortSubmissionType"]</option>
+                                    <option value="@((int)AbstractBookSortMode.ProgramOrder)">@L["BackOffice.AbstractBook.SortProgramOrder"]</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-5">
+                    <div class="card border-0 radius-12 h-100">
+                        <div class="card-header bg-base border-bottom py-16 px-24">
+                            <h6 class="mb-1">Kapak Görseli</h6>
+                            <p class="text-sm text-neutral-500 mb-0">Yüklediğiniz görsel, özet kitabının ilk sayfası olarak doğrudan kullanılır.</p>
+                        </div>
+                        <div class="card-body p-24">
+                            <label asp-for="Export.CoverImageFile" class="form-label fw-semibold">Kapak Dosyası</label>
+                            <input asp-for="Export.CoverImageFile"
+                                   type="file"
+                                   class="form-control"
+                                   accept="image/png,image/jpeg,.png,.jpg,.jpeg" />
+                            <small class="text-neutral-500 d-block mt-2">Yalnızca gerçek PNG veya JPG dosyası yükleyin. En fazla 8 MB. A4 dikey oran önerilir.</small>
+                            <div class="alert alert-info mt-20 mb-0">
+                                <i class="ri-information-line me-1"></i>
+                                Kapak yüklemezseniz ayrıca yapay veya temalı bir kapak sayfası oluşturulmaz.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 radius-12 p-20 d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-2 text-neutral-600">
+                    <span>@L["BackOffice.AbstractBook.SelectedSubmissionCount"]</span>
+                    <strong id="abstractBookActionCount">0</strong>
+                    <small>@L["BackOffice.AbstractBook.SubmissionUnit"]</small>
+                </div>
+                <div class="d-flex flex-wrap gap-2 justify-content-end">
+                    <button type="submit"
+                            class="btn btn-outline-primary-600 js-abstract-export-button"
+                            formaction="@Url.Action("Pdf", "AbstractBook", new { culture })"
+                            formtarget="_blank"
+                            name="preview"
+                            value="true">
+                        <i class="ri-eye-line me-1"></i>@L["BackOffice.AbstractBook.PdfPreview"]
+                    </button>
+                    <button type="submit"
+                            class="btn btn-primary-600 js-abstract-export-button"
+                            formaction="@Url.Action("Pdf", "AbstractBook", new { culture })"
+                            name="preview"
+                            value="false">
+                        <i class="ri-file-pdf-2-line me-1"></i>@L["BackOffice.AbstractBook.PdfDownload"]
+                    </button>
+                    <button type="submit"
+                            class="btn btn-success-600 js-abstract-export-button"
+                            formaction="@Url.Action("Word", "AbstractBook", new { culture })">
+                        <i class="ri-file-word-2-line me-1"></i>@L["BackOffice.AbstractBook.WordDownload"]
+                    </button>
+                </div>
+            </div>
+        </form>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/features/abstract-book/abstract-book.index.js" asp-append-version="true"></script>
+}

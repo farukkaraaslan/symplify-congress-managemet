@@ -1,0 +1,318 @@
+@using Symplify.Portal.WebUI.Models.PublicSite
+@{
+    var shell = ViewData["Shell"] as PublicSiteBootstrapResponse ?? new PublicSiteBootstrapResponse();
+    string activeMenu = ViewData["ActiveMenu"] as string ?? "home";
+    string currentCulture = ViewData["CurrentCulture"] as string ?? "tr-TR";
+    string languageCode = currentCulture.Length >= 2 ? currentCulture.Substring(0, 2) : "tr";
+    string selectedFlag = ToFlagCode(currentCulture);
+    string bodyClass = ViewData["BodyClass"] as string ?? string.Empty;
+    string cultureQuery = "?culture=" + Uri.EscapeDataString(currentCulture);
+
+    string? FirstNonEmpty(params string?[] values)
+    {
+        foreach (string? value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+        }
+
+        return null;
+    }
+
+    string baseSeoTitle = FirstNonEmpty(shell.Congress.SeoTitle, shell.Congress.Title, shell.Congress.Name, shell.Organization.Name, "Symplify")!;
+    string requestedTitle = FirstNonEmpty(ViewData["SeoTitle"] as string, ViewData["Title"] as string, baseSeoTitle)!;
+    string title = string.Equals(requestedTitle, baseSeoTitle, StringComparison.OrdinalIgnoreCase)
+        ? baseSeoTitle
+        : $"{requestedTitle} | {baseSeoTitle}";
+    string description = FirstNonEmpty(
+        ViewData["SeoDescription"] as string,
+        shell.Congress.SeoDescription,
+        shell.Congress.ShortDescription,
+        shell.Congress.Subtitle,
+        "Symplify kongre portalı")!;
+    string keywords = FirstNonEmpty(
+        ViewData["SeoKeywords"] as string,
+        $"{shell.Organization.ShortName}, {shell.Organization.Name}, {shell.Congress.Title}, kongre, akademik etkinlik, bildiri, konferans",
+        "symplify, kongre, akademik etkinlik, bildiri, konferans")!;
+    string logoLight = !string.IsNullOrWhiteSpace(shell.Congress.LogoLightUrl)
+        ? shell.Congress.LogoLightUrl!
+        : !string.IsNullOrWhiteSpace(shell.Organization.LogoLightUrl)
+            ? shell.Organization.LogoLightUrl!
+            : Url.Content("~/assets/img/brand/symplify-logo-horizontal-light.svg");
+    string logoDark = !string.IsNullOrWhiteSpace(shell.Congress.LogoDarkUrl)
+        ? shell.Congress.LogoDarkUrl!
+        : !string.IsNullOrWhiteSpace(shell.Organization.LogoDarkUrl)
+            ? shell.Organization.LogoDarkUrl!
+            : Url.Content("~/assets/img/brand/symplify-logo-horizontal-dark.svg");
+    bool hasFooterLogo = !string.IsNullOrWhiteSpace(shell.Congress.LogoDarkUrl)
+        || !string.IsNullOrWhiteSpace(shell.Congress.LogoLightUrl)
+        || !string.IsNullOrWhiteSpace(shell.Organization.LogoDarkUrl)
+        || !string.IsNullOrWhiteSpace(shell.Organization.LogoLightUrl);
+    string footerLogoDark = FirstNonEmpty(
+        shell.Congress.LogoDarkUrl,
+        shell.Organization.LogoDarkUrl,
+        shell.Congress.LogoLightUrl,
+        shell.Organization.LogoLightUrl) ?? string.Empty;
+    string footerLogoLight = FirstNonEmpty(
+        shell.Congress.LogoLightUrl,
+        shell.Organization.LogoLightUrl,
+        shell.Congress.LogoDarkUrl,
+        shell.Organization.LogoDarkUrl) ?? string.Empty;
+    string footerTextLogo = FirstNonEmpty(shell.Organization.ShortName, shell.Organization.Name, siteName, "Symplify")!;
+    string footerContactAddress = FirstNonEmpty(shell.Contact.ContactAddress, shell.Contact.LocationText, shell.Congress.LocationText, shell.Congress.VenueName) ?? string.Empty;
+    string faviconLight = FirstNonEmpty(shell.Congress.LogoLightUrl, shell.Organization.LogoLightUrl, logoLight, Url.Content("~/assets/img/favicon.ico"))!;
+    string faviconDark = FirstNonEmpty(shell.Congress.LogoDarkUrl, shell.Organization.LogoDarkUrl, logoDark, faviconLight)!;
+    string appleTouchIcon = FirstNonEmpty(shell.Congress.LogoLightUrl, shell.Congress.LogoDarkUrl, shell.Organization.LogoLightUrl, shell.Organization.LogoDarkUrl, Url.Content("~/assets/img/apple-touch-icon.png"))!;
+    string socialImage = FirstNonEmpty(shell.Congress.LogoLightUrl, shell.Congress.LogoDarkUrl, shell.Organization.LogoLightUrl, shell.Organization.LogoDarkUrl, logoLight)!;
+    string siteName = FirstNonEmpty(shell.Organization.ShortName, shell.Organization.Name, "Symplify")!;
+    string brandColor = FirstNonEmpty(shell.Organization.BrandColor, "#0f3b5f")!;
+    string canonicalUrl = $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path}{cultureQuery}";
+    string Active(string key) => string.Equals(activeMenu, key, StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty;
+    string homeActive = Active("home");
+    string boardsActive = Active("boards");
+    string sectionsActive = Active("sections");
+    string contentsActive = Active("contents");
+    string documentsActive = Active("documents");
+    string contactActive = Active("contact");
+    string ToCultureUrl(string culture) => Context.Request.Path + "?culture=" + Uri.EscapeDataString(culture);
+    string ToFlagCode(string culture)
+    {
+        if (culture.StartsWith("tr", StringComparison.OrdinalIgnoreCase)) return "tr";
+        if (culture.StartsWith("en", StringComparison.OrdinalIgnoreCase)) return "gb";
+        if (culture.StartsWith("ru", StringComparison.OrdinalIgnoreCase)) return "ru";
+        if (culture.StartsWith("ar", StringComparison.OrdinalIgnoreCase)) return "sa";
+        if (culture.StartsWith("de", StringComparison.OrdinalIgnoreCase)) return "de";
+        if (culture.StartsWith("fr", StringComparison.OrdinalIgnoreCase)) return "fr";
+        if (culture.StartsWith("es", StringComparison.OrdinalIgnoreCase)) return "es";
+        return culture.Length >= 2 ? culture.Substring(0, 2).ToLowerInvariant() : "tr";
+    }
+    var availableLanguages = shell.Languages.Count > 0
+        ? shell.Languages.OrderByDescending(language => language.IsDefault).ThenBy(language => language.Order).ToArray()
+        : new[]
+        {
+            new PublicLanguageResponse { Culture = "tr-TR", TwoLetterIsoCode = "tr", DisplayName = "Türkçe", IsDefault = true, Order = 1 },
+            new PublicLanguageResponse { Culture = "en-US", TwoLetterIsoCode = "en", DisplayName = "English", Order = 2 }
+        };
+}
+<!DOCTYPE html>
+<html lang="@languageCode">
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>@title</title>
+    <meta name="description" content="@description">
+    <meta name="keywords" content="@keywords">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="@brandColor">
+    <link rel="canonical" href="@canonicalUrl">
+
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="@currentCulture.Replace("-", "_")">
+    <meta property="og:site_name" content="@siteName">
+    <meta property="og:title" content="@title">
+    <meta property="og:description" content="@description">
+    <meta property="og:url" content="@canonicalUrl">
+    <meta property="og:image" content="@socialImage">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@title">
+    <meta name="twitter:description" content="@description">
+    <meta name="twitter:image" content="@socialImage">
+
+    <link rel="icon" href="@faviconLight" media="(prefers-color-scheme: light)">
+    <link rel="icon" href="@faviconDark" media="(prefers-color-scheme: dark)">
+    <link rel="shortcut icon" href="@faviconLight">
+    <link rel="apple-touch-icon" href="@appleTouchIcon">
+
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link href="~/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="~/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+    <link href="~/assets/vendor/aos/aos.css" rel="stylesheet">
+    <link href="~/assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css" />
+    <link href="~/assets/css/main.css" rel="stylesheet" asp-append-version="true">
+</head>
+<body class="@bodyClass">
+<header id="header" class="header sticky-top">
+    <div class="header-topbar">
+        <div class="container-fluid container-xl d-flex align-items-center justify-content-between">
+            <div class="topbar-left d-flex align-items-center">
+                @if (!string.IsNullOrWhiteSpace(shell.Contact.ContactEmail))
+                {
+                    <div class="topbar-item"><i class="bi bi-envelope"></i><span>@shell.Contact.ContactEmail</span></div>
+                }
+                @if (!string.IsNullOrWhiteSpace(shell.Contact.ContactPhone))
+                {
+                    <span class="topbar-sep d-none d-sm-inline">|</span>
+                    <div class="topbar-item d-none d-md-flex"><i class="bi bi-telephone"></i><span>@shell.Contact.ContactPhone</span></div>
+                }
+            </div>
+
+            <div class="topbar-right d-flex align-items-center">
+                <nav class="topbar-nav d-none d-md-flex">
+                    <a href="/@(cultureQuery)#duyurular">Duyurular</a>
+                    <a href="/contents@(cultureQuery)">İçerikler</a>
+                    <a href="/contact@(cultureQuery)">İletişim</a>
+                </nav>
+
+                <span class="topbar-sep d-none d-md-inline">|</span>
+
+                <div class="topbar-controls d-flex align-items-center">
+                    <div class="dropdown ms-2 language-dropdown">
+                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle language-dropdown-toggle" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Seçili dil">
+                            <span class="fi fi-@selectedFlag selected-language-flag"></span>
+                            <span class="selected-language-code">@languageCode.ToUpperInvariant()</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm language-dropdown-menu" aria-labelledby="languageDropdown">
+                            @foreach (var language in availableLanguages)
+                            {
+                                string languageActive = string.Equals(currentCulture, language.Culture, StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty;
+                                string flagCode = ToFlagCode(language.Culture);
+                                string displayName = !string.IsNullOrWhiteSpace(language.DisplayName) ? language.DisplayName : language.Culture;
+                                <li>
+                                    <a class="dropdown-item language-option @languageActive" href="@ToCultureUrl(language.Culture)">
+                                        <span class="fi fi-@flagCode"></span>
+                                        <span>@displayName</span>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-mainbar">
+        <div class="container-fluid container-xl position-relative d-flex align-items-center">
+            <a href="/@(cultureQuery)" class="logo d-flex align-items-center me-auto">
+                <img src="@logoLight" data-logo-light="@logoLight" data-logo-dark="@logoDark" alt="@(shell.Organization.ShortName ?? shell.Organization.Name)" />
+                <h1 class="sitename visually-hidden">@(shell.Organization.ShortName ?? shell.Organization.Name)</h1>
+            </a>
+
+            <nav id="navmenu" class="navmenu">
+                <ul>
+                    <li><a href="/@(cultureQuery)" class="@homeActive">Anasayfa</a></li>
+                    <li><a href="/boards@(cultureQuery)" class="@boardsActive">Kurullar</a></li>
+                    <li><a href="/sections@(cultureQuery)" class="@sectionsActive">Genel Bilgiler</a></li>
+                    <li><a href="/contents@(cultureQuery)" class="@contentsActive">İçerikler</a></li>
+                    <li><a href="/documents@(cultureQuery)" class="@documentsActive">Dokümanlar</a></li>
+                    <li><a href="/contact@(cultureQuery)" class="@contactActive">İletişim</a></li>
+                </ul>
+                <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+            </nav>
+        </div>
+    </div>
+</header>
+
+<main class="main">
+    @RenderBody()
+</main>
+
+<footer id="footer" class="footer accent-background">
+    <div class="container footer-top">
+        <div class="row gy-4">
+            <div class="col-lg-4 col-md-6 footer-about">
+                <a href="/@(cultureQuery)" class="logo d-flex align-items-center">
+                    @if (hasFooterLogo)
+                    {
+                        <img src="@footerLogoDark"
+                             data-logo-light="@footerLogoLight"
+                             data-logo-dark="@footerLogoDark"
+                             alt="@footerTextLogo" />
+                        <span class="sitename visually-hidden">@footerTextLogo</span>
+                    }
+                    else
+                    {
+                        <span class="sitename">@footerTextLogo</span>
+                    }
+                </a>
+                <div class="footer-contact pt-3">
+                    @if (!string.IsNullOrWhiteSpace(shell.Congress.Title))
+                    {
+                        <p>@shell.Congress.Title</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(shell.Congress.LocationText))
+                    {
+                        <p>@shell.Congress.LocationText</p>
+                    }
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6 footer-links">
+                <h4>Hızlı Erişim</h4>
+                <ul>
+                    <li><i class="bi bi-chevron-right"></i><a href="/@(cultureQuery)">Anasayfa</a></li>
+                    <li><i class="bi bi-chevron-right"></i><a href="/boards@(cultureQuery)">Kurullar</a></li>
+                    <li><i class="bi bi-chevron-right"></i><a href="/sections@(cultureQuery)">Genel Bilgiler</a></li>
+                    <li><i class="bi bi-chevron-right"></i><a href="/documents@(cultureQuery)">Dokümanlar</a></li>
+                    <li><i class="bi bi-chevron-right"></i><a href="/contact@(cultureQuery)">İletişim</a></li>
+                </ul>
+            </div>
+
+            <div class="col-lg-4 col-md-12 footer-contact">
+                <h4>İletişim</h4>
+                <ul class="footer-contact-list">
+                    @if (!string.IsNullOrWhiteSpace(shell.Contact.ContactName) || !string.IsNullOrWhiteSpace(shell.Contact.ContactTitle))
+                    {
+                        <li>
+                            <i class="bi bi-person"></i>
+                            <span>
+                                @if (!string.IsNullOrWhiteSpace(shell.Contact.ContactName))
+                                {
+                                    @shell.Contact.ContactName
+                                }
+                                @if (!string.IsNullOrWhiteSpace(shell.Contact.ContactTitle))
+                                {
+                                    <small class="d-block">@shell.Contact.ContactTitle</small>
+                                }
+                            </span>
+                        </li>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(shell.Contact.ContactEmail))
+                    {
+                        <li><i class="bi bi-envelope"></i><a href="mailto:@shell.Contact.ContactEmail">@shell.Contact.ContactEmail</a></li>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(shell.Contact.ContactPhone))
+                    {
+                        <li><i class="bi bi-telephone"></i><a href="tel:@shell.Contact.ContactPhone">@shell.Contact.ContactPhone</a></li>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(footerContactAddress))
+                    {
+                        <li><i class="bi bi-geo-alt"></i><span>@footerContactAddress</span></li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="container footer-bottom">
+        <div class="row align-items-center gy-3">
+            <div class="col-md-6 footer-bottom__copyright">
+                © @DateTime.Now.Year <strong>@footerTextLogo</strong>. Tüm hakları saklıdır.
+            </div>
+            <div class="col-md-6 footer-bottom__links">
+                <a href="/documents@(cultureQuery)">Dokümanlar</a>
+                <span class="footer-bottom__sep">•</span>
+                <a href="/contact@(cultureQuery)">İletişim</a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+<div id="preloader"></div>
+
+<script src="~/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="~/assets/vendor/aos/aos.js"></script>
+<script src="~/assets/vendor/purecounter/purecounter_vanilla.js"></script>
+<script src="~/assets/vendor/swiper/swiper-bundle.min.js"></script>
+<script src="~/assets/js/main.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

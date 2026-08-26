@@ -1,0 +1,188 @@
+@model Symplify.BackOffice.WebUI.Models.CongressAnnouncements.UpdateCongressAnnouncementViewModel
+@using Symplify.BackOffice.Domain.Enums
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    string formActionUrl = Url.Action("Update", "CongressAnnouncements", new { culture = currentCulture }) ?? $"/{currentCulture}/CongressAnnouncements/Update";
+    string defaultLanguageLabel = L.GetStringValue("Common.Default");
+    if (string.IsNullOrWhiteSpace(defaultLanguageLabel) || string.Equals(defaultLanguageLabel, "Common.Default", StringComparison.OrdinalIgnoreCase))
+    {
+        defaultLanguageLabel = "Varsayılan";
+    }
+}
+
+<div aria-hidden="true" class="modal fade congress-announcement-modal" id="updateAnnouncementModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <form id="updateCongressAnnouncementForm"
+              class="modal-content"
+              action="@formActionUrl"
+              method="post"
+              autocomplete="off">
+
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="CongressId" />
+            <input type="hidden" asp-for="Order" />
+
+            <div class="modal-header">
+                <div>
+                    <h6 class="modal-title">@L.GetStringValue("BackOffice.CongressAnnouncements.Update.Title")</h6>
+                    <small class="text-neutral-500 d-block mt-1">
+                        @L.GetStringValue("BackOffice.CongressAnnouncements.Update.Description")
+                    </small>
+                </div>
+                <button aria-label='@L.GetStringValue("Common.Close")' class="btn-close" data-bs-dismiss="modal" type="button"></button>
+            </div>
+
+            <div class="modal-body">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger d-none js-announcement-validation-summary"></div>
+
+                <div class="card border shadow-none mb-4">
+                    <div class="card-header border-bottom"><h6 class="text-md mb-0">@L.GetStringValue("BackOffice.CongressAnnouncements.BasicInfo")</h6></div>
+                    <div class="card-body row gy-4">
+                        <div class="col-lg-3">
+                            <label class="form-label" asp-for="Type">@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.Type")</label>
+                            <select class="form-select" asp-for="Type">
+                                @foreach (CongressAnnouncementType type in Enum.GetValues<CongressAnnouncementType>())
+                                {
+                                    <option value="@type">@L.GetStringValue($"BackOffice.CongressAnnouncements.Types.{type}")</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Type" class="text-danger"></span>
+                        </div>
+                        <div class="col-lg-3">
+                            <label class="form-label" asp-for="Status">@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.Status")</label>
+                            <select class="form-select" asp-for="Status">
+                                @foreach (CongressAnnouncementStatus status in Enum.GetValues<CongressAnnouncementStatus>())
+                                {
+                                    <option value="@status">@L.GetStringValue($"BackOffice.CongressAnnouncements.Statuses.{status}")</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Status" class="text-danger"></span>
+                        </div>
+                        <div class="col-lg-3">
+                            <label class="form-label" asp-for="PublishStartDate">@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.PublishStartDate")</label>
+                            <input class="form-control" asp-for="PublishStartDate" type="datetime-local" />
+                            <span asp-validation-for="PublishStartDate" class="text-danger"></span>
+                        </div>
+                        <div class="col-lg-3">
+                            <label class="form-label" asp-for="PublishEndDate">@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.PublishEndDate")</label>
+                            <input class="form-control" asp-for="PublishEndDate" type="datetime-local" />
+                            <span asp-validation-for="PublishEndDate" class="text-danger"></span>
+                        </div>
+                        <div class="col-lg-6">
+                            <label class="form-label" asp-for="ExternalUrl">@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.ExternalUrl")</label>
+                            <input class="form-control" asp-for="ExternalUrl" maxlength="1000" placeholder='@L.GetStringValue("BackOffice.CongressAnnouncements.Placeholders.ExternalUrl")' />
+                            <span asp-validation-for="ExternalUrl" class="text-danger"></span>
+                        </div>
+                        <div class="col-lg-6">
+                            <label class="form-label" asp-for="AttachmentPath">@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.AttachmentPath")</label>
+                            <input class="form-control" asp-for="AttachmentPath" maxlength="1000" placeholder='@L.GetStringValue("BackOffice.CongressAnnouncements.Placeholders.AttachmentPath")' />
+                            <span asp-validation-for="AttachmentPath" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <div class="d-flex flex-wrap gap-4">
+                                <div class="form-switch switch-primary d-flex align-items-center gap-3">
+                                    <input class="form-check-input" asp-for="IsActive" type="checkbox" role="switch" />
+                                    <label class="form-check-label" asp-for="IsActive">@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.IsActive")</label>
+                                </div>
+                                <div class="form-switch switch-primary d-flex align-items-center gap-3">
+                                    <input class="form-check-input" asp-for="IsPinned" type="checkbox" role="switch" />
+                                    <label class="form-check-label" asp-for="IsPinned">@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.IsPinned")</label>
+                                </div>
+                                <div class="form-switch switch-primary d-flex align-items-center gap-3">
+                                    <input class="form-check-input" asp-for="ShowOnHomePage" type="checkbox" role="switch" />
+                                    <label class="form-check-label" asp-for="ShowOnHomePage">@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.ShowOnHomePage")</label>
+                                </div>
+                                <div class="form-switch switch-primary d-flex align-items-center gap-3">
+                                    <input class="form-check-input" asp-for="ShowInTicker" type="checkbox" role="switch" />
+                                    <label class="form-check-label" asp-for="ShowInTicker">@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.ShowInTicker")</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border shadow-none">
+                    <div class="card-header border-bottom"><h6 class="text-md mb-0">@L.GetStringValue("Common.Translations")</h6></div>
+                    <div class="card-body">
+                        <ul class="nav nav-pills mb-3" role="tablist">
+                            @for (int i = 0; i < Model.Translations.Count; i++)
+                            {
+                                string tabId = $"updateAnnouncementTranslation-{Model.Translations[i].Culture}".Replace(".", "-");
+
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link @(i == 0 ? "active" : string.Empty)"
+                                            id="@tabId-tab"
+                                            data-bs-toggle="pill"
+                                            data-bs-target="#@tabId"
+                                            type="button"
+                                            role="tab"
+                                            aria-controls="@tabId"
+                                            aria-selected="@(i == 0 ? "true" : "false")">
+                                        <span class="d-inline-flex align-items-center gap-2">
+                                            <span>@Model.Translations[i].LanguageName</span>
+                                            @if (Model.Translations[i].IsDefault)
+                                            {
+                                                <span class="badge bg-primary-50 text-primary-600 rounded-pill">@defaultLanguageLabel</span>
+                                            }
+                                        </span>
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+                        <div class="tab-content">
+                            @for (int i = 0; i < Model.Translations.Count; i++)
+                            {
+                                string tabId = $"updateAnnouncementTranslation-{Model.Translations[i].Culture}".Replace(".", "-");
+                                <div class="tab-pane fade @(i == 0 ? "show active" : null)" id="@tabId" role="tabpanel" aria-labelledby="@tabId-tab" tabindex="0">
+                                    <input type="hidden" asp-for="Translations[i].LanguageId" />
+                                    <input type="hidden" asp-for="Translations[i].Culture" />
+                                    <input type="hidden" asp-for="Translations[i].LanguageName" />
+                                    <input type="hidden" asp-for="Translations[i].IsDefault" />
+                                    <div class="row gy-4">
+                                        <div class="col-12">
+                                            <label class="form-label" asp-for="Translations[i].Title">
+                                                @L.GetStringValue("BackOffice.CongressAnnouncements.Fields.Title") <required-mark visible="@Model.Translations[i].IsDefault"></required-mark>
+                                            </label>
+                                            <input class="form-control" asp-for="Translations[i].Title" placeholder='@L.GetStringValue("BackOffice.CongressAnnouncements.Placeholders.Title")' />
+                                            <span asp-validation-for="Translations[i].Title" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label" asp-for="Translations[i].Summary">@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.Summary")</label>
+                                            <textarea class="form-control" asp-for="Translations[i].Summary" rows="2" placeholder='@L.GetStringValue("BackOffice.CongressAnnouncements.Placeholders.Summary")'></textarea>
+                                            <span asp-validation-for="Translations[i].Summary" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label" asp-for="Translations[i].Content">@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.Content")</label>
+                                            <textarea class="form-control js-announcement-content-editor" asp-for="Translations[i].Content" rows="8" data-symplify-editor data-editor-height="360" data-editor-profile="content" placeholder='@L.GetStringValue("BackOffice.CongressAnnouncements.Placeholders.Content")'></textarea>
+                                            <small class="text-neutral-500">@L.GetStringValue("BackOffice.CongressAnnouncements.Help.Content")</small>
+                                            <span asp-validation-for="Translations[i].Content" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label" asp-for="Translations[i].SeoTitle">@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.SeoTitle")</label>
+                                            <input class="form-control" asp-for="Translations[i].SeoTitle" />
+                                            <span asp-validation-for="Translations[i].SeoTitle" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label" asp-for="Translations[i].SeoDescription">@L.GetStringValue("BackOffice.CongressAnnouncements.Fields.SeoDescription")</label>
+                                            <textarea class="form-control" asp-for="Translations[i].SeoDescription" rows="2"></textarea>
+                                            <span asp-validation-for="Translations[i].SeoDescription" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-light-100 text-dark radius-8 px-20 py-11 d-flex align-items-center gap-2" data-bs-dismiss="modal" type="button">@L.GetStringValue("Common.Cancel")</button>
+                <button class="btn btn-primary-600 radius-8 px-20 py-11 d-flex align-items-center gap-2" type="submit">@L.GetStringValue("BackOffice.CongressAnnouncements.Buttons.Update")</button>
+            </div>
+        </form>
+    </div>
+</div>
+

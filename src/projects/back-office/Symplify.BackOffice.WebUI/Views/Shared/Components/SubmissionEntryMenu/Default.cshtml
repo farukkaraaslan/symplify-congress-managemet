@@ -1,0 +1,217 @@
+@using Symplify.BackOffice.WebUI.Localization
+@inject IBackOfficeViewLocalizer L
+@model Symplify.BackOffice.WebUI.Models.SubmissionEntry.SubmissionEntryMenuViewModel
+
+@{
+    string T(string key, string fallback)
+    {
+        var value = L.GetStringValue(key);
+
+        return string.IsNullOrWhiteSpace(value) ||
+               string.Equals(value, key, StringComparison.OrdinalIgnoreCase)
+            ? fallback
+            : value;
+    }
+
+    string culture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    string submissionsUrl = Url.Action("Index", "Submissions", new { culture }) ?? $"/{culture}/submissions";
+}
+
+@if (string.Equals(Model.DisplayMode, "AuthorHome", StringComparison.OrdinalIgnoreCase))
+{
+    <section class="card border-0 radius-12 mb-24" id="newSubmission">
+        <div class="card-header bg-base border-bottom py-16 px-24 d-flex align-items-center justify-content-between gap-3 flex-wrap">
+            <div>
+                <h5 class="fw-semibold mb-1">@T("BackOffice.SubmissionEntry.AuthorHome.Title", "Bildiri türünü seçin")</h5>
+                <p class="text-sm text-neutral-500 mb-0">@T("BackOffice.SubmissionEntry.AuthorHome.Description", "İşleminize uygun bildiri türünü seçin.")</p>
+            </div>
+        </div>
+        <div class="card-body p-24">
+            @if (Model.Items.Count > 0)
+            {
+                <div class="row g-4">
+                    @foreach (var item in Model.Items)
+                    {
+                        string iconClass = ResolveRemixIcon(item.Code, item.Text, item.FormProfile.ToString());
+                        string description = ResolveDescription(item.Code, item.Text, item.FormProfile.ToString());
+
+                        <div class="col-md-6 col-xl-4">
+                            <a href="@item.Url" class="easy-action-card text-decoration-none text-primary-light">
+                                <span class="easy-action-card__icon"><i class="@iconClass text-2xl"></i></span>
+                                <h6 class="mb-2">@item.Text</h6>
+                                <p class="text-neutral-500 text-sm flex-grow-1">@description</p>
+                                <span class="btn btn-sm btn-primary-600 radius-8 mt-auto">@T("BackOffice.SubmissionEntry.AuthorHome.CreateButton", "Bildiri Oluştur")</span>
+                            </a>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info bg-primary-50 border-primary-100 text-primary-700 mb-0">
+                    @T("BackOffice.SubmissionEntry.AuthorHome.Empty", "Aktif kongre için başvuru türü bulunamadı.")
+                </div>
+            }
+        </div>
+    </section>
+}
+else if (string.Equals(Model.DisplayMode, "Home", StringComparison.OrdinalIgnoreCase))
+{
+    <div class="col-xl-8" id="newSubmission">
+        <div class="card border shadow-none h-100 radius-16">
+            <div class="card-header border-bottom">
+                <h6 class="text-lg mb-1 text-primary-light">@T("BackOffice.SubmissionEntry.Home.Title", "Yeni Başvuru Gönder")</h6>
+                <span class="text-neutral-500 text-sm">@T("BackOffice.SubmissionEntry.Home.Description", "Aktif kongrenin desteklediği başvuru türlerinden birini seçerek gönderim yap.")</span>
+            </div>
+            <div class="card-body p-24">
+                @if (Model.Items.Count > 0)
+                {
+                    <div class="row g-4">
+                        @foreach (var item in Model.Items)
+                        {
+                            string iconClass = ResolveIconBadgeClass(item.Code, item.Text, item.FormProfile.ToString());
+                            string buttonClass = ResolveButtonClass(item.Code, item.Text, item.FormProfile.ToString());
+                            string description = ResolveDescription(item.Code, item.Text, item.FormProfile.ToString());
+
+                            <div class="col-md-6 col-xl-4">
+                                <div class="card border shadow-none h-100 radius-12">
+                                    <div class="card-body p-24 d-flex flex-column">
+                                        <span class="w-56-px h-56-px @iconClass rounded-circle d-flex align-items-center justify-content-center mb-20">
+                                            <iconify-icon icon="@item.Icon" class="text-2xl"></iconify-icon>
+                                        </span>
+
+                                        <h6 class="mb-10 text-primary-light">@item.Text</h6>
+
+                                        <p class="text-neutral-500 text-sm mb-20 flex-grow-1">@description</p>
+
+                                        <a href="@item.Url" class="btn @buttonClass radius-8 px-16 py-10 d-inline-flex align-items-center justify-content-center gap-2 mt-auto">
+                                            <iconify-icon icon="solar:arrow-right-linear" class="text-lg"></iconify-icon>
+                                            @T("BackOffice.SubmissionEntry.Home.StartButton", "Başvuruya Başla")
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info bg-primary-50 border-primary-100 text-primary-700 mb-0">
+                        @T("BackOffice.SubmissionEntry.Home.Empty", "Aktif kongre için başvuru türü bulunamadı.")
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card border shadow-none h-100 radius-16">
+            <div class="card-body p-24 d-flex flex-column align-items-center justify-content-center text-center">
+                <span class="w-64-px h-64-px bg-primary-50 text-primary-600 rounded-circle d-flex align-items-center justify-content-center mb-20">
+                    <iconify-icon icon="solar:folder-with-files-outline" class="text-3xl"></iconify-icon>
+                </span>
+
+                <h6 class="text-lg mb-10 text-primary-light">@T("BackOffice.SubmissionEntry.Home.MySubmissionsTitle", "Mevcut Bildirilerim")</h6>
+
+                <a href="@submissionsUrl" class="btn btn-primary-600 radius-8 px-24 py-12 d-flex align-items-center justify-content-center gap-2">
+                    <iconify-icon icon="solar:eye-outline" class="text-lg"></iconify-icon>
+                    @T("BackOffice.SubmissionEntry.Home.MySubmissionsButton", "Tüm Bildirilerimi Gör")
+                </a>
+            </div>
+        </div>
+    </div>
+}
+else if (Model.Items.Count > 0)
+{
+    <li class="sidebar-menu-group-title">@T("BackOffice.SubmissionEntry.Sidebar.Title", "Yeni Başvuru")</li>
+    @foreach (var item in Model.Items)
+    {
+        <li>
+            <a href="@item.Url" class="@(item.IsActive ? "active-page" : string.Empty)">
+                <iconify-icon icon="@item.Icon" class="menu-icon"></iconify-icon>
+                <span>@item.Text</span>
+            </a>
+        </li>
+    }
+}
+
+@functions {
+    private string R(string key, string fallback)
+    {
+        var value = L.GetStringValue(key);
+        return string.IsNullOrWhiteSpace(value) || string.Equals(value, key, StringComparison.OrdinalIgnoreCase)
+            ? fallback
+            : value;
+    }
+
+    private string NormalizeKind(string? code, string? text, string? profile)
+    {
+        string value = string.Join(" ", code, text, profile)
+            .Replace("İ", "I", StringComparison.Ordinal)
+            .Replace("ı", "i", StringComparison.Ordinal)
+            .Replace("Ö", "O", StringComparison.Ordinal)
+            .Replace("ö", "o", StringComparison.Ordinal)
+            .Replace("Ü", "U", StringComparison.Ordinal)
+            .Replace("ü", "u", StringComparison.Ordinal)
+            .Replace("Ş", "S", StringComparison.Ordinal)
+            .Replace("ş", "s", StringComparison.Ordinal)
+            .Replace("Ğ", "G", StringComparison.Ordinal)
+            .Replace("ğ", "g", StringComparison.Ordinal)
+            .Replace("Ç", "C", StringComparison.Ordinal)
+            .Replace("ç", "c", StringComparison.Ordinal)
+            .ToUpperInvariant();
+
+        if (value.Contains("EXHIBITION") || value.Contains("SERGI"))
+            return "exhibition";
+
+        if (value.Contains("POSTER"))
+            return "poster";
+
+        if (value.Contains("ORAL") || value.Contains("SOZLU") || value.Contains("SOZEL"))
+            return "oral";
+
+        return "default";
+    }
+
+    private string ResolveRemixIcon(string? code, string? text, string? profile)
+    {
+        return NormalizeKind(code, text, profile) switch
+        {
+            "exhibition" => "ri-image-add-line",
+            "poster" => "ri-sticky-note-line",
+            "oral" => "ri-mic-line",
+            _ => "ri-file-add-line"
+        };
+    }
+
+    private string ResolveIconBadgeClass(string? code, string? text, string? profile)
+    {
+        return NormalizeKind(code, text, profile) switch
+        {
+            "exhibition" => "bg-warning-100 text-warning-600",
+            "poster" => "bg-success-100 text-success-600",
+            _ => "bg-primary-50 text-primary-600"
+        };
+    }
+
+    private string ResolveButtonClass(string? code, string? text, string? profile)
+    {
+        return NormalizeKind(code, text, profile) switch
+        {
+            "exhibition" => "btn-outline-warning",
+            "poster" => "btn-outline-success",
+            _ => "btn-outline-primary-600"
+        };
+    }
+
+    private string ResolveDescription(string? code, string? text, string? profile)
+    {
+        return NormalizeKind(code, text, profile) switch
+        {
+            "exhibition" => R("BackOffice.SubmissionEntry.AuthorHome.ExhibitionDescription", "Eser bilgilerini ve görsel/PDF dosyanızı yükleyerek sergi bildirisi oluşturun."),
+            "poster" => R("BackOffice.SubmissionEntry.AuthorHome.PosterDescription", "Poster formatında değerlendirilmesini istediğiniz bildiriyi sisteme ekleyin."),
+            "oral" => R("BackOffice.SubmissionEntry.AuthorHome.OralDescription", "Kongre programında sözlü sunum olarak değerlendirilmesini istediğiniz çalışmayı gönderin."),
+            _ => R("BackOffice.SubmissionEntry.AuthorHome.GenericDescription", "Başvuru bilgilerinizi doldurarak gönderim yapın.")
+        };
+    }
+}

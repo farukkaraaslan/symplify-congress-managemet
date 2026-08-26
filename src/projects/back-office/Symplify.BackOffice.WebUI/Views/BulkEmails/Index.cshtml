@@ -1,0 +1,348 @@
+@model Symplify.BackOffice.WebUI.Models.BulkEmails.BulkEmailComposeViewModel
+@using Symplify.BackOffice.Domain.Enums
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string culture = ViewContext.RouteData.Values["culture"]?.ToString() ?? Model.Culture;
+
+    string T(string key, string fallback)
+    {
+        string value = L.GetStringValue(key);
+        return string.IsNullOrWhiteSpace(value) || string.Equals(value, key, StringComparison.Ordinal)
+            ? fallback
+            : value;
+    }
+
+    bool isEnglish = culture.StartsWith("en", StringComparison.OrdinalIgnoreCase);
+
+    string V(string key, string trFallback, string enFallback)
+    {
+        return T(key, isEnglish ? enFallback : trFallback);
+    }
+
+    ViewData["Title"] = T("BackOffice.BulkEmails.PageTitle", "Toplu E-Posta Gönder");
+    string previewRecipientsUrl = Url.Action("GetRecipientPreview", "BulkEmails", new { culture }) ?? "";
+    string previewContentUrl = Url.Action("GetContentPreview", "BulkEmails", new { culture }) ?? "";
+    string historyPageUrl = Url.Action("History", "BulkEmails", new { culture, congressId = Model.CongressId == Guid.Empty ? (Guid?)null : Model.CongressId }) ?? "";
+}
+
+<div class="dashboard-main-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-1">@T("BackOffice.BulkEmails.PageTitle", "Toplu E-Posta Gönder")</h6>
+            <p class="text-secondary-light mb-0">@T("BackOffice.BulkEmails.PageDescription", "Seçili kongredeki hedef gruba mevcut kurumsal e-posta şablonuyla duyuru gönderin.")</p>
+        </div>
+        <a href="@historyPageUrl" class="btn btn-outline-primary-600 radius-8">
+            <i class="ri-history-line me-1"></i>@T("BackOffice.Sidebar.BulkEmails.History", "Gönderim Geçmişi")
+        </a>
+    </div>
+
+    <form asp-action="Queue"
+          asp-controller="BulkEmails"
+          asp-route-culture="@culture"
+          method="post"
+          id="bulkEmailForm"
+          data-preview-recipients-url="@previewRecipientsUrl"
+          data-preview-content-url="@previewContentUrl"
+          data-confirm-title="@T("BackOffice.BulkEmails.Confirm.Title", "Gönderimi Onayla")"
+          data-confirm-text="@T("BackOffice.BulkEmails.Confirm.Text", "{0} benzersiz alıcı için e-posta kuyruğu oluşturulacak. Devam etmek istiyor musunuz?")"
+          data-confirm-button="@T("BackOffice.BulkEmails.Confirm.Button", "Kuyruğa Al")"
+          data-cancel-button="@T("Common.Cancel", "Vazgeç")"
+          data-loading-text="@T("BackOffice.BulkEmails.Loading", "İşlem yapılıyor...")"
+          data-loading-recipients="@T("BackOffice.BulkEmails.Client.LoadingRecipients", "Alıcılar yükleniyor...")"
+          data-error-title="@T("BackOffice.BulkEmails.Client.ErrorTitle", "Hata")"
+          data-generic-error="@T("BackOffice.BulkEmails.Client.GenericError", "İşlem sırasında bir hata oluştu.")"
+          data-select-congress="@T("BackOffice.BulkEmails.Client.SelectCongress", "Lütfen bir kongre seçiniz.")"
+          data-invalid-summary="@T("BackOffice.BulkEmails.Client.InvalidSummary", "({0} geçersiz adres atlandı)")"
+          data-recipient-modal-summary="@T("BackOffice.BulkEmails.Client.RecipientModalSummaryV2", "{0} seçili alıcı · {1} filtre sonucu · {2} geçersiz adres")"
+          data-recipient-not-found="@T("BackOffice.BulkEmails.Client.RecipientNotFound", "Alıcı bulunamadı.")"
+          data-unsafe-links="@T("BackOffice.BulkEmails.Client.UnsafeLinks", "Güvenli olmayan bağlantılar bulundu.")"
+          data-http-warning="@T("BackOffice.BulkEmails.Client.HttpWarning", "HTTP kullanan bağlantılar bulundu. Mümkünse HTTPS kullanınız.")"
+          data-no-deliverable-recipient="@T("BackOffice.BulkEmails.Client.NoDeliverableRecipient", "Seçilen grupta gönderilebilir alıcı bulunamadı.")"
+          data-manual-email-invalid="@T("BackOffice.BulkEmails.Client.ManualEmailInvalid", "Geçerli bir e-posta adresi giriniz.")"
+          data-recipient-page-summary="@T("BackOffice.BulkEmails.Client.RecipientPageSummary", "Sayfa {0} / {1} · {2} kayıt")"
+          data-source-filter="@T("BackOffice.BulkEmails.Modal.Recipients.Source.Filter", "Filtre")"
+          data-source-manual="@T("BackOffice.BulkEmails.Modal.Recipients.Source.Manual", "Manuel")"
+          data-remove-recipient="@T("BackOffice.BulkEmails.Modal.Recipients.Remove", "Listeden Çıkar")"
+          data-reset-confirm-title="@T("BackOffice.BulkEmails.Modal.Recipients.ResetConfirmTitle", "Alıcı listesini sıfırla")"
+          data-reset-confirm-text="@T("BackOffice.BulkEmails.Modal.Recipients.ResetConfirmText", "Manuel eklenen ve çıkarılan alıcılar silinecek. Devam etmek istiyor musunuz?")"
+          data-filter-change-note="@T("BackOffice.BulkEmails.Client.FilterChangeReset", "Alıcı grubu değiştiği için manuel alıcı seçimleri sıfırlandı.")"
+          data-subject-required="@V("BackOffice.BulkEmails.Validation.SubjectRequired", "E-posta konusu zorunludur.", "Email subject is required.")"
+          data-subject-too-long="@V("BackOffice.BulkEmails.Validation.SubjectTooLong", "E-posta konusu en fazla 200 karakter olabilir.", "Email subject can contain at most 200 characters.")"
+          data-subject-invalid="@V("BackOffice.BulkEmails.Validation.SubjectInvalid", "E-posta konusu satır sonu içeremez.", "Email subject cannot contain line breaks.")"
+          data-title-required="@V("BackOffice.BulkEmails.Validation.TitleRequired", "Mail başlığı zorunludur.", "Email title is required.")"
+          data-title-too-long="@V("BackOffice.BulkEmails.Validation.TitleTooLong", "Mail başlığı en fazla 200 karakter olabilir.", "Email title can contain at most 200 characters.")"
+          data-body-required="@V("BackOffice.BulkEmails.Validation.BodyRequired", "Mail içeriği zorunludur.", "Email content is required.")"
+          data-body-too-long="@V("BackOffice.BulkEmails.Validation.BodyTooLong", "Mail içeriği en fazla 20.000 karakter olabilir.", "Email content can contain at most 20,000 characters.")">
+        @Html.AntiForgeryToken()
+        <input asp-for="Culture" type="hidden" />
+        <input asp-for="ExcludedRecipientEmailsJson" type="hidden" id="bulkEmailExcludedRecipientEmailsJson" />
+        <input asp-for="AdditionalRecipientsJson" type="hidden" id="bulkEmailAdditionalRecipientsJson" />
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger radius-8 mb-24" role="alert"></div>
+        }
+
+        <div class="card mb-24">
+            <div class="card-header border-bottom bg-base py-16 px-24">
+                <h6 class="text-lg mb-0">@T("BackOffice.BulkEmails.Section.Recipients", "Alıcı Seçimi")</h6>
+            </div>
+            <div class="card-body p-24">
+                <div class="row gy-20">
+                    <div class="col-lg-6">
+                        <label asp-for="CongressId" class="form-label fw-semibold">
+                            @T("BackOffice.BulkEmails.Fields.Congress", "Kongre")
+                            <span class="text-danger">*</span>
+                        </label>
+                        <select asp-for="CongressId" asp-items="Model.CongressOptions" class="form-select radius-8" id="bulkEmailCongressId">
+                            <option value="">@T("BackOffice.BulkEmails.Placeholders.SelectCongress", "Kongre seçiniz")</option>
+                        </select>
+                        <span asp-validation-for="CongressId" class="text-danger text-sm"></span>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <label asp-for="AudienceType" class="form-label fw-semibold">
+                            @T("BackOffice.BulkEmails.Fields.Audience", "Kime Gönderilsin?")
+                            <span class="text-danger">*</span>
+                        </label>
+                        <select asp-for="AudienceType" class="form-select radius-8" id="bulkEmailAudienceType">
+                            <option value="@((int)BulkEmailAudienceType.AllRegistered)">@T("BackOffice.BulkEmails.Audience.AllRegistered", "Tüm Kayıt Olanlara")</option>
+                            <option value="@((int)BulkEmailAudienceType.AcceptedCorrespondingAuthors)">@T("BackOffice.BulkEmails.Audience.AcceptedCorrespondingAuthors", "Sadece Kabul Alanlara")</option>
+                            <option value="@((int)BulkEmailAudienceType.AcceptedAllAuthors)">@T("BackOffice.BulkEmails.Audience.AcceptedAllAuthors", "Kabul Alan Tüm Yazarlara")</option>
+                            <option value="@((int)BulkEmailAudienceType.PaymentPending)">@T("BackOffice.BulkEmails.Audience.PaymentPending", "Ücret Ödemeyenlere")</option>
+                            <option value="@((int)BulkEmailAudienceType.PaymentCompleted)">@T("BackOffice.BulkEmails.Audience.PaymentCompleted", "Ücret Ödeyenlere")</option>
+                        </select>
+                        <span asp-validation-for="AudienceType" class="text-danger text-sm"></span>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mt-20 p-16 bg-neutral-50 radius-8 border">
+                    <div>
+                        <div class="text-sm text-secondary-light">@T("BackOffice.BulkEmails.RecipientSummary", "Alıcı Özeti")</div>
+                        <div class="fw-semibold">
+                            <span id="bulkEmailRecipientCount">-</span>
+                            @T("BackOffice.BulkEmails.UniqueRecipients", "benzersiz alıcı")
+                            <span id="bulkEmailInvalidEmailSummary" class="text-warning-600 ms-2 d-none"></span>
+                        </div>
+                        <small class="text-secondary-light" id="bulkEmailRecipientLoadingText"></small>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary-600 radius-8" id="bulkEmailPreviewRecipientsButton">
+                        <i class="ri-user-settings-line me-1"></i>@T("BackOffice.BulkEmails.Buttons.ManageRecipients", "Alıcıları Yönet")
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-24">
+            <div class="card-header border-bottom bg-base py-16 px-24">
+                <h6 class="text-lg mb-0">@T("BackOffice.BulkEmails.Section.Content", "E-Posta İçeriği")</h6>
+            </div>
+            <div class="card-body p-24">
+                <div class="row gy-20">
+                    <div class="col-12">
+                        <label asp-for="Subject" class="form-label fw-semibold">
+                            @T("BackOffice.BulkEmails.Fields.Subject", "E-Posta Konusu")
+                            <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="Subject"
+                               class="form-control radius-8"
+                               maxlength="200"
+                               autocomplete="off"
+                               aria-required="true"
+                               data-val="true"
+                               data-val-required="@V("BackOffice.BulkEmails.Validation.SubjectRequired", "E-posta konusu zorunludur.", "Email subject is required.")"
+                               data-val-length="@V("BackOffice.BulkEmails.Validation.SubjectTooLong", "E-posta konusu en fazla 200 karakter olabilir.", "Email subject can contain at most 200 characters.")"
+                               data-val-length-max="200"
+                               placeholder="@T("BackOffice.BulkEmails.Placeholders.Subject", "Örn: Kongre ödeme süreci hakkında bilgilendirme")" />
+                        <span asp-validation-for="Subject" class="text-danger text-sm"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="Title" class="form-label fw-semibold">
+                            @T("BackOffice.BulkEmails.Fields.Title", "Mail Başlığı")
+                            <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="Title"
+                               class="form-control radius-8"
+                               maxlength="200"
+                               autocomplete="off"
+                               aria-required="true"
+                               data-val="true"
+                               data-val-required="@V("BackOffice.BulkEmails.Validation.TitleRequired", "Mail başlığı zorunludur.", "Email title is required.")"
+                               data-val-length="@V("BackOffice.BulkEmails.Validation.TitleTooLong", "Mail başlığı en fazla 200 karakter olabilir.", "Email title can contain at most 200 characters.")"
+                               data-val-length-max="200"
+                               placeholder="@T("BackOffice.BulkEmails.Placeholders.Title", "Örn: Ödeme Hatırlatması")" />
+                        <span asp-validation-for="Title" class="text-danger text-sm"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="BodyText" class="form-label fw-semibold">
+                            @T("BackOffice.BulkEmails.Fields.Body", "Mail İçeriği")
+                            <span class="text-danger">*</span>
+                        </label>
+                        <textarea asp-for="BodyText"
+                                  class="form-control radius-8"
+                                  rows="13"
+                                  maxlength="20000"
+                                  aria-required="true"
+                                  data-val="true"
+                                  data-val-required="@V("BackOffice.BulkEmails.Validation.BodyRequired", "Mail içeriği zorunludur.", "Email content is required.")"
+                                  data-val-length="@V("BackOffice.BulkEmails.Validation.BodyTooLong", "Mail içeriği en fazla 20.000 karakter olabilir.", "Email content can contain at most 20,000 characters.")"
+                                  data-val-length-max="20000"
+                                  placeholder="@T("BackOffice.BulkEmails.Placeholders.Body", "Göndermek istediğiniz metni yazınız...")"></textarea>
+                        <span asp-validation-for="BodyText" class="text-danger text-sm"></span>
+
+                        <div class="d-flex flex-wrap gap-2 mt-12">
+                            <span class="badge bg-primary-50 text-primary-600">{{RecipientName}}</span>
+                            <span class="badge bg-primary-50 text-primary-600">{{CongressTitle}}</span>
+                        </div>
+                        <div class="form-text mt-8">
+                            @T("BackOffice.BulkEmails.BodyHelp", "HTML kodları çalıştırılmaz. HTTP/HTTPS bağlantıları doğrulanır; tehlikeli protokoller ve yerel ağ adresleri engellenir.")
+                        </div>
+                    </div>
+                </div>
+
+                <div id="bulkEmailLinkWarnings" class="alert alert-warning radius-8 mt-20 d-none" role="alert"></div>
+
+                <div class="d-flex justify-content-end flex-wrap gap-2 mt-24">
+                    <button type="button" class="btn btn-outline-neutral-500 radius-8" id="bulkEmailPreviewContentButton">
+                        <i class="ri-eye-line me-1"></i>@T("BackOffice.BulkEmails.Buttons.PreviewContent", "Maili Ön İzle")
+                    </button>
+                    <button type="submit" class="btn btn-primary-600 radius-8" id="bulkEmailQueueButton">
+                        <i class="ri-mail-send-line me-1"></i>@T("BackOffice.BulkEmails.Buttons.Queue", "Gönderimi Kuyruğa Al")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="modal fade" id="bulkEmailRecipientsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content radius-12">
+            <div class="modal-header">
+                <div>
+                    <h6 class="modal-title">@T("BackOffice.BulkEmails.Modal.Recipients.TitleV2", "Alıcı Listesini Yönet")</h6>
+                    <small class="text-secondary-light" id="bulkEmailRecipientsModalSummary"></small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T("Common.Close", "Kapat")"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info radius-8 mb-20 py-12 px-16">
+                    @T("BackOffice.BulkEmails.Modal.Recipients.Help", "Filtre sonucundaki tüm alıcılar sayfalanarak listelenir. İsterseniz kişileri listeden çıkarabilir veya manuel alıcı ekleyebilirsiniz.")
+                </div>
+
+                <div class="card border mb-20">
+                    <div class="card-body p-16">
+                        <div class="row gy-12 align-items-end">
+                            <div class="col-lg-4">
+                                <label for="bulkEmailManualRecipientName" class="form-label text-sm fw-semibold">@T("BackOffice.BulkEmails.Modal.Recipients.Name", "Ad Soyad")</label>
+                                <input type="text"
+                                       class="form-control radius-8"
+                                       id="bulkEmailManualRecipientName"
+                                       maxlength="250"
+                                       placeholder="@T("BackOffice.BulkEmails.Modal.Recipients.NamePlaceholder", "Ad Soyad")" />
+                            </div>
+                            <div class="col-lg-5">
+                                <label for="bulkEmailManualRecipientEmail" class="form-label text-sm fw-semibold">@T("BackOffice.BulkEmails.Modal.Recipients.Email", "E-Posta")</label>
+                                <input type="email"
+                                       class="form-control radius-8"
+                                       id="bulkEmailManualRecipientEmail"
+                                       maxlength="320"
+                                       autocomplete="off"
+                                       placeholder="ornek@domain.com" />
+                            </div>
+                            <div class="col-lg-3 d-grid">
+                                <button type="button" class="btn btn-primary-600 radius-8" id="bulkEmailAddRecipientButton">
+                                    <i class="ri-user-add-line me-1"></i>@T("BackOffice.BulkEmails.Modal.Recipients.Add", "Alıcı Ekle")
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-16">
+                    <div class="row gy-12 flex-grow-1">
+                        <div class="col-md-8">
+                            <label for="bulkEmailRecipientSearch" class="form-label text-sm fw-semibold">@T("BackOffice.BulkEmails.Modal.Recipients.Search", "Ara")</label>
+                            <input type="search"
+                                   id="bulkEmailRecipientSearch"
+                                   class="form-control radius-8"
+                                   placeholder="@T("BackOffice.BulkEmails.Modal.Recipients.SearchPlaceholder", "Ad soyad veya e-posta...")" />
+                        </div>
+                        <div class="col-md-4">
+                            <label for="bulkEmailRecipientPageSize" class="form-label text-sm fw-semibold">@T("BackOffice.BulkEmails.Modal.Recipients.PageSize", "Sayfa Boyutu")</label>
+                            <select id="bulkEmailRecipientPageSize" class="form-select radius-8">
+                                <option value="10">10</option>
+                                <option value="25" selected>25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-danger radius-8" id="bulkEmailResetRecipientsButton">
+                        <i class="ri-refresh-line me-1"></i>@T("BackOffice.BulkEmails.Modal.Recipients.Reset", "Seçimi Sıfırla")
+                    </button>
+                </div>
+
+                <div class="table-responsive border radius-8">
+                    <table class="table bordered-table mb-0 align-middle">
+                        <thead>
+                        <tr>
+                            <th>@T("BackOffice.BulkEmails.Modal.Recipients.Name", "Ad Soyad")</th>
+                            <th>@T("BackOffice.BulkEmails.Modal.Recipients.Email", "E-Posta")</th>
+                            <th class="text-nowrap">@T("BackOffice.BulkEmails.Modal.Recipients.Source", "Kaynak")</th>
+                            <th class="text-end text-nowrap">@T("BackOffice.BulkEmails.Modal.Recipients.Action", "İşlem")</th>
+                        </tr>
+                        </thead>
+                        <tbody id="bulkEmailRecipientsTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mt-16">
+                    <small class="text-secondary-light" id="bulkEmailRecipientPageSummary"></small>
+                    <div class="btn-group" role="group" aria-label="@T("BackOffice.BulkEmails.Modal.Recipients.Pagination", "Sayfalama")">
+                        <button type="button" class="btn btn-outline-neutral-500 radius-8" id="bulkEmailRecipientPreviousButton">
+                            <i class="ri-arrow-left-s-line"></i>@T("Common.Previous", "Önceki")
+                        </button>
+                        <button type="button" class="btn btn-outline-neutral-500 radius-8" id="bulkEmailRecipientNextButton">
+                            @T("Common.Next", "Sonraki")<i class="ri-arrow-right-s-line"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light-100 text-dark radius-8" data-bs-dismiss="modal">@T("Common.Close", "Kapat")</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="bulkEmailContentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content radius-12">
+            <div class="modal-header">
+                <div>
+                    <h6 class="modal-title">@T("BackOffice.BulkEmails.Modal.Content.Title", "Mail Ön İzlemesi")</h6>
+                    <small class="text-secondary-light" id="bulkEmailPreviewSubject"></small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T("Common.Close", "Kapat")"></button>
+            </div>
+            <div class="modal-body p-0">
+                <iframe id="bulkEmailPreviewFrame"
+                        title="@T("BackOffice.BulkEmails.Modal.Content.FrameTitle", "E-posta ön izlemesi")"
+                        sandbox="allow-popups allow-popups-to-escape-sandbox"
+                        class="d-block w-100 min-h-612-px border-0 bg-neutral-50"></iframe>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light-100 text-dark radius-8" data-bs-dismiss="modal">@T("Common.Close", "Kapat")</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script src="~/js/features/bulk-emails/bulk-emails.index.js" asp-append-version="true"></script>
+}

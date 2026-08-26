@@ -1,0 +1,557 @@
+@using Symplify.BackOffice.Application.Features.Submissions.Queries.GetManage
+@using Symplify.BackOffice.WebUI.Localization
+@inject IBackOfficeViewLocalizer L
+@model Symplify.BackOffice.WebUI.Models.Submissions.SubmissionManageViewModel
+
+@{
+    string T(string key, string fallback = "") {
+        var v = L.GetStringValue(key);
+        return string.IsNullOrWhiteSpace(v) || string.Equals(v, key, StringComparison.OrdinalIgnoreCase) ? (string.IsNullOrWhiteSpace(fallback) ? key : fallback) : v;
+    }
+
+    ViewData["Title"] = T("BackOffice.Submissions.Manage.PageTitle", "Bildiri Yönetimi");
+    string? currentCulture = Context.Request.RouteValues["culture"]?.ToString();
+    GetManageSubmissionResponse detail = Model.Detail ?? new GetManageSubmissionResponse();
+}
+
+<div class="dashboard-main-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <a asp-action="Index" asp-route-culture="@currentCulture" class="btn btn-outline-primary-600 radius-8 px-16 py-8 d-inline-flex align-items-center gap-2">
+            <i class="ri-arrow-left-line"></i>
+            @T("Common.BackToList", "Listeye Dön")
+        </a>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="badge bg-primary-50 text-primary-600 rounded-pill px-12 py-8">
+                @(string.IsNullOrWhiteSpace(detail.SubmissionNumber) ? detail.Id.ToString() : detail.SubmissionNumber)
+            </span>
+            <span class="badge @detail.TransactionStatusBadgeClass rounded-pill px-12 py-8">
+                @T("Common.Status", "Durum"): @(string.IsNullOrWhiteSpace(detail.TransactionStatusName) ? "-" : detail.TransactionStatusName)
+            </span>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] is not null)
+    {
+        <div class="d-none" data-symplify-toast="success" data-symplify-toast-message="@TempData["SuccessMessage"]"></div>
+    }
+
+    @if (TempData["ErrorMessage"] is not null)
+    {
+        <div class="d-none" data-symplify-toast="error" data-symplify-toast-message="@TempData["ErrorMessage"]"></div>
+    }
+
+    <div class="alert alert-info bg-primary-50 border-primary-100 text-primary-700 d-flex align-items-start gap-3 mb-24">
+        <i class="ri-information-line text-xl mt-1"></i>
+        <div>
+            <h6 class="text-md mb-1">@T("BackOffice.Submissions.Manage.AlertTitle", "Editör yönetim ekranı")</h6>
+            <p class="mb-0">@T("BackOffice.Submissions.Manage.AlertText", "Bildiri içeriğini inceleyebilir, DB tanımlı workflow geçişlerini çalıştırabilir, hakem/değerlendirme/history/kabul yazısı ve mail durumlarını görebilirsiniz.")</p>
+        </div>
+    </div>
+
+    <div class="row gy-4">
+        <div class="col-xl-8">
+            <div class="card border shadow-none mb-4">
+                <div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-3">
+                    <div>
+                        <h6 class="text-md mb-0">@T("BackOffice.Submissions.Manage.SubmissionInfo", "Bildiri Bilgileri")</h6>
+                        <small class="text-neutral-500">@T("BackOffice.Submissions.Manage.SubmissionInfoSub", "Başvuruya ait temel kayıt bilgileri.")</small>
+                    </div>
+                    <span class="badge bg-primary-50 text-primary-600 rounded-pill px-12 py-8">@detail.Id</span>
+                </div>
+
+                <div class="card-body">
+                    <div class="row gy-3">
+                        <div class="col-md-4">
+                            <span class="text-sm text-neutral-500 d-block mb-1">@T("BackOffice.Submissions.Manage.SubmissionNo", "Bildiri No")</span>
+                            <span class="fw-semibold text-primary-light">@(string.IsNullOrWhiteSpace(detail.SubmissionNumber) ? "-" : detail.SubmissionNumber)</span>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="text-sm text-neutral-500 d-block mb-1">@T("BackOffice.Submissions.Manage.SubmissionType", "Bildiri Türü")</span>
+                            <span class="fw-semibold text-primary-light">@Display(detail.SubmissionTypeName)</span>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="text-sm text-neutral-500 d-block mb-1">@T("BackOffice.Submissions.Manage.Topic", "Konu")</span>
+                            <span class="fw-semibold text-primary-light">@Display(detail.TopicName)</span>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="text-sm text-neutral-500 d-block mb-1">ORCID</span>
+                            <span class="fw-semibold text-primary-light">@Display(detail.Orcid)</span>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="text-sm text-neutral-500 d-block mb-1">@T("BackOffice.Submissions.Manage.PaymentStatus", "Ödeme Durumu")</span>
+                            <span class="badge @detail.PaymentStatusBadgeClass rounded-pill px-12 py-8">@Display(detail.PaymentStatusName)</span>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="text-sm text-neutral-500 d-block mb-1">@T("BackOffice.Submissions.Manage.Submission", "Gönderim")</span>
+                            <span class="fw-semibold text-primary-light">@(detail.IsSubmitted ? T("BackOffice.Submissions.Manage.Submitted", "Gönderildi") : T("BackOffice.Submissions.Manage.NotSubmitted", "Gönderilmedi"))</span>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="text-sm text-neutral-500 d-block mb-1">@T("BackOffice.Submissions.Manage.CreatedDate", "Oluşturma")</span>
+                            <span class="fw-semibold text-primary-light">@FormatDateTime(detail.CreatedDate)</span>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="text-sm text-neutral-500 d-block mb-1">@T("BackOffice.Submissions.Manage.SubmittedAt", "Gönderim Tarihi")</span>
+                            <span class="fw-semibold text-primary-light">@FormatDateTime(detail.SubmittedAt)</span>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="text-sm text-neutral-500 d-block mb-1">@T("BackOffice.Submissions.Manage.AverageScore", "Ortalama Puan")</span>
+                            <span class="fw-semibold text-primary-light">@(detail.AverageScore.HasValue ? detail.AverageScore.Value.ToString("0.##") : "-")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border shadow-none mb-4">
+                <div class="card-header border-bottom">
+                    <h6 class="text-md mb-0">@T("BackOffice.Submissions.Manage.TitleKeywordsAbstract", "Başlık, Anahtar Kelimeler ve Özet")</h6>
+                </div>
+
+                <div class="card-body">
+                    <ul class="nav nav-pills mb-3" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#submissionTr" type="button" role="tab">@T("Common.Turkish", "Türkçe")</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#submissionEn" type="button" role="tab">@T("Common.English", "English")</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="submissionTr" role="tabpanel" tabindex="0">
+                            <div class="mb-4">
+                                <span class="text-sm text-neutral-500 d-block mb-1">@T("BackOffice.Submissions.Manage.Title", "Başlık")</span>
+                                <h6 class="text-md mb-0">@Display(detail.Title)</h6>
+                            </div>
+                            <div class="mb-4">
+                                <span class="text-sm text-neutral-500 d-block mb-2">@T("BackOffice.Submissions.Manage.Keywords", "Anahtar Kelimeler")</span>
+                                <p class="mb-0">@Display(detail.Keywords)</p>
+                            </div>
+                            <div>
+                                <span class="text-sm text-neutral-500 d-block mb-2">@T("BackOffice.Submissions.Manage.Abstract", "Özet")</span>
+                                <div class="border rounded-3 p-16 bg-neutral-50">
+                                    <div class="symplify-rich-content text-secondary-light mb-0">@RenderRichText(detail.Abstract, "-")</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="submissionEn" role="tabpanel" tabindex="0">
+                            <div class="mb-4">
+                                <span class="text-sm text-neutral-500 d-block mb-1">@T("BackOffice.Submissions.Manage.TitleEn", "Title")</span>
+                                <h6 class="text-md mb-0">@Display(detail.TitleEn)</h6>
+                            </div>
+                            <div class="mb-4">
+                                <span class="text-sm text-neutral-500 d-block mb-2">@T("BackOffice.Submissions.Manage.KeywordsEn", "Keywords")</span>
+                                <p class="mb-0">@Display(detail.KeywordsEn)</p>
+                            </div>
+                            <div>
+                                <span class="text-sm text-neutral-500 d-block mb-2">@T("BackOffice.Submissions.Manage.AbstractEn", "Abstract")</span>
+                                <div class="border rounded-3 p-16 bg-neutral-50">
+                                    <div class="symplify-rich-content text-secondary-light mb-0">@RenderRichText(detail.AbstractEn, "-")</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border shadow-none mb-4">
+                <div class="card-header border-bottom d-flex align-items-center justify-content-between">
+                    <h6 class="text-md mb-0">@T("BackOffice.Submissions.Manage.Authors", "Yazarlar")</h6>
+                    <span class="badge bg-neutral-100 text-neutral-700 rounded-pill">@detail.Authors.Count kişi</span>
+                </div>
+                <div class="card-body p-0">
+                    @if (!detail.Authors.Any())
+                    {
+                        <div class="p-24 text-neutral-500">@T("BackOffice.Submissions.Manage.NoAuthors", "Yazar kaydı bulunamadı.")</div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>@T("BackOffice.Submissions.Manage.AuthorName", "Yazar")</th>
+                                        <th>@T("BackOffice.Submissions.Manage.AuthorTitle", "Unvan")</th>
+                                        <th>@T("BackOffice.Submissions.Manage.AuthorEmail", "E-posta")</th>
+                                        <th>@T("BackOffice.Submissions.Manage.AuthorInstitution", "Kurum")</th>
+                                        <th>ORCID</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (ManageSubmissionAuthorDto author in detail.Authors)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <span class="fw-semibold">@Display(author.FullName)</span>
+                                                @if (author.IsCorrespondingAuthor)
+                                                {
+                                                    <span class="badge bg-success-100 text-success-600 ms-2">@T("BackOffice.Submissions.Manage.Corresponding", "Sorumlu")</span>
+                                                }
+                                            </td>
+                                            <td>@Display(author.TitleName)</td>
+                                            <td>@Display(author.Email)</td>
+                                            <td>@Display(author.Institution)</td>
+                                            <td>@Display(author.Orcid)</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="card border shadow-none mb-4">
+                <div class="card-header border-bottom d-flex align-items-center justify-content-between">
+                    <h6 class="text-md mb-0">@T("BackOffice.Submissions.Manage.Files", "Dosyalar")</h6>
+                    <span class="badge bg-neutral-100 text-neutral-700 rounded-pill">@detail.Files.Count dosya</span>
+                </div>
+                <div class="card-body p-0">
+                    @if (!detail.Files.Any())
+                    {
+                        <div class="p-24 text-neutral-500">@T("BackOffice.Submissions.Manage.NoFiles", "Bildiri dosyası bulunamadı.")</div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>@T("BackOffice.Submissions.Manage.FileKind", "Tür")</th>
+                                        <th>@T("BackOffice.Submissions.Manage.FileName", "Dosya")</th>
+                                        <th>@T("BackOffice.Submissions.Manage.FileSize", "Boyut")</th>
+                                        <th>@T("BackOffice.Submissions.Manage.UploadedAt", "Yükleme")</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (ManageSubmissionFileDto file in detail.Files)
+                                    {
+                                        <tr>
+                                            <td>@Display(file.FileKind)</td>
+                                            <td>
+                                                @if (!string.IsNullOrWhiteSpace(file.FilePath))
+                                                {
+                                                    <a href="@file.FilePath" target="_blank" rel="noopener">@Display(file.OriginalFileName)</a>
+                                                }
+                                                else
+                                                {
+                                                    @Display(file.OriginalFileName)
+                                                }
+                                            </td>
+                                            <td>@FormatBytes(file.FileSize)</td>
+                                            <td>@FormatDateTime(file.UploadedAt)</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="card border shadow-none mb-4">
+                <div class="card-header border-bottom d-flex align-items-center justify-content-between">
+                    <h6 class="text-md mb-0">@T("BackOffice.Submissions.Manage.ReviewersEvaluations", "Hakemler ve Değerlendirmeler")</h6>
+                    <span class="badge bg-neutral-100 text-neutral-700 rounded-pill">@detail.Reviewers.Count hakem</span>
+                </div>
+                <div class="card-body">
+                    @if (!detail.Reviewers.Any())
+                    {
+                        <div class="alert alert-warning mb-0">@T("BackOffice.Submissions.Manage.NoReviewers", "Henüz hakem atanmadı.")</div>
+                    }
+                    else
+                    {
+                        <div class="vstack gap-3">
+                            @foreach (ManageSubmissionReviewerDto reviewer in detail.Reviewers)
+                            {
+                                <div class="border rounded-3 p-16">
+                                    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                                        <div>
+                                            <h6 class="text-md mb-1">@Display(reviewer.FullName)</h6>
+                                            <div class="text-sm text-neutral-500">@Display(reviewer.Email) · @Display(reviewer.Institution)</div>
+                                            <div class="text-sm text-neutral-500">@T("Common.Status", "Durum"): @Display(reviewer.Status)</div>
+                                        </div>
+                                        <span class="badge bg-info-100 text-info-600 rounded-pill">@FormatDate(reviewer.AssignedAt)</span>
+                                    </div>
+
+                                    @if (reviewer.Evaluation is not null)
+                                    {
+                                        <div class="mt-3 pt-3 border-top">
+                                            <div class="d-flex flex-wrap gap-3 mb-2">
+                                                <span class="text-sm">@T("BackOffice.Submissions.Manage.Recommendation", "Öneri"): <strong>@Display(reviewer.Evaluation.Recommendation)</strong></span>
+                                                <span class="text-sm">@T("BackOffice.Submissions.Manage.Score", "Puan"): <strong>@(reviewer.Evaluation.TotalScore.HasValue ? reviewer.Evaluation.TotalScore.Value.ToString("0.##") : "-")</strong></span>
+                                                <span class="text-sm">@T("BackOffice.Submissions.Manage.ScoreCount", "Skor Sayısı"): <strong>@reviewer.Evaluation.ScoreCount</strong></span>
+                                            </div>
+                                            <p class="mb-0 text-secondary-light">@Display(reviewer.Evaluation.Comment)</p>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="card border shadow-none mb-4">
+                <div class="card-header border-bottom">
+                    <h6 class="text-md mb-0">@T("BackOffice.Submissions.Manage.ProcessHistory", "Süreç Geçmişi")</h6>
+                </div>
+                <div class="card-body">
+                    @if (!detail.Histories.Any())
+                    {
+                        <div class="text-neutral-500">@T("BackOffice.Submissions.Manage.NoHistory", "Süreç geçmişi bulunamadı.")</div>
+                    }
+                    else
+                    {
+                        <div class="vstack gap-3">
+                            @foreach (ManageSubmissionHistoryDto history in detail.Histories)
+                            {
+                                <div class="border-start border-primary border-3 ps-3">
+                                    <div class="d-flex justify-content-between gap-3 flex-wrap">
+                                        <div>
+                                            <strong>@Display(history.FromStatusName)</strong>
+                                            <i class="ri-arrow-right-line mx-1"></i>
+                                            <strong>@Display(history.ToStatusName)</strong>
+                                            @if (history.IsAutomatic)
+                                            {
+                                                <span class="badge bg-neutral-100 text-neutral-700 ms-2">@T("BackOffice.Submissions.Manage.Automatic", "Otomatik")</span>
+                                            }
+                                        </div>
+                                        <small class="text-neutral-500">@FormatDateTime(history.PerformedAt)</small>
+                                    </div>
+                                    <div class="text-sm text-neutral-500 mt-1">@T("BackOffice.Submissions.Manage.PerformedBy", "İşlem yapan"): @Display(history.PerformedByName)</div>
+                                    @if (!string.IsNullOrWhiteSpace(history.PublicNote))
+                                    {
+                                        <div class="text-sm mt-2"><strong>@T("BackOffice.Submissions.Manage.PublicNote", "Yazara not"):</strong> @history.PublicNote</div>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(history.InternalNote))
+                                    {
+                                        <div class="text-sm mt-1"><strong>@T("BackOffice.Submissions.Manage.InternalNote", "İç not"):</strong> @history.InternalNote</div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4">
+            <div class="card border shadow-none mb-4">
+                <div class="card-header border-bottom">
+                    <h6 class="text-md mb-0">@T("BackOffice.Submissions.Manage.ProcessSummary", "Süreç Özeti")</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-sm text-neutral-500">@T("BackOffice.Submissions.Manage.SubmissionStatus", "Bildiri Durumu")</span>
+                        <span class="badge @detail.TransactionStatusBadgeClass rounded-pill">@Display(detail.TransactionStatusName)</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-sm text-neutral-500">@T("BackOffice.Submissions.Manage.TransitionCount", "Geçiş Sayısı")</span>
+                        <span class="fw-semibold text-primary-light">@detail.WorkflowTransitions.Count</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-sm text-neutral-500">@T("BackOffice.Submissions.Manage.ReviewerCount", "Hakem Sayısı")</span>
+                        <span class="fw-semibold text-primary-light">@detail.Reviewers.Count</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="text-sm text-neutral-500">@T("BackOffice.Submissions.Manage.EvaluationCount", "Değerlendirme Sayısı")</span>
+                        <span class="fw-semibold text-primary-light">@detail.Evaluations.Count</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border shadow-none mb-4">
+                <div class="card-header border-bottom">
+                    <h6 class="text-md mb-0">@T("BackOffice.Submissions.Manage.WorkflowActions", "Workflow İşlemleri")</h6>
+                    <small class="text-neutral-500">@T("BackOffice.Submissions.Manage.WorkflowActionsSub", "Butonlar DB'deki aktif transition kayıtlarından gelir.")</small>
+                </div>
+                <div class="card-body">
+                    @if (!detail.WorkflowTransitions.Any())
+                    {
+                        <div class="alert alert-warning mb-0">@T("BackOffice.Submissions.Manage.NoTransitions", "Bu durum için tanımlı geçiş bulunamadı.")</div>
+                    }
+                    else
+                    {
+                        <div class="d-grid gap-3">
+                            @foreach (var transition in detail.WorkflowTransitions)
+                            {
+                                <form asp-controller="SubmissionWorkflow" asp-action="ChangeStatus" asp-route-culture="@currentCulture" method="post" data-submission-workflow-form>
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="SubmissionId" value="@detail.Id" />
+                                    <input type="hidden" name="TransitionId" value="@transition.TransitionId" />
+
+                                    <label class="form-label text-sm">@Display(transition.DisplayText)</label>
+                                    <textarea class="form-control mb-2" name="PublicNote" rows="2" placeholder="@T("BackOffice.Submissions.Manage.PublicNotePlaceholder", "Yazara görünecek not")"></textarea>
+                                    <textarea class="form-control mb-2" name="InternalNote" rows="2" placeholder="@T("BackOffice.Submissions.Manage.InternalNotePlaceholder", "İç not")"></textarea>
+
+                                    <button type="submit"
+                                            class="btn btn-primary-600 radius-8 px-20 py-11 d-flex align-items-center justify-content-center gap-2 w-100"
+                                            @(transition.IsAllowed ? null : "disabled")
+                                            title="@transition.DisabledReason">
+                                        <i class="ri-send-plane-fill"></i>
+                                        @Display(transition.DisplayText)
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="card border shadow-none mb-4">
+                <div class="card-header border-bottom">
+                    <h6 class="text-md mb-0">@T("BackOffice.Submissions.Manage.AcceptanceLetters", "Kabul Yazıları")</h6>
+                </div>
+                <div class="card-body">
+                    @if (!detail.AcceptanceLetters.Any())
+                    {
+                        <div class="text-neutral-500">@T("BackOffice.Submissions.Manage.NoAcceptanceLetters", "Kabul yazısı oluşturulmadı.")</div>
+                    }
+                    else
+                    {
+                        <div class="vstack gap-3">
+                            @foreach (ManageSubmissionAcceptanceLetterDto letter in detail.AcceptanceLetters)
+                            {
+                                <div class="border rounded-3 p-12">
+                                    <div class="fw-semibold">@Display(letter.LetterNumber)</div>
+                                    <div class="text-sm text-neutral-500">@T("BackOffice.Submissions.Manage.GeneratedAt", "Oluşturma"): @FormatDateTime(letter.GeneratedAt)</div>
+                                    <div class="text-sm text-neutral-500">@T("BackOffice.Submissions.Manage.SentAt", "Gönderim"): @FormatDateTime(letter.SentAt)</div>
+                                    @if (!string.IsNullOrWhiteSpace(letter.PdfFilePath))
+                                    {
+                                        <a href="@letter.PdfFilePath" target="_blank" rel="noopener" class="text-primary-600 text-sm">@T("BackOffice.Submissions.Manage.ViewPdf", "PDF Görüntüle")</a>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="card border shadow-none mb-4">
+                <div class="card-header border-bottom">
+                    <h6 class="text-md mb-0">@T("BackOffice.Submissions.Manage.MailQueue", "Mail Kuyruğu")</h6>
+                </div>
+                <div class="card-body">
+                    @if (!detail.MailMessages.Any())
+                    {
+                        <div class="text-neutral-500">@T("BackOffice.Submissions.Manage.NoMailMessages", "Mail kuyruğu kaydı bulunamadı.")</div>
+                    }
+                    else
+                    {
+                        <div class="vstack gap-3">
+                            @foreach (ManageSubmissionMailMessageDto message in detail.MailMessages)
+                            {
+                                <div class="border rounded-3 p-12">
+                                    <div class="fw-semibold">@Display(message.Subject)</div>
+                                    <div class="text-sm text-neutral-500">@T("BackOffice.Submissions.Manage.Recipient", "Alıcı"): @Display(message.ToEmail)</div>
+                                    <div class="text-sm text-neutral-500">@T("Common.Status", "Durum"): @Display(message.Status) · @T("BackOffice.Submissions.Manage.Attempt", "Deneme"): @message.AttemptCount</div>
+                                    <div class="text-sm text-neutral-500">@T("BackOffice.Submissions.Manage.SentAt", "Gönderim"): @FormatDateTime(message.SentAt)</div>
+                                    @if (!string.IsNullOrWhiteSpace(message.LastError))
+                                    {
+                                        <div class="text-sm text-danger-600 mt-1">@message.LastError</div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="card border shadow-none">
+                <div class="card-header border-bottom">
+                    <h6 class="text-md mb-0">@T("BackOffice.Submissions.Manage.PaymentDocuments", "Ödeme Belgeleri")</h6>
+                </div>
+                <div class="card-body">
+                    @if (!detail.PaymentDocuments.Any())
+                    {
+                        <div class="text-neutral-500">@T("BackOffice.Submissions.Manage.NoPaymentDocuments", "Ödeme belgesi bulunamadı.")</div>
+                    }
+                    else
+                    {
+                        <div class="vstack gap-3">
+                            @foreach (ManageSubmissionPaymentDocumentDto document in detail.PaymentDocuments)
+                            {
+                                <div class="border rounded-3 p-12">
+                                    <div class="fw-semibold">@Display(document.OriginalFileName)</div>
+                                    <div class="text-sm text-neutral-500">@T("BackOffice.Submissions.Manage.FileSize", "Boyut"): @FormatBytes(document.Size)</div>
+                                    <div class="text-sm text-neutral-500">@T("BackOffice.Submissions.Manage.UploadedAt", "Yükleme"): @FormatDateTime(document.UploadedAt)</div>
+                                    <span class="badge @(document.IsApproved ? "bg-success-100 text-success-600" : "bg-warning-100 text-warning-600") rounded-pill mt-2">
+                                        @(document.IsApproved ? T("BackOffice.Submissions.Manage.Approved", "Onaylı") : T("BackOffice.Submissions.Manage.Pending", "Bekliyor"))
+                                    </span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/features/submissions/submissions-actions.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('[data-symplify-toast]').forEach(function (element) {
+                var type = element.getAttribute('data-symplify-toast') || 'info';
+                var message = element.getAttribute('data-symplify-toast-message') || '';
+
+                if (!message) {
+                    return;
+                }
+
+                if (window.Swal) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: type,
+                        title: message,
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true
+                    });
+                }
+            });
+        });
+    </script>
+}
+
+@functions {
+
+    private static Microsoft.AspNetCore.Html.IHtmlContent RenderRichText(string? html, string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(html))
+            return new Microsoft.AspNetCore.Html.HtmlString(System.Net.WebUtility.HtmlEncode(fallback));
+
+        return new Microsoft.AspNetCore.Html.HtmlString(System.Net.WebUtility.HtmlDecode(html));
+    }
+
+    private static string Display(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "-" : value;
+    }
+
+    private static string FormatBytes(long? bytes)
+    {
+        if (!bytes.HasValue || bytes.Value <= 0)
+            return "-";
+
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double length = bytes.Value;
+        int order = 0;
+
+        while (length >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            length /= 1024;
+        }
+
+        return $"{length:0.##} {sizes[order]}";
+    }
+    private static string FormatDate(DateTime? value) => IsMeaningfulDate(value) ? value!.Value.ToString("dd.MM.yyyy") : "-";
+    private static string FormatDateTime(DateTime? value) => IsMeaningfulDate(value) ? value!.Value.ToString("dd.MM.yyyy HH:mm") : "-";
+    private static bool IsMeaningfulDate(DateTime? value) => value.HasValue && value.Value.Year >= 1900;
+
+}

@@ -1,0 +1,119 @@
+@model Symplify.BackOffice.WebUI.Models.Congresses.ManageCongressViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+
+    string getListUrl = Url.Action("GetList", "CongressPaymentPlans", new { culture = currentCulture })
+        ?? $"/{currentCulture}/CongressPaymentPlans/GetList";
+
+    string createModalUrl = Url.Action("CreateModal", "CongressPaymentPlans", new { culture = currentCulture, congressId = Model.Id })
+        ?? $"/{currentCulture}/CongressPaymentPlans/CreateModal?congressId={Model.Id}";
+
+    string editModalUrl = Url.Action("EditModal", "CongressPaymentPlans", new { culture = currentCulture })
+        ?? $"/{currentCulture}/CongressPaymentPlans/EditModal";
+
+    string deleteUrl = Url.Action("Delete", "CongressPaymentPlans", new { culture = currentCulture })
+        ?? $"/{currentCulture}/CongressPaymentPlans/Delete";
+
+    string filterOptionsUrl = Url.Action("GetFilterOptions", "CongressPaymentPlans", new { culture = currentCulture })
+        ?? $"/{currentCulture}/CongressPaymentPlans/GetFilterOptions";
+}
+
+<div class="card border shadow-none mb-4"
+     id="congressPaymentPlanPanel"
+     data-congress-id="@Model.Id"
+     data-source-url="@getListUrl"
+     data-create-modal-url="@createModalUrl"
+     data-edit-modal-url="@editModalUrl"
+     data-delete-url="@deleteUrl"
+     data-filter-options-url="@filterOptionsUrl">
+
+    @Html.AntiForgeryToken()
+
+    <div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <h6 class="text-md mb-0">@L.GetStringValue("BackOffice.CongressPaymentPlans.ListTitle")</h6>
+            <small class="text-neutral-500">@L.GetStringValue("BackOffice.CongressPaymentPlans.ListDescription")</small>
+        </div>
+        <button id="openCreatePaymentPlanModalButton" class="btn btn-primary-600 radius-8 px-20 py-11 d-flex align-items-center gap-2" type="button">
+            <i class="ri-add-line me-1"></i>
+            @L.GetStringValue("BackOffice.CongressPaymentPlans.Buttons.New")
+        </button>
+    </div>
+
+    <div class="card-body">
+        <div class="alert alert-info bg-primary-50 border-primary-100 text-primary-700 d-flex align-items-start gap-2 mb-24">
+            <i class="ri-information-line text-lg mt-1"></i>
+            <div>
+                @L.GetStringValue("BackOffice.CongressPaymentPlans.Help")
+            </div>
+        </div>
+
+        <div class="card border shadow-none mb-24">
+            <div class="card-header border-bottom">
+                <h6 class="text-md mb-0">@L.GetStringValue("Common.Filters")</h6>
+            </div>
+            <div class="card-body">
+                <div class="row gy-3 align-items-end">
+                    <div class="col-md-6 col-xl-3">
+                        <label class="form-label">@L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.AudienceType")</label>
+                        <select class="form-control form-select payment-plan-audience-filter">
+                            <option value="">@L.GetStringValue("Common.All")</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 col-xl-3">
+                        <label class="form-label">@L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.PaymentCategory")</label>
+                        <select class="form-control form-select payment-plan-category-filter">
+                            <option value="">@L.GetStringValue("Common.All")</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 col-xl-2">
+                        <label class="form-label">@L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.IsPublicVisible")</label>
+                        <select class="form-control form-select payment-plan-public-filter">
+                            <option value="">@L.GetStringValue("Common.All")</option>
+                            <option value="true">@L.GetStringValue("Common.Visible")</option>
+                            <option value="false">@L.GetStringValue("Common.Hidden")</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 col-xl-2">
+                        <label class="form-label">@L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.IsActive")</label>
+                        <select class="form-control form-select payment-plan-status-filter">
+                            <option value="">@L.GetStringValue("Common.All")</option>
+                            <option value="true">@L.GetStringValue("Common.Active")</option>
+                            <option value="false">@L.GetStringValue("Common.Passive")</option>
+                        </select>
+                    </div>
+                    <div class="col-md-12 col-xl-2">
+                        <button class="btn btn-outline-neutral-900 radius-8 px-20 py-11 d-flex align-items-center justify-content-center payment-plan-filter-reset" type="button">
+                            <i class="ri-refresh-line"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table bordered-table mb-0" id="congressPaymentPlansTable">
+                <thead>
+                    <tr>
+                        <th class="text-nowrap">@L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.Order")</th>
+                        <th>@L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.Name")</th>
+                        <th class="text-nowrap">@L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.AudienceType")</th>
+                        <th class="text-nowrap">@L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.PaymentCategory")</th>
+                        <th class="text-nowrap">@L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.Amount")</th>
+                        <th class="text-nowrap">@L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.Currency")</th>
+                        <th class="text-nowrap">@L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.ValidUntil")</th>
+                        <th class="text-nowrap">@L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.IsPublicVisible")</th>
+                        <th class="text-nowrap">@L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.IsActive")</th>
+                        <th class="text-end text-nowrap">@L.GetStringValue("Common.Actions")</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="congressPaymentPlanModalContainer"></div>
+

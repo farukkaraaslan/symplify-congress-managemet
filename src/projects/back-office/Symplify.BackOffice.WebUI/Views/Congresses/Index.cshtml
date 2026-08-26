@@ -1,0 +1,152 @@
+@model Symplify.BackOffice.WebUI.Models.Congresses.CongressesIndexViewModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+
+    ViewData["Title"] = L.GetStringValue("BackOffice.Congresses.PageTitle");
+    ViewData["ClientResourcePrefixes"] = new[] { "BackOffice.Congresses." };
+
+    string homeUrl = Url.Action("Index", "Home", new { culture = currentCulture }) ?? $"/{currentCulture}/home/index";
+    string getListUrl = Url.Action("GetList", "Congresses", new { culture = currentCulture }) ?? $"/{currentCulture}/congresses/getlist";
+    string createUrl = Url.Action("Create", "Congresses", new { culture = currentCulture, organizationId = Model.OrganizationId }) ?? $"/{currentCulture}/congresses/create";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="dashboard-main-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <h6 class="fw-semibold mb-0">@L["BackOffice.Congresses.PageTitle"]</h6>
+
+        <ul class="d-flex align-items-center gap-2 mb-0">
+            <li class="fw-medium">
+                <a class="d-flex align-items-center gap-1 hover-text-primary text-neutral-600"
+                   href="@homeUrl">
+                    <iconify-icon class="icon text-lg"
+                                  icon="solar:home-smile-angle-outline"></iconify-icon>
+                    @L["Common.Panel"]
+                </a>
+            </li>
+            <li>-</li>
+            <li class="fw-medium">@L["BackOffice.Congresses.PageTitle"]</li>
+        </ul>
+    </div>
+
+    <div class="card border shadow-none radius-12">
+        <div class="card-header border-bottom bg-base py-12 px-20">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <span class="badge bg-primary-focus text-primary-600 rounded-pill px-12 py-7">
+                    <i class="ri-calendar-event-line me-1"></i>
+                    @L["BackOffice.Congresses.ListTitle"]
+                </span>
+
+                <a id="createCongressButton"
+                   href="@createUrl"
+                   class="btn btn-sm btn-primary-600 radius-8 px-12 py-7">
+                    <i class="ri-add-line me-1"></i>
+                    @L["BackOffice.Congresses.CreateButton"]
+                </a>
+            </div>
+        </div>
+
+        <div class="card-body p-20">
+            <div class="row g-2 align-items-end mb-20">
+                <div class="col-12 col-md-5 col-xl-4">
+                    <label class="form-label text-sm fw-semibold mb-1"
+                           for="congressOrganizationFilter">
+                        @L["BackOffice.Congresses.Fields.Organization"]
+                    </label>
+
+                    <select id="congressOrganizationFilter"
+                            class="form-select form-select-sm radius-8 w-100">
+                        <option value="">@L["BackOffice.Congresses.Filters.AllOrganizations"]</option>
+
+                        @foreach (SelectListItem organization in Model.OrganizationOptions)
+                        {
+                            if (organization.Selected)
+                            {
+                                <option value="@organization.Value" selected>@organization.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@organization.Value">@organization.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-4 col-xl-3">
+                    <label class="form-label text-sm fw-semibold mb-1"
+                           for="congressStatusFilter">
+                        @L["BackOffice.Congresses.Fields.Status"]
+                    </label>
+
+                    <select id="congressStatusFilter"
+                            class="form-select form-select-sm radius-8 w-100"
+                            data-default-status="@Model.StatusFilter.Value">
+                        @foreach (SelectListItem status in Model.StatusOptions)
+                        {
+                            if (status.Selected)
+                            {
+                                <option value="@status.Value" selected>@status.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@status.Value">@status.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="col-6 col-md-auto ms-md-auto">
+                    <button type="button"
+                            id="applyCongressFilters"
+                            class="btn btn-sm btn-primary-600 radius-8 px-16 py-8 w-100">
+                        <i class="ri-filter-3-line me-1"></i>
+                        Filtrele
+                    </button>
+                </div>
+
+                <div class="col-6 col-md-auto">
+                    <button type="button"
+                            id="clearCongressFilters"
+                            class="btn btn-sm btn-outline-secondary-light radius-8 px-16 py-8 w-100">
+                        <i class="ri-refresh-line me-1"></i>
+                        Temizle
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table bordered-table table-sm mb-0 align-middle"
+                       id="congressTable"
+                       data-source-url="@getListUrl"
+                       data-create-base-url="@(Url.Action("Create", "Congresses", new { culture = currentCulture }) ?? $"/{currentCulture}/congresses/create")"
+                       data-edit-base-url="@(Url.Action("Edit", "Congresses", new { culture = currentCulture }) ?? $"/{currentCulture}/congresses/edit")"
+                       data-manage-base-url="@(Url.Action("Index", "CongressManage", new { culture = currentCulture }) ?? $"/{currentCulture}/Congresses/Manage")">
+                    <thead>
+                        <tr>
+                            <th>@L["BackOffice.Congresses.Fields.Code"]</th>
+                            <th>@L["BackOffice.Congresses.Fields.Organization"]</th>
+                            <th>@L["BackOffice.Congresses.Fields.Title"]</th>
+                            <th>@L["BackOffice.Congresses.Fields.DateRange"]</th>
+                            <th>@L["BackOffice.Congresses.Fields.Location"]</th>
+                            <th>@L["BackOffice.Congresses.Fields.Language"]</th>
+                            <th>@L["BackOffice.Congresses.Fields.Status"]</th>
+                            <th class="text-end">@L["Common.Actions"]</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_LocalizationScripts")
+
+    <script src="~/js/shared/ajax/symplify.ajax.js" asp-append-version="true"></script>
+    <script src="~/js/features/congresses/congresses.index.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,53 @@
+@use "./functions" as f;
+
+@mixin mq-up($bp-key) {
+  @media (min-width: f.bp($bp-key)) {
+    @content;
+  }
+}
+
+@mixin mq-down($bp-key) {
+  $max: f.bp($bp-key);
+  @media (max-width: ($max - 0.02px)) {
+    @content;
+  }
+}
+
+@mixin flex-center($direction: row, $gap: null) {
+  display: flex;
+  flex-direction: $direction;
+  align-items: center;
+  justify-content: center;
+
+  @if $gap != null {
+    gap: $gap;
+  }
+}
+
+@mixin inline-flex-center($gap: null) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  @if $gap != null {
+    gap: $gap;
+  }
+}
+
+@mixin truncate($lines: 1) {
+  @if $lines == 1 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  } @else {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: $lines;
+  }
+}
+
+@mixin focus-ring($color: currentColor, $alpha: 0.25) {
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem color-mix(in srgb, #{$color}, transparent #{(1 - $alpha) * 100%});
+}

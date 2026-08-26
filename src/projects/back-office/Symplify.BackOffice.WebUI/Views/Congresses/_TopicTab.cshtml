@@ -1,0 +1,162 @@
+@model Symplify.BackOffice.WebUI.Models.Congresses.ManageCongressViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+
+    string selectedUrl = Url.Action("GetSelected", "CongressTopics", new { culture = currentCulture, congressId = Model.Id })
+        ?? $"/{currentCulture}/CongressTopics/GetSelected?congressId={Model.Id}";
+
+    string optionsUrl = Url.Action("GetSelectionOptions", "CongressTopics", new { culture = currentCulture, congressId = Model.Id })
+        ?? $"/{currentCulture}/CongressTopics/GetSelectionOptions?congressId={Model.Id}";
+
+    string saveUrl = Url.Action("SaveSelections", "CongressTopics", new { culture = currentCulture })
+        ?? $"/{currentCulture}/CongressTopics/SaveSelections";
+
+    string categoriesUrl = Url.Action("GetCategories", "CongressTopics", new { culture = currentCulture, congressId = Model.Id })
+        ?? $"/{currentCulture}/CongressTopics/GetCategories?congressId={Model.Id}";
+
+    string saveCategoriesUrl = Url.Action("SaveCategories", "CongressTopics", new { culture = currentCulture })
+        ?? $"/{currentCulture}/CongressTopics/SaveCategories";
+}
+
+<div class="card border shadow-none mb-4"
+     id="congressTopicPanel"
+     data-congress-id="@Model.Id"
+     data-selected-url="@selectedUrl"
+     data-options-url="@optionsUrl"
+     data-save-url="@saveUrl"
+     data-categories-url="@categoriesUrl"
+     data-save-categories-url="@saveCategoriesUrl"
+     data-category-none-text='@L.GetStringValue("BackOffice.CongressTopics.Category.None")'
+     data-category-label-text='@L.GetStringValue("BackOffice.CongressTopics.Category.Label")'
+     data-category-passive-text='@L.GetStringValue("Common.Passive")'
+     data-category-name-text='@L.GetStringValue("BackOffice.CongressTopics.Category.Name")'
+     data-category-order-text='@L.GetStringValue("BackOffice.CongressTopics.Category.Order")'
+     data-category-active-text='@L.GetStringValue("Common.Active")'
+     data-category-delete-text='@L.GetStringValue("Common.Delete")'
+     data-default-text='@L.GetStringValue("Common.Default")'>
+
+    @Html.AntiForgeryToken()
+
+    <div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <h6 class="text-md mb-0">@L.GetStringValue("BackOffice.CongressTopics.ListTitle")</h6>
+            <small class="text-neutral-500">
+                @L.GetStringValue("BackOffice.CongressTopics.ListDescription")
+            </small>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button id="openCongressTopicCategoriesModalButton"
+                    class="btn btn-outline-primary-600 radius-8 px-12 py-8 d-flex align-items-center justify-content-center"
+                    data-bs-target="#congressTopicCategoriesModal"
+                    data-bs-toggle="modal"
+                    type="button">
+                <i class="ri-folder-add-line me-1"></i>
+                @L.GetStringValue("BackOffice.CongressTopics.Buttons.ManageCategories")
+            </button>
+
+            <button id="openCongressTopicSelectionModalButton"
+                    class="btn btn-primary-100 text-primary-600 radius-8 px-12 py-8 d-flex align-items-center justify-content-center"
+                    data-bs-target="#congressTopicSelectionModal"
+                    data-bs-toggle="modal"
+                    type="button">
+                <i class="ri-edit-line me-1"></i>
+                @L.GetStringValue("BackOffice.CongressTopics.Buttons.Manage")
+            </button>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div id="congressTopicSelectedBadges" class="d-flex flex-wrap gap-2"></div>
+        <div id="congressTopicEmptyState" class="alert alert-info bg-primary-50 border-primary-100 text-primary-700 mb-0 d-none">
+            @L.GetStringValue("BackOffice.CongressTopics.Empty")
+        </div>
+    </div>
+</div>
+
+<div aria-hidden="true" class="modal fade" id="congressTopicSelectionModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h6 class="modal-title">@L.GetStringValue("BackOffice.CongressTopics.Modal.Title")</h6>
+                    <small class="text-neutral-500 d-block mt-1">
+                        @L.GetStringValue("BackOffice.CongressTopics.Modal.Description")
+                    </small>
+                </div>
+                <button aria-label='@L.GetStringValue("Common.Close")' class="btn-close" data-bs-dismiss="modal" type="button"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="card border shadow-none">
+                    <div class="card-header border-bottom">
+                        <h6 class="text-md mb-0">@L.GetStringValue("BackOffice.CongressTopics.SelectionTitle")</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="congress-topic-selection-loading text-neutral-500">
+                            @L.GetStringValue("Common.Loading")
+                        </div>
+                        <div class="congress-topic-selection-list row g-2 d-none"></div>
+                        <div class="congress-topic-selection-empty alert alert-info bg-primary-50 border-primary-100 text-primary-700 mb-0 d-none">
+                            @L.GetStringValue("BackOffice.CongressTopics.NoGlobalLookup")
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-light-100 text-dark radius-8 px-20 py-11 d-flex align-items-center gap-2" data-bs-dismiss="modal" type="button">
+                    @L.GetStringValue("Common.Cancel")
+                </button>
+                <button id="saveCongressTopicSelectionsButton" class="btn btn-primary-600 radius-8 px-20 py-11 d-flex align-items-center gap-2" type="button">
+                    @L.GetStringValue("Common.Save")
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div aria-hidden="true" class="modal fade" id="congressTopicCategoriesModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h6 class="modal-title">@L.GetStringValue("BackOffice.CongressTopics.Category.Modal.Title")</h6>
+                    <small class="text-neutral-500 d-block mt-1">
+                        @L.GetStringValue("BackOffice.CongressTopics.Category.Modal.Description")
+                    </small>
+                </div>
+                <button aria-label='@L.GetStringValue("Common.Close")' class="btn-close" data-bs-dismiss="modal" type="button"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="d-flex justify-content-end mb-16">
+                    <button type="button" id="addCongressTopicCategoryButton" class="btn btn-outline-primary-600 btn-sm radius-8">
+                        <i class="ri-add-line me-1"></i>
+                        @L.GetStringValue("BackOffice.CongressTopics.Category.Buttons.New")
+                    </button>
+                </div>
+
+                <div class="congress-topic-category-loading text-neutral-500">@L.GetStringValue("Common.Loading")</div>
+                <div class="congress-topic-category-list d-flex flex-column gap-12 d-none"></div>
+                <div class="congress-topic-category-empty alert alert-info bg-primary-50 border-primary-100 text-primary-700 mb-0 d-none">
+                    @L.GetStringValue("BackOffice.CongressTopics.Category.Empty")
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-light-100 text-dark radius-8 px-20 py-11" data-bs-dismiss="modal" type="button">
+                    @L.GetStringValue("Common.Cancel")
+                </button>
+                <button id="saveCongressTopicCategoriesButton" class="btn btn-primary-600 radius-8 px-20 py-11" type="button">
+                    <i class="ri-save-line me-1"></i>
+                    @L.GetStringValue("Common.Save")
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

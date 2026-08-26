@@ -1,0 +1,286 @@
+@model Symplify.BackOffice.WebUI.Models.SubmissionFinalFiles.SubmissionFinalFilesIndexViewModel
+@using Symplify.BackOffice.Domain.Enums
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@functions {
+    string T(string key, string fallback)
+    {
+        string value = L.GetStringValue(key);
+        return string.IsNullOrWhiteSpace(value) || string.Equals(value, key, StringComparison.OrdinalIgnoreCase)
+            ? fallback
+            : value;
+    }
+}
+
+<div class="dashboard-main-body">
+    @Html.AntiForgeryToken()
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-0">@L[Model.PageTitleKey]</h6>
+        </div>
+        <ul class="d-flex align-items-center gap-2">
+            <li class="fw-medium">
+                <a href="@Url.Action("Index", "Home")" class="d-flex align-items-center gap-1 hover-text-primary">
+                    <iconify-icon icon="solar:home-smile-angle-outline" class="icon text-lg"></iconify-icon>
+                    @T("BackOffice.Submissions.Management.Editor.Breadcrumb.Dashboard", "Panel")
+                </a>
+            </li>
+            <li>-</li>
+            <li class="fw-medium">@L[Model.PageTitleKey]</li>
+        </ul>
+    </div>
+
+    <div class="card basic-data-table">
+        <div class="card-header border-bottom bg-base py-20 d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+                <h5 class="mb-1">@L[Model.ListTitleKey]</h5>
+                <p class="text-secondary-light mb-0">@L[Model.ListDescriptionKey]</p>
+            </div>
+
+            @if (!Model.IsVideoPage)
+            {
+                <button class="btn btn-sm btn-success-600 radius-8 px-12 py-7 text-sm js-generate-full-text-book"
+                        type="button">
+                    <i class="ri-file-word-2-line me-1"></i>
+                    @T("BackOffice.Submissions.FinalFiles.FullTextBook.Generate", "Tam Metin Kitabı Oluştur")
+                </button>
+            }
+        </div>
+        <div class="card-body">
+            <div class="card mb-16">
+                <div class="card-body">
+                    <div class="row gy-3 align-items-end">
+                        <div class="col-md-6 col-xl-4">
+                            <label class="form-label" for="finalFilesCongressFilter">@T("BackOffice.Submissions.FinalFiles.Filter.Congress", "Kongre")</label>
+                            <select class="form-select" id="finalFilesCongressFilter">
+                                <option value="">
+                                    @(Model.ArchiveMode
+                                        ? T("BackOffice.Submissions.FinalFiles.Filter.AllArchivedCongresses", "Tüm arşiv kongreleri")
+                                        : T("BackOffice.Submissions.FinalFiles.Filter.AllActiveCongresses", "Tüm aktif kongreler"))
+                                </option>
+                                @foreach (var congress in Model.CongressOptions)
+                                {
+                                    <option value="@congress.Value">@congress.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6 col-xl-8">
+                            <div class="d-flex justify-content-end gap-2">
+                                <button class="btn btn-outline-neutral-500 radius-8 js-final-files-clear-filters" type="button">
+                                    <i class="ri-refresh-line me-1"></i>@T("BackOffice.Submissions.FinalFiles.Action.ClearFilters", "Filtreleri Temizle")
+                                </button>
+                                <button class="btn btn-primary-600 radius-8 js-final-files-apply-filters" type="button">
+                                    <i class="ri-filter-3-line me-1"></i>@T("BackOffice.Submissions.FinalFiles.Action.Filter", "Filtrele")
+                                </button>
+
+                                <a class="btn @(Model.ArchiveMode ? "btn-primary-600" : "btn-outline-warning") radius-8 ms-1"
+                                   href="@Model.ArchiveToggleUrl">
+                                    <i class="@(Model.ArchiveMode ? "ri-inbox-unarchive-line" : "ri-archive-line") me-1"></i>
+                                    @(Model.ArchiveMode
+                                        ? T("BackOffice.Submissions.FinalFiles.Action.ViewActive", "Aktif Kongreleri Görüntüle")
+                                        : T("BackOffice.Submissions.FinalFiles.Action.ViewArchive", "Arşivi Görüntüle"))
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="alert alert-light border text-secondary-light text-sm mb-12" role="alert">
+                @T("BackOffice.Submissions.FinalFiles.Help.BulkActions", "İşlem yapmak için satırları seçip tablonun üstündeki toplu işlem butonlarını kullanabilirsiniz.")
+            </div>
+
+            <div class="d-flex align-items-center justify-content-start justify-content-lg-end flex-wrap gap-2 mb-12 final-files-bulk-actions">
+                <button class="btn btn-sm btn-success-600 radius-8 px-12 py-7 text-sm js-final-files-bulk-review"
+                        type="button"
+                        data-review-status="@SubmissionFileReviewStatus.Approved">
+                    <i class="ri-check-line me-1"></i>
+                    @T("BackOffice.Submissions.FinalFiles.Action.BulkApprove", "Seçilenleri Onayla")
+                </button>
+
+                <button class="btn btn-sm btn-outline-danger radius-8 px-12 py-7 text-sm js-final-files-bulk-review"
+                        type="button"
+                        data-review-status="@SubmissionFileReviewStatus.PendingReview">
+                    <i class="ri-arrow-go-back-line me-1"></i>
+                    @T("BackOffice.Submissions.FinalFiles.Action.BulkRevert", "Onayı Geri Al")
+                </button>
+
+                <button class="btn btn-sm btn-outline-primary-600 radius-8 px-12 py-7 text-sm js-final-files-bulk-download"
+                        type="button">
+                    <i class="ri-download-cloud-2-line me-1"></i>
+                    @T("BackOffice.Submissions.FinalFiles.Action.BulkDownload", "Seçilenleri İndir")
+                </button>
+
+                @if (!Model.IsVideoPage)
+                {
+                    <button class="btn btn-sm btn-danger-600 radius-8 px-12 py-7 text-sm js-final-files-bulk-delete"
+                            type="button">
+                        <i class="ri-delete-bin-6-line me-1"></i>
+                        @T("BackOffice.Submissions.FinalFiles.Action.BulkDelete", "Seçilenleri Sil")
+                    </button>
+                }
+
+                <button class="btn btn-sm btn-primary-600 radius-8 px-12 py-7 text-sm js-final-files-public-links"
+                        type="button"
+                        data-bs-toggle="modal"
+                        data-bs-target="#publicLinksModal">
+                    <i class="ri-links-line me-1"></i>
+                    @T("BackOffice.Submissions.FinalFiles.Action.ShortLinks", "Kısa Linkleri Al")
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table bordered-table table-sm mb-0 align-middle js-final-files-table"
+                       id="@(Model.IsVideoPage ? "videoPresentationsTable" : "fullTextBookTable")"
+                       data-source-url="@Model.SourceUrl"
+                       data-review-url="@Model.ReviewUrl"
+                       data-bulk-review-url="@Model.BulkReviewUrl"
+                       data-bulk-download-url="@Model.BulkDownloadUrl"
+                       data-generate-book-url="@Model.GenerateFullTextBookUrl"
+                       data-bulk-delete-url="@Model.BulkDeleteUrl"
+                       data-delete-url="@Model.DeleteUrl"
+                       data-public-links-url="@Model.PublicLinksUrl"
+                       data-is-video-page="@Model.IsVideoPage.ToString().ToLowerInvariant()"
+                       data-archive-mode="@Model.ArchiveMode.ToString().ToLowerInvariant()"
+                       data-select-required-message="@T("BackOffice.Submissions.FinalFiles.Message.SelectAtLeastOne", "Lütfen en az bir dosya seçin.")"
+                       data-congress-required-message="@T("BackOffice.Submissions.FinalFiles.FullTextBook.CongressRequired", "Tam metin kitabı oluşturmak için bir kongre seçin.")"
+                       data-generating-book-message="@T("BackOffice.Submissions.FinalFiles.FullTextBook.Generating", "Tam metin kitabı hazırlanıyor...")"
+                       data-cover-max-bytes="8388608"
+                       data-cover-too-large-message="@T("BackOffice.Submissions.FinalFiles.FullTextBook.CoverTooLarge", "Kapak görseli en fazla 8 MB olabilir.")"
+                       data-cover-invalid-message="@T("BackOffice.Submissions.FinalFiles.FullTextBook.CoverInvalid", "Kapak görseli geçerli bir PNG veya JPG dosyası olmalıdır.")"
+                       data-generic-error-message="@T("Common.GenericError", "İşlem sırasında bir hata oluştu.")"
+                       data-confirm-title="@T("BackOffice.Submissions.FinalFiles.Confirm.Title", "İşlem onayı")"
+                       data-confirm-approve="@T("BackOffice.Submissions.FinalFiles.Confirm.Approve", "Seçilen dosyalar onaylanacak. Devam edilsin mi?")"
+                       data-confirm-revert="@T("BackOffice.Submissions.FinalFiles.Confirm.Revert", "Seçilen dosyaların onayı geri alınacak. Devam edilsin mi?")"
+                       data-confirm-button="@T("Common.Confirm", "Onayla")"
+                       data-cancel-button="@T("Common.Cancel", "Vazgeç")"
+                       data-dt-search="@T("BackOffice.Common.DataTable.Search", "Ara:")"
+                       data-dt-length-menu="@T("BackOffice.Common.DataTable.LengthMenu", "_MENU_ kayıt göster")"
+                       data-dt-info="@T("BackOffice.Common.DataTable.Info", "_TOTAL_ kayıttan _START_ - _END_ arası gösteriliyor")"
+                       data-dt-info-empty="@T("BackOffice.Common.DataTable.InfoEmpty", "Kayıt bulunamadı")"
+                       data-dt-zero-records="@T("BackOffice.Common.DataTable.ZeroRecords", "Eşleşen kayıt bulunamadı")"
+                       data-dt-first="@T("BackOffice.Common.DataTable.First", "İlk")"
+                       data-dt-previous="@T("BackOffice.Common.DataTable.Previous", "Önceki")"
+                       data-dt-next="@T("BackOffice.Common.DataTable.Next", "Sonraki")"
+                       data-dt-last="@T("BackOffice.Common.DataTable.Last", "Son")"
+                       data-actions-text="@T("BackOffice.Submissions.FinalFiles.Table.Actions", "İşlemler")"
+                       data-preview-text="@(Model.IsVideoPage ? T("BackOffice.Submissions.FinalFiles.Action.Watch", "İzle") : T("BackOffice.Submissions.FinalFiles.Action.Preview", "Önizle"))"
+                       data-download-text="@T("BackOffice.Submissions.FinalFiles.Action.Download", "İndir")"
+                       data-approve-text="@T("BackOffice.Submissions.FinalFiles.Action.Approve", "Onayla")"
+                       data-revert-text="@T("BackOffice.Submissions.FinalFiles.Action.Revert", "Onayı Geri Al")"
+                       data-delete-text="@T("BackOffice.Submissions.FinalFiles.Action.Delete", "Sil")"
+                       data-confirm-delete="@T("BackOffice.Submissions.FinalFiles.Confirm.Delete", "Tam metin dosyası kalıcı olarak silinecek. Devam edilsin mi?")"
+                       data-confirm-bulk-delete="@T("BackOffice.Submissions.FinalFiles.Confirm.BulkDelete", "Seçilen {0} tam metin dosyası kalıcı olarak silinecek. Devam edilsin mi?")"
+                       data-confirm-delete-button="@T("BackOffice.Submissions.FinalFiles.Confirm.DeleteButton", "Evet, Sil")"
+                       data-short-link-text="@T("BackOffice.Submissions.FinalFiles.Action.ShortLink", "Kısa Link")"
+                       data-short-link-unavailable-message="@T("BackOffice.Submissions.FinalFiles.Message.ShortLinkUnavailable", "Kısa link oluşturulabilecek onaylı dosya bulunamadı.")">
+                    <thead>
+                    <tr>
+                        <th class="text-center"><input class="form-check-input js-final-files-select-all" type="checkbox" aria-label="@T("BackOffice.Common.SelectAll", "Tümünü seç")" /></th>
+                        <th>@T("BackOffice.Submissions.FinalFiles.Table.SubmissionNumber", "Bildiri No")</th>
+                        <th>@T("BackOffice.Submissions.FinalFiles.Table.Title", "Bildiri Başlık")</th>
+                        <th>@T("BackOffice.Submissions.FinalFiles.Table.Author", "Yazar")</th>
+                        <th>@T("BackOffice.Submissions.FinalFiles.Table.File", "Dosya")</th>
+                        <th>@T("BackOffice.Submissions.FinalFiles.Table.ApprovalStatus", "Onay Durumu")</th>
+                        <th>@T("BackOffice.Submissions.FinalFiles.Table.UploadedAt", "Yükleme Tarihi")</th>
+                        <th>@T("BackOffice.Submissions.FinalFiles.Table.Actions", "İşlem")</th>
+                    </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @if (!Model.IsVideoPage)
+    {
+        <div class="modal fade" id="fullTextBookCoverModal" tabindex="-1" aria-labelledby="fullTextBookCoverModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <div>
+                            <h6 class="modal-title" id="fullTextBookCoverModalLabel">
+                                @T("BackOffice.Submissions.FinalFiles.FullTextBook.CoverModalTitle", "Tam Metin Kitabı Oluştur")
+                            </h6>
+                            <p class="text-secondary-light text-sm mb-0 mt-1">
+                                @T("BackOffice.Submissions.FinalFiles.FullTextBook.CoverModalDescription", "Kitap kapağını seçin ve Word çıktısını oluşturun.")
+                            </p>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T("Common.Close", "Kapat")"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="border radius-8 p-16 bg-neutral-50 mb-20">
+                            <div class="d-flex align-items-start gap-3">
+                                <span class="w-40-px h-40-px rounded-circle bg-primary-50 text-primary-600 d-inline-flex align-items-center justify-content-center flex-shrink-0">
+                                    <i class="ri-book-open-line text-xl"></i>
+                                </span>
+                                <div>
+                                    <div class="fw-semibold mb-1">
+                                        @T("BackOffice.Submissions.FinalFiles.FullTextBook.DefaultCoverTitle", "Varsayılan kurumsal kapak")
+                                    </div>
+                                    <div class="text-secondary-light text-sm">
+                                        @T("BackOffice.Submissions.FinalFiles.FullTextBook.DefaultCoverDescription", "Kapak seçmezseniz kongre adı, tarihi ve yeri kullanılarak örnek kitaptaki lacivert kurumsal kapak otomatik oluşturulur.")
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <label class="form-label fw-semibold" for="fullTextBookCoverImage">
+                            @T("BackOffice.Submissions.FinalFiles.FullTextBook.CoverLabel", "Özel kapak görseli (isteğe bağlı)")
+                        </label>
+                        <input class="form-control js-full-text-book-cover-input"
+                               id="fullTextBookCoverImage"
+                               type="file"
+                               accept="image/png,image/jpeg,.png,.jpg,.jpeg" />
+                        <div class="form-text">
+                            @T("BackOffice.Submissions.FinalFiles.FullTextBook.CoverHelp", "PNG veya JPG, en fazla 8 MB. A4 kapak görseli kırpılmadan sayfanın tamamına yerleştirilir.")
+                        </div>
+
+                        <div class="border radius-8 p-12 mt-16 d-none js-full-text-book-cover-preview">
+                            <div class="d-flex align-items-center gap-3">
+                                <img class="rounded border object-fit-contain js-full-text-book-cover-preview-image w-80-px h-120-px"
+                                     src=""
+                                     alt="@T("BackOffice.Submissions.FinalFiles.FullTextBook.CoverPreview", "Kapak önizlemesi")" />
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="fw-semibold text-truncate js-full-text-book-cover-file-name"></div>
+                                    <div class="text-secondary-light text-sm js-full-text-book-cover-file-size"></div>
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger radius-8 js-clear-full-text-book-cover" type="button">
+                                    <i class="ri-delete-bin-line me-1"></i>
+                                    @T("BackOffice.Submissions.FinalFiles.FullTextBook.RemoveCover", "Kapağı Kaldır")
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary-light radius-8" data-bs-dismiss="modal">
+                            @T("Common.Cancel", "Vazgeç")
+                        </button>
+                        <button type="button" class="btn btn-success-600 radius-8 js-confirm-generate-full-text-book">
+                            <i class="ri-file-word-2-line me-1"></i>
+                            @T("BackOffice.Submissions.FinalFiles.FullTextBook.GenerateWord", "Word Kitabını Oluştur")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="modal fade" id="publicLinksModal" tabindex="-1" aria-labelledby="publicLinksModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title" id="publicLinksModalLabel">@T("BackOffice.Submissions.FinalFiles.PublicLinks.Title", "Kısa Linkler")</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T("Common.Close", "Kapat")"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label" for="publicLinksText">@T("BackOffice.Submissions.FinalFiles.PublicLinks.Label", "Seçilen dosyaların kısa linkleri")</label>
+                    <textarea class="form-control" id="publicLinksText" rows="7" readonly></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary-light radius-8" data-bs-dismiss="modal">@T("Common.Close", "Kapat")</button>
+                    <button type="button" class="btn btn-primary-600 radius-8" id="copyPublicLinks"><i class="ri-file-copy-line me-1"></i>@T("Common.Copy", "Kopyala")</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,93 @@
+@model Symplify.BackOffice.WebUI.Models.Congresses.ManageCongressViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+
+    string selectedUrl = Url.Action("GetSelected", "CongressSubmissionTypes", new { culture = currentCulture, congressId = Model.Id })
+        ?? $"/{currentCulture}/CongressSubmissionTypes/GetSelected?congressId={Model.Id}";
+
+    string optionsUrl = Url.Action("GetSelectionOptions", "CongressSubmissionTypes", new { culture = currentCulture, congressId = Model.Id })
+        ?? $"/{currentCulture}/CongressSubmissionTypes/GetSelectionOptions?congressId={Model.Id}";
+
+    string saveUrl = Url.Action("SaveSelections", "CongressSubmissionTypes", new { culture = currentCulture })
+        ?? $"/{currentCulture}/CongressSubmissionTypes/SaveSelections";
+}
+
+<div class="card border shadow-none mb-4"
+     id="congressSubmissionTypePanel"
+     data-congress-id="@Model.Id"
+     data-selected-url="@selectedUrl"
+     data-options-url="@optionsUrl"
+     data-save-url="@saveUrl">
+
+    @Html.AntiForgeryToken()
+
+    <div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <h6 class="text-md mb-0">@L.GetStringValue("BackOffice.CongressSubmissionTypes.ListTitle")</h6>
+            <small class="text-neutral-500">
+                @L.GetStringValue("BackOffice.CongressSubmissionTypes.ListDescription")
+            </small>
+        </div>
+
+        <button id="openCongressSubmissionTypeSelectionModalButton"
+                class="btn btn-primary-100 text-primary-600 radius-8 px-12 py-8 d-flex align-items-center justify-content-center"
+                data-bs-target="#congressSubmissionTypeSelectionModal"
+                data-bs-toggle="modal"
+                type="button">
+            <i class="ri-edit-line me-1"></i>
+            @L.GetStringValue("BackOffice.CongressSubmissionTypes.Buttons.Manage")
+        </button>
+    </div>
+
+    <div class="card-body">
+        <div id="congressSubmissionTypeSelectedBadges" class="d-flex flex-wrap gap-2"></div>
+        <div id="congressSubmissionTypeEmptyState" class="alert alert-info bg-primary-50 border-primary-100 text-primary-700 mb-0 d-none">
+            @L.GetStringValue("BackOffice.CongressSubmissionTypes.Empty")
+        </div>
+    </div>
+</div>
+
+<div aria-hidden="true" class="modal fade" id="congressSubmissionTypeSelectionModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h6 class="modal-title">@L.GetStringValue("BackOffice.CongressSubmissionTypes.Modal.Title")</h6>
+                    <small class="text-neutral-500 d-block mt-1">
+                        @L.GetStringValue("BackOffice.CongressSubmissionTypes.Modal.Description")
+                    </small>
+                </div>
+                <button aria-label='@L.GetStringValue("Common.Close")' class="btn-close" data-bs-dismiss="modal" type="button"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="card border shadow-none">
+                    <div class="card-header border-bottom">
+                        <h6 class="text-md mb-0">@L.GetStringValue("BackOffice.CongressSubmissionTypes.SelectionTitle")</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="congress-submission-type-selection-loading text-neutral-500">
+                            @L.GetStringValue("Common.Loading")
+                        </div>
+                        <div class="congress-submission-type-selection-list row g-2 d-none"></div>
+                        <div class="congress-submission-type-selection-empty alert alert-info bg-primary-50 border-primary-100 text-primary-700 mb-0 d-none">
+                            @L.GetStringValue("BackOffice.CongressSubmissionTypes.NoGlobalLookup")
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-light-100 text-dark radius-8 px-20 py-11 d-flex align-items-center gap-2" data-bs-dismiss="modal" type="button">
+                    @L.GetStringValue("Common.Cancel")
+                </button>
+                <button id="saveCongressSubmissionTypeSelectionsButton" class="btn btn-primary-600 radius-8 px-20 py-11 d-flex align-items-center gap-2" type="button">
+                    @L.GetStringValue("Common.Save")
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+

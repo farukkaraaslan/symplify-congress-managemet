@@ -1,0 +1,94 @@
+@using Core.Application.Responses
+@using Symplify.BackOffice.Application.Features.Roles.Dtos
+@using Symplify.BackOffice.WebUI.Localization
+@inject IBackOfficeViewLocalizer L
+@model GetListResponse<RoleListItemDto>
+
+@{
+    string T(string key, string fallback = "") {
+        var v = L.GetStringValue(key);
+        return string.IsNullOrWhiteSpace(v) || string.Equals(v, key, StringComparison.OrdinalIgnoreCase) ? (string.IsNullOrWhiteSpace(fallback) ? key : fallback) : v;
+    }
+    ViewData["Title"] = T("BackOffice.Roles.PageTitle", "Roller");
+    string culture = Context.Request.RouteValues["culture"]?.ToString() ?? "tr-TR";
+    string? searchText = Context.Request.Query["searchText"].ToString();
+    List<RoleListItemDto> roles = Model.Items?.ToList() ?? new List<RoleListItemDto>();
+}
+
+<div class="dashboard-main-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-0">@T("BackOffice.Roles.PageTitle", "Roller")</h6>
+            <small class="text-neutral-500">@T("BackOffice.Roles.PageSubtitle", "Dinamik rol ve rol yetkilerini yönetin.")</small>
+        </div>
+        <a asp-controller="Roles" asp-action="Create" asp-route-culture="@culture" class="btn btn-primary-600 radius-8 px-16 py-10 d-inline-flex align-items-center gap-2">
+            <i class="ri-add-line"></i> @T("BackOffice.Roles.NewRole", "Yeni Rol")
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] is not null)
+    {
+        <div class="alert alert-success mb-24">@TempData["SuccessMessage"]</div>
+    }
+
+    <div class="card border shadow-none radius-12">
+        <div class="card-header border-bottom">
+            <form method="get" class="row gy-2 gx-2 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label">@T("Common.Search", "Ara")</label>
+                    <input type="text" name="searchText" value="@searchText" class="form-control" placeholder="@T("BackOffice.Roles.SearchPlaceholder", "Rol adı veya açıklama")" />
+                </div>
+                <div class="col-md-auto">
+                    <button type="submit" class="btn btn-primary-600 radius-8 px-16 py-10">@T("BackOffice.Roles.Filter", "Filtrele")</button>
+                </div>
+            </form>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table bordered-table mb-0">
+                    <thead>
+                    <tr>
+                        <th>@T("BackOffice.Roles.ColumnRole", "Rol")</th>
+                        <th>@T("Common.Description", "Açıklama")</th>
+                        <th>@T("BackOffice.Roles.ColumnUserCount", "Kullanıcı")</th>
+                        <th>@T("BackOffice.Roles.ColumnClaimCount", "Yetki")</th>
+                        <th>@T("BackOffice.Roles.ColumnCreated", "Oluşturma")</th>
+                        <th class="text-end">@T("Common.Actions", "İşlemler")</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @if (!roles.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-neutral-500 py-24">@T("BackOffice.Roles.NotFound", "Rol bulunamadı.")</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (RoleListItemDto role in roles)
+                        {
+                            <tr>
+                                <td class="fw-semibold text-primary-light">@role.Name</td>
+                                <td>@(role.Description ?? "-")</td>
+                                <td>@role.UserCount</td>
+                                <td>@role.ClaimCount</td>
+                                <td>@role.CreatedDate.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a asp-controller="Roles" asp-action="Details" asp-route-culture="@culture" asp-route-id="@role.Id" class="btn btn-primary-100 text-primary-600 radius-8 px-12 py-8">
+                                            <i class="ri-eye-line"></i>
+                                        </a>
+                                        <a asp-controller="Roles" asp-action="Edit" asp-route-culture="@culture" asp-route-id="@role.Id" class="btn btn-warning-100 text-warning-600 radius-8 px-12 py-8">
+                                            <i class="ri-edit-line"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

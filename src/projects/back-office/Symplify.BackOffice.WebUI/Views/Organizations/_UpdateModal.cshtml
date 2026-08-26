@@ -1,0 +1,109 @@
+@model Symplify.BackOffice.WebUI.Models.Organizations.UpdateOrganizationViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+<div class="modal fade" id="updateOrganizationModal" tabindex="-1" aria-labelledby="updateOrganizationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="updateOrganizationForm" method="post" enctype="multipart/form-data" autocomplete="off">
+                @Html.AntiForgeryToken()
+                <input asp-for="Id" type="hidden" id="UpdateOrganization_Id" />
+                <input asp-for="ExistingLogoPath" type="hidden" id="UpdateOrganization_ExistingLogoPath" />
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="updateOrganizationModalLabel">@L["BackOffice.Organizations.EditTitle"]</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L.GetStringValue("Common.Close")"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="Name" class="form-label">@L["BackOffice.Organizations.Fields.Name"]</label>
+                            <input asp-for="Name" class="form-control" id="UpdateOrganization_Name" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="Code" class="form-label">@L["BackOffice.Organizations.Fields.Code"]</label>
+                            <input asp-for="Code" class="form-control" id="UpdateOrganization_Code" />
+                            <span asp-validation-for="Code" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="ShortName" class="form-label">@L["BackOffice.Organizations.Fields.ShortName"]</label>
+                            <input asp-for="ShortName" class="form-control" id="UpdateOrganization_ShortName" />
+                            <span asp-validation-for="ShortName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="WebsiteUrl" class="form-label">@L["BackOffice.Organizations.Fields.WebsiteUrl"]</label>
+                            <input asp-for="WebsiteUrl" class="form-control" id="UpdateOrganization_WebsiteUrl" />
+                            <span asp-validation-for="WebsiteUrl" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="BrandColor" class="form-label">@L["BackOffice.Organizations.Fields.BrandColor"]</label>
+                            <input asp-for="BrandColor" class="form-control form-control-color w-100" type="color" id="UpdateOrganization_BrandColor" />
+                            <span asp-validation-for="BrandColor" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="LogoFile" class="form-label">@L["BackOffice.Organizations.Fields.Logo"]</label>
+                            <input asp-for="LogoFile" class="form-control" type="file" accept=".png,.jpg,.jpeg,.svg" />
+                            <span asp-validation-for="LogoFile" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label asp-for="Description" class="form-label">@L["BackOffice.Organizations.Fields.Description"]</label>
+                            <textarea asp-for="Description" class="form-control" rows="3" id="UpdateOrganization_Description"></textarea>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="ContactName" class="form-label">@L["BackOffice.Organizations.Fields.ContactName"]</label>
+                            <input asp-for="ContactName" class="form-control" id="UpdateOrganization_ContactName" />
+                            <span asp-validation-for="ContactName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="ContactTitle" class="form-label">@L["BackOffice.Organizations.Fields.ContactTitle"]</label>
+                            <input asp-for="ContactTitle" class="form-control" id="UpdateOrganization_ContactTitle" />
+                            <span asp-validation-for="ContactTitle" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="ContactEmail" class="form-label">@L["BackOffice.Organizations.Fields.ContactEmail"]</label>
+                            <input asp-for="ContactEmail" class="form-control" id="UpdateOrganization_ContactEmail" />
+                            <span asp-validation-for="ContactEmail" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="ContactPhone" class="form-label">@L["BackOffice.Organizations.Fields.ContactPhone"]</label>
+                            <input asp-for="ContactPhone" class="form-control" id="UpdateOrganization_ContactPhone" />
+                            <span asp-validation-for="ContactPhone" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label asp-for="ContactNote" class="form-label">@L["BackOffice.Organizations.Fields.ContactNote"]</label>
+                            <textarea asp-for="ContactNote" class="form-control" rows="2" id="UpdateOrganization_ContactNote"></textarea>
+                            <span asp-validation-for="ContactNote" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-12">
+                            <div class="form-check form-switch">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" id="UpdateOrganization_IsActive" />
+                                <label asp-for="IsActive" class="form-check-label">@L["Common.Active"]</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">@L["Common.Close"]</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-save me-1"></i> @L["Common.SaveChanges"]
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

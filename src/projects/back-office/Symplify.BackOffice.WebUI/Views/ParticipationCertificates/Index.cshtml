@@ -1,0 +1,326 @@
+@using Symplify.BackOffice.Application.Features.ParticipationCertificates.Services
+@model Symplify.BackOffice.WebUI.Models.ParticipationCertificates.ParticipationCertificatesIndexViewModel
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    ParticipationCertificateTemplateDto? trTemplate = Model.Templates.FirstOrDefault(item =>
+        string.Equals(item.Culture, ParticipationCertificateCultures.Turkish, StringComparison.OrdinalIgnoreCase));
+    ParticipationCertificateTemplateDto? enTemplate = Model.Templates.FirstOrDefault(item =>
+        string.Equals(item.Culture, ParticipationCertificateCultures.English, StringComparison.OrdinalIgnoreCase));
+    bool hasCongress = Model.CongressId != Guid.Empty;
+    string congressManageUrl = hasCongress
+        ? Url.Action("Manage", "Congresses", new { culture = currentCulture, id = Model.CongressId, tab = "documents" })
+            ?? $"/{currentCulture}/Congresses/Manage/{Model.CongressId}?tab=documents"
+        : Url.Action("Index", "Congresses", new { culture = currentCulture }) ?? $"/{currentCulture}/Congresses";
+    ViewData["Title"] = "Katılım Belgeleri";
+}
+
+<div class="dashboard-main-body" id="participationCertificatePage"
+     data-congress-id="@Model.CongressId"
+     data-candidate-url="@Url.Action("CandidateData", "ParticipationCertificates", new { culture = currentCulture })"
+     data-document-url="@Url.Action("DocumentData", "ParticipationCertificates", new { culture = currentCulture })"
+     data-generate-url="@Url.Action("Generate", "ParticipationCertificates", new { culture = currentCulture })"
+     data-email-url="@Url.Action("QueueEmails", "ParticipationCertificates", new { culture = currentCulture })"
+     data-revoke-url="@Url.Action("Revoke", "ParticipationCertificates", new { culture = currentCulture })"
+     data-download-base-url="@($"/{currentCulture}/participation-certificates/download/")">
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h5 class="mb-1">Katılım Belgeleri</h5>
+            <small class="text-neutral-500">@Model.CongressTitle</small>
+        </div>
+        <a class="btn btn-outline-primary-600 radius-8 px-16 py-8 d-inline-flex align-items-center gap-2" href="@congressManageUrl">
+            <i class="ri-arrow-left-line"></i>
+            Kongre Yönetimine Dön
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] is string success && !string.IsNullOrWhiteSpace(success))
+    {
+        <div class="alert alert-success">@success</div>
+    }
+    @if (TempData["ErrorMessage"] is string error && !string.IsNullOrWhiteSpace(error))
+    {
+        <div class="alert alert-danger">@error</div>
+    }
+
+    <form class="d-none" id="participationCertificateAntiForgeryForm">
+        @Html.AntiForgeryToken()
+    </form>
+
+    <div class="card border shadow-none radius-12 mb-24">
+        <div class="card-body">
+            <form asp-action="Index" asp-controller="ParticipationCertificates" asp-route-culture="@currentCulture" method="get" class="row gy-3 align-items-end">
+                <div class="col-lg-8 col-xl-6">
+                    <label class="form-label fw-semibold">Kongre</label>
+                    <select class="form-select radius-8" name="congressId" asp-items="Model.CongressOptions" onchange="this.form.submit()">
+                        <option value="">Kongre seçiniz</option>
+                    </select>
+                </div>
+                @if (hasCongress)
+                {
+                    <div class="col-lg-4 col-xl-3">
+                        <label class="form-label fw-semibold">Görüntüleme Dili</label>
+                        <select class="form-select radius-8" name="certificateCulture" asp-items="Model.CertificateCultureOptions" onchange="this.form.submit()"></select>
+                    </div>
+                }
+            </form>
+        </div>
+    </div>
+
+    @if (!hasCongress)
+    {
+        <div class="card border shadow-none radius-12">
+            <div class="card-body text-center py-5">
+                <i class="ri-file-list-3-line text-primary-600 display-5"></i>
+                <h5 class="mt-3 mb-2">Katılım belgesi işlemleri için kongre seçin</h5>
+                <p class="text-neutral-500 mb-0">Template, üretim ve mail işlemleri seçilen kongre kapsamında yürütülür.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row gy-4 mb-24">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border shadow-none radius-12 h-100"><div class="card-body"><small class="text-neutral-500">Uygun Aday</small><h4 class="mb-0">@Model.EligibleCandidateCount</h4></div></div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border shadow-none radius-12 h-100"><div class="card-body"><small class="text-neutral-500">Aktif Belge</small><h4 class="mb-0">@Model.GeneratedCount</h4></div></div>
+            </div>
+            <div class="col-sm-6 col-xl-2">
+                <div class="card border shadow-none radius-12 h-100"><div class="card-body"><small class="text-neutral-500">Mail Kuyruğu</small><h4 class="mb-0">@Model.EmailQueuedCount</h4></div></div>
+            </div>
+            <div class="col-sm-6 col-xl-2">
+                <div class="card border shadow-none radius-12 h-100"><div class="card-body"><small class="text-neutral-500">Mail Gönderildi</small><h4 class="mb-0">@Model.EmailSentCount</h4></div></div>
+            </div>
+            <div class="col-sm-6 col-xl-2">
+                <div class="card border shadow-none radius-12 h-100"><div class="card-body"><small class="text-neutral-500">Kaldırılan</small><h4 class="mb-0">@Model.RevokedCount</h4></div></div>
+            </div>
+        </div>
+
+        @if (Model.GenerationJob is not null)
+        {
+            <div class="card border shadow-none radius-12 mb-24" id="participationCertificateGenerationJobCard"
+                 data-job-id="@Model.GenerationJob.Id"
+                 data-is-active="@Model.GenerationJob.IsActive.ToString().ToLowerInvariant()"
+                 data-status-url="@Url.Action("GenerationStatus", "ParticipationCertificates", new { culture = currentCulture, jobId = Model.GenerationJob.Id })">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-12">
+                        <div>
+                            <h6 class="mb-1">Belge Üretim İşi</h6>
+                            <small class="text-neutral-500">Yalnızca modalda seçilen kayıtlar arka planda üretilir.</small>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-primary-focus text-primary-main" id="generationJobStatus">@Model.GenerationJob.Status</span>
+                            @if (Model.GenerationJob.IsActive)
+                            {
+                                <form asp-action="CancelGeneration" asp-controller="ParticipationCertificates" asp-route-culture="@currentCulture" asp-route-jobId="@Model.GenerationJob.Id" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="congressId" value="@Model.CongressId" />
+                                    <input type="hidden" name="certificateCulture" value="@Model.GenerationJob.Culture" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger-600">İptal Et</button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                    <progress class="w-100 h-12-px" id="generationJobProgressBar" max="100" value="@Model.GenerationJob.ProgressPercent"></progress>
+                    <div class="d-flex flex-wrap gap-3 mt-10 text-sm">
+                        <span>İlerleme: <strong id="generationJobProgressText">@Model.GenerationJob.ProcessedCount / @Model.GenerationJob.TotalCount</strong></span>
+                        <span>Başarılı: <strong id="generationJobSucceeded">@Model.GenerationJob.SucceededCount</strong></span>
+                        <span>Hatalı: <strong id="generationJobFailed">@Model.GenerationJob.FailedCount</strong></span>
+                        <span>Atlanan: <strong>@Model.GenerationJob.SkippedCount</strong></span>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="card border shadow-none radius-12 mb-24">
+            <div class="card-header border-bottom d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <h6 class="mb-1">PDF ve Mail Template Ayarları</h6>
+                    <small class="text-neutral-500">Mailde PDF eki gönderilmez. <code>{{CERTIFICATE_LINK}}</code> güvenli public belge linkiyle değiştirilir.</small>
+                </div>
+                <ul class="nav nav-pills" role="tablist">
+                    <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#certificateTemplateTr" type="button">Türkçe</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#certificateTemplateEn" type="button">English</button></li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="certificateTemplateTr">
+                        @await Html.PartialAsync("_TemplateSettings", new Symplify.BackOffice.WebUI.Models.ParticipationCertificates.ParticipationCertificateTemplateSettingsPartialModel
+                        {
+                            CongressId = Model.CongressId,
+                            CurrentCulture = currentCulture,
+                            TemplateCulture = ParticipationCertificateCultures.Turkish,
+                            CultureLabel = "Türkçe",
+                            Template = trTemplate,
+                            DefaultBodyText = "{{SUBMISSION_TYPE}} sunumuyla kongremize katılımınız için teşekkür ederiz.",
+                            DefaultMailSubject = "Katılım Belgeniz Hazır",
+                            DefaultMailTitle = "Katılım Belgeniz",
+                            DefaultMailBodyHtml = "<p>Sayın {{AUTHOR_NAME}},</p><p><strong>{{CONGRESS_NAME}}</strong> katılım belgeniz hazırlanmıştır.</p><p><a href=\"{{CERTIFICATE_LINK}}\">Katılım belgenizi görüntüleyin</a></p>"
+                        })
+                    </div>
+                    <div class="tab-pane fade" id="certificateTemplateEn">
+                        @await Html.PartialAsync("_TemplateSettings", new Symplify.BackOffice.WebUI.Models.ParticipationCertificates.ParticipationCertificateTemplateSettingsPartialModel
+                        {
+                            CongressId = Model.CongressId,
+                            CurrentCulture = currentCulture,
+                            TemplateCulture = ParticipationCertificateCultures.English,
+                            CultureLabel = "English",
+                            Template = enTemplate,
+                            DefaultBodyText = "We would like to thank you for participating in our congress with {{SUBMISSION_TYPE}} presentation.",
+                            DefaultMailSubject = "Your Participation Certificate Is Ready",
+                            DefaultMailTitle = "Participation Certificate",
+                            DefaultMailBodyHtml = "<p>Dear {{AUTHOR_NAME}},</p><p>Your participation certificate for <strong>{{CONGRESS_NAME}}</strong> is ready.</p><p><a href=\"{{CERTIFICATE_LINK}}\">View your participation certificate</a></p>"
+                        })
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border shadow-none radius-12">
+            <div class="card-header border-bottom d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <h6 class="mb-1">Oluşturulan Belgeler</h6>
+                    <small class="text-neutral-500">Mail başarıyla gönderilince public link aktifleşir ve belge bildirinin Dokümanlar bölümünde görünür.</small>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="button" class="btn btn-outline-success-600" data-bs-toggle="modal" data-bs-target="#certificateMailModal">
+                        <i class="ri-mail-send-line me-1"></i> Mail Gönder
+                    </button>
+                    <button type="button" class="btn btn-primary-600" data-bs-toggle="modal" data-bs-target="#certificateCandidateModal">
+                        <i class="ri-file-add-line me-1"></i> Katılım Belgesi Oluştur
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row gy-3 mb-16">
+                    <div class="col-md-3">
+                        <label class="form-label">Belge Dili</label>
+                        <select class="form-select" id="documentCultureFilter">
+                            <option value="">Tümü</option>
+                            <option value="tr-TR">Türkçe</option>
+                            <option value="en-US">English</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Mail Durumu</label>
+                        <select class="form-select" id="documentEmailStatusFilter">
+                            <option value="">Tümü</option>
+                            <option value="NotSent">Gönderilmedi</option>
+                            <option value="Queued">Kuyrukta</option>
+                            <option value="Sent">Gönderildi</option>
+                            <option value="Failed">Hatalı</option>
+                            <option value="Revoked">Kaldırıldı</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="includeRevokedDocuments" />
+                            <label class="form-check-label" for="includeRevokedDocuments">Kaldırılanları göster</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table bordered-table mb-0 w-100" id="participationCertificateDocumentsTable">
+                        <thead><tr>
+                            <th>Bildiri No</th><th>Yazar</th><th>Dil</th><th>Oluşturulma</th><th>Mail</th><th>Yayın</th><th class="text-end">İşlem</th>
+                        </tr></thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="certificateCandidateModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <div><h5 class="modal-title">Belge Oluşturulacak Bildirileri Seç</h5><small class="text-neutral-500">Seçilen bildirilerin tüm yazarlarına belge üretilir; seçilmeyen bildirilere hiçbir belge oluşturulmaz.</small></div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row gy-3 mb-16">
+                            <div class="col-md-4">
+                                <label class="form-label">Bildiri Durumu</label>
+                                <select class="form-select" id="candidateSubmissionStatusFilter" asp-items="Model.SubmissionStatusOptions"></select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Ödeme Durumu</label>
+                                <select class="form-select" id="candidatePaymentStatusFilter" asp-items="Model.PaymentStatusOptions"></select>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end justify-content-md-end gap-2">
+                                <button type="button" class="btn btn-outline-primary-600" id="candidateSelectAllFiltered">Filtrelenen Tümünü Seç</button>
+                                <button type="button" class="btn btn-outline-secondary" id="candidateClearSelection">Seçimi Temizle</button>
+                            </div>
+                        </div>
+                        <div class="alert alert-info py-2" id="candidateSelectionSummary">Seçili kayıt yok.</div>
+                        <div class="table-responsive">
+                            <table class="table bordered-table mb-0 w-100" id="participationCertificateCandidatesTable">
+                                <thead><tr>
+                                    <th class="w-44-px"><input type="checkbox" class="form-check-input" id="candidatePageSelect" /></th>
+                                    <th>Bildiri No</th><th>Bildiri</th><th>Yazarlar</th><th>Durum</th><th>Belge Durumu</th>
+                                </tr></thead>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-between">
+                        <span class="text-sm text-neutral-500">Bir bildiri seçildiğinde o bildirinin tüm yazarları seçilmiş sayılır. TR ve EN üretimleri birbirinden bağımsızdır.</span>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Vazgeç</button>
+                            <button type="button" class="btn btn-outline-primary-600 js-generate-certificate" data-culture="en-US">EN Belge Oluştur</button>
+                            <button type="button" class="btn btn-primary-600 js-generate-certificate" data-culture="tr-TR">TR Belge Oluştur</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="certificateMailModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <div><h5 class="modal-title">Mail Gönderilecek Belgeleri Seç</h5><small class="text-neutral-500">PDF eklenmez; güvenli public belge linki gönderilir.</small></div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row gy-3 mb-16">
+                            <div class="col-md-4">
+                                <label class="form-label">Belge Dili</label>
+                                <select class="form-select" id="mailCultureFilter">
+                                    <option value="">Tümü</option><option value="tr-TR">Türkçe</option><option value="en-US">English</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Mail Durumu</label>
+                                <select class="form-select" id="mailStatusFilter">
+                                    <option value="NotSent">Gönderilmemiş</option><option value="Failed">Hatalı</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end justify-content-md-end gap-2">
+                                <button type="button" class="btn btn-outline-primary-600" id="mailSelectAllFiltered">Filtrelenen Tümünü Seç</button>
+                                <button type="button" class="btn btn-outline-secondary" id="mailClearSelection">Seçimi Temizle</button>
+                            </div>
+                        </div>
+                        <div class="alert alert-info py-2" id="mailSelectionSummary">Seçili belge yok.</div>
+                        <div class="table-responsive">
+                            <table class="table bordered-table mb-0 w-100" id="participationCertificateMailTable">
+                                <thead><tr>
+                                    <th class="w-44-px"><input type="checkbox" class="form-check-input" id="mailPageSelect" /></th>
+                                    <th>Bildiri No</th><th>Yazar / E-posta</th><th>Dil</th><th>Oluşturulma</th><th>Durum</th>
+                                </tr></thead>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Vazgeç</button>
+                        <button type="button" class="btn btn-success-600" id="queueCertificateEmailsButton"><i class="ri-mail-send-line me-1"></i> Seçilenlere Mail Gönder</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/features/participation-certificates/participation-certificates.index.js" asp-append-version="true"></script>
+}

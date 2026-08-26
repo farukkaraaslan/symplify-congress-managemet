@@ -1,0 +1,46 @@
+@use "../abstracts" as a;
+
+.section-title {
+  text-align: center;
+  padding-bottom: 60px;
+  position: relative;
+
+  h2 {
+    font-size: 32px;
+    font-weight: 700;
+    position: relative;
+
+    &:before,
+    &:after {
+      content: "";
+      width: 50px;
+      height: 2px;
+      background: var(--accent-color);
+      display: inline-block;
+    }
+
+    &:before {
+      margin: 0 15px 10px 0;
+    }
+
+    &:after {
+      margin: 0 0 10px 15px;
+    }
+  }
+
+  p {
+    margin-bottom: 0;
+  }
+
+  @include a.mq-down(md) {
+    h2 {
+      font-size: 20px;
+
+      &:before,
+      &:after {
+        width: 20px;
+        height: 2px;
+      }
+    }
+  }
+}

@@ -1,0 +1,54 @@
+@use "../abstracts" as a;
+
+.btn {
+  transition: all 0.3s ease;
+  --bs-btn-border-radius: var(--bs-border-radius-lg);
+  --bs-btn-border-radius-sm: var(--bs-border-radius);
+  --bs-btn-border-radius-lg: var(--bs-border-radius-xl);
+}
+
+.btn.btn-primary {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+  color: var(--contrast-color);
+}
+
+.btn.btn-primary:hover,
+.btn.btn-primary:focus:hover {
+  background-color: color-mix(in srgb, var(--accent-color), black 12%);
+  border-color: color-mix(in srgb, var(--accent-color), black 12%);
+  color: var(--contrast-color);
+  transform: translateY(-2px);
+}
+
+.btn.btn-outline {
+  background-color: transparent;
+  border: 2px solid var(--accent-color);
+  color: var(--accent-color);
+}
+
+.btn.btn-outline:hover,
+.btn.btn-outline:focus:hover {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+  color: var(--contrast-color);
+  transform: translateY(-2px);
+}
+
+.btn-course {
+  display: inline-block;
+  background: var(--accent-color);
+  color: var(--contrast-color);
+  padding: 12px 25px;
+  border-radius: var(--bs-border-radius-lg);
+  text-decoration: none;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.btn-course:hover {
+  background: color-mix(in srgb, var(--accent-color), black 10%);
+  color: var(--contrast-color);
+  transform: translateY(-2px);
+}

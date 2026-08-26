@@ -1,0 +1,306 @@
+@model Symplify.BackOffice.Application.Features.MailDeliveries.Queries.GetList.GetMailDeliveryListResponse
+@using Symplify.BackOffice.Domain.Enums
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string culture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    bool isEnglish = culture.StartsWith("en", StringComparison.OrdinalIgnoreCase);
+
+    Guid? selectedOrganizationId = ViewBag.OrganizationId as Guid?;
+    Guid? selectedCongressId = ViewBag.CongressId as Guid?;
+    MailMessageType? selectedMailType = ViewBag.MailType is MailMessageType mt ? mt : null;
+    MailOutboxStatus? selectedStatus = ViewBag.Status is MailOutboxStatus os ? os : null;
+    MailDeliveryStatus? selectedDeliveryStatus = ViewBag.DeliveryStatus is MailDeliveryStatus ds ? ds : null;
+    DateTime? dateFrom = ViewBag.DateFrom as DateTime?;
+    DateTime? dateTo = ViewBag.DateTo as DateTime?;
+    string search = ViewBag.Search as string ?? string.Empty;
+
+    string T(string key, string tr, string en)
+    {
+        string value = L.GetStringValue(key);
+        if (!string.IsNullOrWhiteSpace(value) && !string.Equals(value, key, StringComparison.Ordinal))
+            return value;
+
+        return isEnglish ? en : tr;
+    }
+
+    string MailTypeText(MailMessageType value) => value switch
+    {
+        MailMessageType.EmailConfirmation => T("BackOffice.MailDeliveries.MailType.EmailConfirmation", "E-posta Doğrulama", "Email Confirmation"),
+        MailMessageType.PasswordReset => T("BackOffice.MailDeliveries.MailType.PasswordReset", "Şifre Sıfırlama", "Password Reset"),
+        MailMessageType.OrganizationMailTest => T("BackOffice.MailDeliveries.MailType.OrganizationMailTest", "Mail Ayarı Testi", "Mail Configuration Test"),
+        MailMessageType.SubmissionSentToReview => T("BackOffice.MailDeliveries.MailType.SubmissionSentToReview", "Hakem Süreci", "Sent to Review"),
+        MailMessageType.SubmissionPaymentPending => T("BackOffice.MailDeliveries.MailType.SubmissionPaymentPending", "Ödeme Bekleniyor", "Payment Pending"),
+        MailMessageType.SubmissionPaymentApproved => T("BackOffice.MailDeliveries.MailType.SubmissionPaymentApproved", "Ödeme Onaylandı", "Payment Approved"),
+        MailMessageType.SubmissionAccepted => T("BackOffice.MailDeliveries.MailType.SubmissionAccepted", "Bildiri Kabul", "Submission Accepted"),
+        MailMessageType.AcceptanceLetter => T("BackOffice.MailDeliveries.MailType.AcceptanceLetter", "Kabul Belgesi", "Acceptance Letter"),
+        MailMessageType.ParticipationCertificate => T("BackOffice.MailDeliveries.MailType.ParticipationCertificate", "Katılım Belgesi", "Participation Certificate"),
+        MailMessageType.BulkEmail => T("BackOffice.MailDeliveries.MailType.BulkEmail", "Toplu E-posta", "Bulk Email"),
+        MailMessageType.OtherSystem => T("BackOffice.MailDeliveries.MailType.OtherSystem", "Sistem E-postası", "System Email"),
+        _ => T("BackOffice.MailDeliveries.MailType.Unknown", "Bilinmiyor", "Unknown")
+    };
+
+    string TransportText(MailOutboxStatus value) => value switch
+    {
+        MailOutboxStatus.Pending => T("BackOffice.MailDeliveries.Transport.Pending", "Kuyrukta", "Queued"),
+        MailOutboxStatus.Sent => T("BackOffice.MailDeliveries.Transport.Sent", "Gönderildi", "Sent"),
+        MailOutboxStatus.Failed => T("BackOffice.MailDeliveries.Transport.Failed", "Başarısız", "Failed"),
+        MailOutboxStatus.Cancelled => T("BackOffice.MailDeliveries.Transport.Cancelled", "İptal", "Cancelled"),
+        MailOutboxStatus.Processing => T("BackOffice.MailDeliveries.Transport.Processing", "Gönderiliyor", "Processing"),
+        _ => value.ToString()
+    };
+
+    string DeliveryText(MailDeliveryStatus value) => value switch
+    {
+        MailDeliveryStatus.Unknown => T("BackOffice.MailDeliveries.Delivery.Unknown", "Bilinmiyor", "Unknown"),
+        MailDeliveryStatus.NotTracked => T("BackOffice.MailDeliveries.Delivery.NotTracked", "Takip Edilmiyor", "Not Tracked"),
+        MailDeliveryStatus.Pending => T("BackOffice.MailDeliveries.Delivery.Pending", "SES Bekleniyor", "Awaiting SES"),
+        MailDeliveryStatus.Delivered => T("BackOffice.MailDeliveries.Delivery.Delivered", "Teslim Edildi", "Delivered"),
+        MailDeliveryStatus.Delayed => T("BackOffice.MailDeliveries.Delivery.Delayed", "Gecikiyor", "Delayed"),
+        MailDeliveryStatus.Bounced => T("BackOffice.MailDeliveries.Delivery.Bounced", "Bounce", "Bounced"),
+        MailDeliveryStatus.Rejected => T("BackOffice.MailDeliveries.Delivery.Rejected", "Reddedildi", "Rejected"),
+        MailDeliveryStatus.Complaint => T("BackOffice.MailDeliveries.Delivery.Complaint", "Şikayet", "Complaint"),
+        MailDeliveryStatus.RenderingFailed => T("BackOffice.MailDeliveries.Delivery.RenderingFailed", "İçerik Hatası", "Rendering Failed"),
+        _ => value.ToString()
+    };
+
+    ViewData["Title"] = T("BackOffice.MailDeliveries.Title", "E-posta Gönderimleri", "Email Deliveries");
+    ViewData["ClientResourcePrefixes"] = new[] { "BackOffice.MailDeliveries.", "Common.", "DataTable." };
+
+    string dataUrl = Url.Action("GetList", "MailDeliveries", new { culture })
+        ?? $"/{culture}/mail-deliveries/data";
+}
+
+<div class="dashboard-main-body" id="mailDeliveriesPage">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-1">@T("BackOffice.MailDeliveries.Title", "E-posta Gönderimleri", "Email Deliveries")</h6>
+            <p class="text-secondary-light mb-0">
+                @T(
+                    "BackOffice.MailDeliveries.Description",
+                    "Uygulamadan çıkan tüm e-postaların kuyruk, SMTP ve AWS SES teslimat durumlarını tek ekrandan izleyin.",
+                    "Monitor queue, SMTP and AWS SES delivery status for every email sent by the application.")
+            </p>
+        </div>
+    </div>
+
+    <form class="d-none" id="mailDeliveryAntiForgeryForm">
+        @Html.AntiForgeryToken()
+    </form>
+
+    <div class="row gy-16 mb-24">
+        <div class="col-6 col-xl">
+            <div class="card h-100">
+                <div class="card-body p-20">
+                    <div class="text-secondary-light text-sm">@T("BackOffice.MailDeliveries.Summary.Total", "Toplam", "Total")</div>
+                    <div class="text-2xl fw-semibold" id="mailDeliverySummaryTotal">@Model.TotalCount</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl">
+            <div class="card h-100">
+                <div class="card-body p-20">
+                    <div class="text-secondary-light text-sm">@T("BackOffice.MailDeliveries.Summary.TransportPending", "Kuyruk / Gönderiliyor", "Queued / Processing")</div>
+                    <div class="text-2xl fw-semibold text-warning-600" id="mailDeliverySummaryPending">@Model.PendingTransportCount</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl">
+            <div class="card h-100">
+                <div class="card-body p-20">
+                    <div class="text-secondary-light text-sm">@T("BackOffice.MailDeliveries.Summary.Delivered", "Teslim Edildi", "Delivered")</div>
+                    <div class="text-2xl fw-semibold text-success-600" id="mailDeliverySummaryDelivered">@Model.DeliveredCount</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl">
+            <div class="card h-100">
+                <div class="card-body p-20">
+                    <div class="text-secondary-light text-sm">@T("BackOffice.MailDeliveries.Summary.Bounced", "Bounce", "Bounced")</div>
+                    <div class="text-2xl fw-semibold text-danger-600" id="mailDeliverySummaryBounced">@Model.BouncedCount</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl">
+            <div class="card h-100">
+                <div class="card-body p-20">
+                    <div class="text-secondary-light text-sm">@T("BackOffice.MailDeliveries.Summary.TransportFailed", "Gönderim Hatası", "Transport Failed")</div>
+                    <div class="text-2xl fw-semibold text-danger-600" id="mailDeliverySummaryFailed">@Model.FailedTransportCount</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-24">
+        <div class="card-body p-24">
+            <form id="mailDeliveryFilterForm" autocomplete="off">
+                <div class="row gy-12 align-items-end">
+                    <div class="col-xl-3 col-lg-4 col-md-6">
+                        <label class="form-label fw-semibold" for="mailDeliverySearch">
+                            @T("BackOffice.MailDeliveries.Filters.Search", "Alıcı / E-posta / Konu / Bildiri No", "Recipient / Email / Subject / Submission No")
+                        </label>
+                        <input type="search"
+                               id="mailDeliverySearch"
+                               name="search"
+                               value="@search"
+                               maxlength="200"
+                               class="form-control radius-8" />
+                    </div>
+
+                    <div class="col-xl-2 col-lg-4 col-md-6">
+                        <label class="form-label fw-semibold" for="mailDeliveryOrganizationId">
+                            @T("BackOffice.MailDeliveries.Filters.Organization", "Organizasyon", "Organization")
+                        </label>
+                        <select id="mailDeliveryOrganizationId" name="organizationId" class="form-select radius-8">
+                            <option value="">@T("Common.All", "Tümü", "All")</option>
+                            @foreach (var option in Model.Organizations)
+                            {
+                                <option value="@option.Id" selected="@(selectedOrganizationId == option.Id)">@option.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-xl-2 col-lg-4 col-md-6">
+                        <label class="form-label fw-semibold" for="mailDeliveryCongressId">
+                            @T("BackOffice.MailDeliveries.Filters.Congress", "Kongre", "Congress")
+                        </label>
+                        <select id="mailDeliveryCongressId" name="congressId" class="form-select radius-8">
+                            <option value="">@T("Common.All", "Tümü", "All")</option>
+                            @foreach (var option in Model.Congresses)
+                            {
+                                <option value="@option.Id" selected="@(selectedCongressId == option.Id)">@option.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-xl-2 col-lg-4 col-md-6">
+                        <label class="form-label fw-semibold" for="mailDeliveryMailType">
+                            @T("BackOffice.MailDeliveries.Filters.MailType", "Mail Türü", "Email Type")
+                        </label>
+                        <select id="mailDeliveryMailType" name="mailType" class="form-select radius-8">
+                            <option value="">@T("Common.All", "Tümü", "All")</option>
+                            @foreach (MailMessageType type in Enum.GetValues<MailMessageType>())
+                            {
+                                <option value="@((int)type)" selected="@(selectedMailType == type)">@MailTypeText(type)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-xl-2 col-lg-4 col-md-6">
+                        <label class="form-label fw-semibold" for="mailDeliveryTransportStatus">
+                            @T("BackOffice.MailDeliveries.Filters.TransportStatus", "Gönderim Durumu", "Transport Status")
+                        </label>
+                        <select id="mailDeliveryTransportStatus" name="status" class="form-select radius-8">
+                            <option value="">@T("Common.All", "Tümü", "All")</option>
+                            @foreach (MailOutboxStatus value in Enum.GetValues<MailOutboxStatus>())
+                            {
+                                <option value="@((int)value)" selected="@(selectedStatus == value)">@TransportText(value)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-xl-2 col-lg-4 col-md-6">
+                        <label class="form-label fw-semibold" for="mailDeliveryDeliveryStatus">
+                            @T("BackOffice.MailDeliveries.Filters.DeliveryStatus", "Teslimat Durumu", "Delivery Status")
+                        </label>
+                        <select id="mailDeliveryDeliveryStatus" name="deliveryStatus" class="form-select radius-8">
+                            <option value="">@T("Common.All", "Tümü", "All")</option>
+                            @foreach (MailDeliveryStatus value in Enum.GetValues<MailDeliveryStatus>())
+                            {
+                                <option value="@((int)value)" selected="@(selectedDeliveryStatus == value)">@DeliveryText(value)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-xl-2 col-lg-4 col-md-6">
+                        <label class="form-label fw-semibold" for="mailDeliveryDateFrom">
+                            @T("BackOffice.MailDeliveries.Filters.DateFrom", "Başlangıç", "From")
+                        </label>
+                        <input type="date"
+                               id="mailDeliveryDateFrom"
+                               name="dateFrom"
+                               value="@(dateFrom?.ToString("yyyy-MM-dd"))"
+                               class="form-control radius-8" />
+                    </div>
+
+                    <div class="col-xl-2 col-lg-4 col-md-6">
+                        <label class="form-label fw-semibold" for="mailDeliveryDateTo">
+                            @T("BackOffice.MailDeliveries.Filters.DateTo", "Bitiş", "To")
+                        </label>
+                        <input type="date"
+                               id="mailDeliveryDateTo"
+                               name="dateTo"
+                               value="@(dateTo?.ToString("yyyy-MM-dd"))"
+                               class="form-control radius-8" />
+                    </div>
+
+                    <div class="col-xl-3 col-lg-4 col-md-6 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary-600 radius-8 flex-grow-1">
+                            <i class="ri-filter-3-line me-1"></i>
+                            @T("BackOffice.MailDeliveries.Filters.Apply", "Filtrele", "Filter")
+                        </button>
+                        <button type="button" id="mailDeliveryClearFilters" class="btn btn-outline-neutral-400 radius-8">
+                            @T("BackOffice.MailDeliveries.Filters.Clear", "Temizle", "Clear")
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border shadow-none radius-12">
+        <div class="card-header border-bottom bg-base py-16 px-24">
+            <div>
+                <h6 class="text-lg mb-1">@T("BackOffice.MailDeliveries.Records", "Gönderim Kayıtları", "Delivery Records")</h6>
+                <small class="text-neutral-500">
+                    @T("BackOffice.MailDeliveries.RecordsDescription", "Kayıtlar server-side DataTable ile sayfalı ve sıralanabilir olarak yüklenir.", "Records are loaded with server-side DataTables paging and sorting.")
+                </small>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table bordered-table table-sm mb-0 align-middle w-100"
+                       id="mailDeliveriesTable"
+                       data-source-url="@dataUrl">
+                    <thead>
+                    <tr>
+                        <th>@T("Common.Actions", "İşlemler", "Actions")</th>
+                        <th>@T("BackOffice.MailDeliveries.Columns.CreatedAt", "Tarih", "Date")</th>
+                        <th>@T("BackOffice.MailDeliveries.Columns.Type", "Tür", "Type")</th>
+                        <th>@T("BackOffice.MailDeliveries.Columns.Recipient", "Alıcı", "Recipient")</th>
+                        <th>@T("BackOffice.MailDeliveries.Columns.Context", "Organizasyon / Kongre", "Organization / Congress")</th>
+                        <th>@T("BackOffice.MailDeliveries.Columns.Subject", "Konu", "Subject")</th>
+                        <th>@T("BackOffice.MailDeliveries.Columns.Transport", "Gönderim", "Transport")</th>
+                        <th>@T("BackOffice.MailDeliveries.Columns.Delivery", "Teslimat", "Delivery")</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-info radius-8 mt-20 mb-0 text-sm">
+        <strong>@T("BackOffice.MailDeliveries.Note.Title", "Durum farkı:", "Status distinction:")</strong>
+        @T(
+            "BackOffice.MailDeliveries.Note.Body",
+            "Gönderildi, Symplify'ın mesajı SMTP/AWS SES'e başarıyla verdiğini; Teslim Edildi ise SES'in alıcı posta sunucusundan başarılı teslim yanıtı aldığını ifade eder.",
+            "Sent means Symplify handed the message to SMTP/AWS SES successfully; Delivered means SES received a successful delivery response from the recipient mail server.")
+    </div>
+</div>
+
+<div class="modal fade" id="mailDeliveryDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content radius-12" id="mailDeliveryDetailContent">
+            <div class="modal-body text-center py-40">
+                @T("Common.Loading", "Yükleniyor...", "Loading...")
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_LocalizationScripts")
+    <script src="~/js/shared/ajax/symplify.ajax.js" asp-append-version="true"></script>
+    <script src="~/js/features/mail-deliveries/mail-deliveries.index.js" asp-append-version="true"></script>
+}

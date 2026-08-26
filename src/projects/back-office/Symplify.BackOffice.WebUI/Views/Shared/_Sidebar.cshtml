@@ -1,0 +1,229 @@
+@using Symplify.BackOffice.WebUI.Authorization
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string culture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+
+    string currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    string currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    string currentPath = Context.Request.Path.Value?.TrimEnd('/').ToLowerInvariant() ?? "";
+
+    string MenuUrl(string controller, string action = "Index")
+    {
+        return Url.Action(action, controller, new { culture })
+               ?? $"/{culture}/{controller.ToLowerInvariant()}/{action.ToLowerInvariant()}";
+    }
+
+    string ActiveClass(string controller)
+    {
+        bool controllerMatches = string.Equals(currentController, controller, StringComparison.OrdinalIgnoreCase);
+        string expectedPathStart = $"/{culture.ToLowerInvariant()}/{controller.ToLowerInvariant()}";
+        bool pathMatches = currentPath.StartsWith(expectedPathStart);
+        return controllerMatches || pathMatches ? "active-page" : "";
+    }
+
+    string TextOrFallback(string key, string trFallback, string enFallback)
+    {
+        string value = L.GetStringValue(key);
+        if (!string.IsNullOrWhiteSpace(value) && !string.Equals(value, key, StringComparison.Ordinal))
+            return value;
+
+        return culture.StartsWith("en", StringComparison.OrdinalIgnoreCase)
+            ? enFallback
+            : trFallback;
+    }
+
+    bool CanRead(string section) => User.CanReadBackOfficeSection(section);
+    bool CanAny(params string[] permissions) => User.HasBackOfficePermission(permissions);
+
+    bool isBulkEmailSection = string.Equals(currentController, "BulkEmails", StringComparison.OrdinalIgnoreCase);
+    bool isParticipationCertificatesSection = string.Equals(currentController, "ParticipationCertificates", StringComparison.OrdinalIgnoreCase)
+        || currentPath.Contains("/participation-certificates", StringComparison.OrdinalIgnoreCase);
+    bool isBulkEmailHistory = isBulkEmailSection && string.Equals(currentAction, "History", StringComparison.OrdinalIgnoreCase);
+    bool isBulkEmailCompose = isBulkEmailSection && !isBulkEmailHistory;
+
+    bool canDefinitions = CanRead("Topics") || CanRead("Titles") || CanRead("DocumentTypes") || CanRead("SubmissionTypes") || CanRead("EventRooms") || CanRead("EvaluationCriteria");
+    bool canOrganization = CanRead("Organizations") || CanRead("Congresses");
+    bool canSubmission = CanRead("Submissions") || CanRead("BulkEmails") || CanRead("ReviewerEvaluations") || CanRead("Reviewers");
+    bool canSystem = CanRead("Users") || CanRead("Roles") || CanRead("MailDeliveries");
+    bool canWorkflow = CanRead("TransactionStatusPhases") || CanRead("TransactionStatuses") || CanRead("TransactionStatusTransitions") || CanRead("WorkflowTemplates");
+}
+
+<aside class="sidebar">
+    <button type="button" class="sidebar-close-btn">
+        <iconify-icon icon="radix-icons:cross-2"></iconify-icon>
+    </button>
+
+    <div>
+        <a href="@MenuUrl("Home")" class="sidebar-logo">
+            <img src="/assets/images/logo/symplify-logo-horizontal-light.svg" alt="Symplify" class="light-logo">
+            <img src="/assets/images/logo/symplify-logo-horizontal-dark.svg" alt="Symplify" class="dark-logo">
+            <img src="/assets/images/logo/symplify-logo-icon-light.svg" alt="Symplify" class="logo-icon logo-icon-light">
+            <img src="/assets/images/logo/symplify-logo-icon-dark.svg" alt="Symplify" class="logo-icon logo-icon-dark">
+        </a>
+    </div>
+
+    <div class="sidebar-menu-area">
+        <ul class="sidebar-menu" id="sidebar-menu">
+
+            @if (canDefinitions)
+            {
+                <li class="sidebar-menu-group-title">@L["BackOffice.Sidebar.Definitions"]</li>
+
+                @if (CanRead("Topics"))
+                {
+                    <li><a href="@MenuUrl("Topics")" class="@ActiveClass("Topics")"><iconify-icon icon="solar:tag-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.Topics"]</span></a></li>
+                }
+
+                @if (CanRead("Titles"))
+                {
+                    <li><a href="@MenuUrl("Titles")" class="@ActiveClass("Titles")"><iconify-icon icon="solar:user-id-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.Titles"]</span></a></li>
+                }
+
+                @if (CanRead("DocumentTypes"))
+                {
+                    <li><a href="@MenuUrl("DocumentTypes")" class="@ActiveClass("DocumentTypes")"><iconify-icon icon="solar:document-text-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.DocumentTypes"]</span></a></li>
+                }
+
+                @if (CanRead("SubmissionTypes"))
+                {
+                    <li><a href="@MenuUrl("SubmissionTypes")" class="@ActiveClass("SubmissionTypes")"><iconify-icon icon="solar:document-add-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.SubmissionTypes"]</span></a></li>
+                }
+
+                @if (CanRead("EventRooms"))
+                {
+                    <li><a href="@MenuUrl("EventRooms")" class="@ActiveClass("EventRooms")"><iconify-icon icon="solar:buildings-2-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.EventRooms"]</span></a></li>
+                }
+
+                @if (CanRead("EvaluationCriteria"))
+                {
+                    <li><a href="@MenuUrl("EvaluationCriteria")" class="@ActiveClass("EvaluationCriteria")"><iconify-icon icon="solar:checklist-minimalistic-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.EvaluationCriteria"]</span></a></li>
+                }
+            }
+
+            @if (canOrganization)
+            {
+                <li class="sidebar-menu-group-title">@L["BackOffice.Sidebar.OrganizationManagement"]</li>
+
+                @if (CanRead("Organizations"))
+                {
+                    <li><a href="@MenuUrl("Organizations")" class="@ActiveClass("Organizations")"><iconify-icon icon="solar:buildings-2-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.Organizations"]</span></a></li>
+                }
+
+                @if (CanRead("Congresses"))
+                {
+                    <li><a href="@MenuUrl("Congresses")" class="@ActiveClass("Congresses")"><iconify-icon icon="solar:calendar-mark-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.Congresses"]</span></a></li>
+                }
+
+                @if (CanRead("Organizations"))
+                {
+                    <li><a href="@MenuUrl("OrganizationMailConfigurations")" class="@ActiveClass("OrganizationMailConfigurations")"><iconify-icon icon="solar:letter-outline" class="menu-icon"></iconify-icon><span>@TextOrFallback("BackOffice.Sidebar.OrganizationMailSettings", "Mail Ayarları", "Mail Settings")</span></a></li>
+                }
+
+            }
+
+            @if (canSubmission)
+            {
+                <li class="sidebar-menu-group-title">@L["BackOffice.Sidebar.SubmissionManagement"]</li>
+
+                @if (CanAny("Submissions.Admin", "Submissions.Read"))
+                {
+                    <li><a href="@MenuUrl("Submissions")" class="@ActiveClass("Submissions")"><iconify-icon icon="solar:document-add-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.MySubmissions"]</span></a></li>
+                    @await Component.InvokeAsync("SubmissionEntryMenu", new { displayMode = "Sidebar" })
+                }
+
+                @if (CanAny("Submissions.Admin"))
+                {
+                    <li><a href="@MenuUrl("SubmissionManagement")" class="@ActiveClass("SubmissionManagement")"><iconify-icon icon="solar:folder-with-files-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.AllSubmissions"]</span></a></li>
+                    <li><a href="@MenuUrl("ProgramManagement")" class="@ActiveClass("ProgramManagement")"><iconify-icon icon="solar:calendar-mark-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.ProgramManagement"]</span></a></li>
+                    <li><a href="@MenuUrl("AbstractBook")" class="@ActiveClass("AbstractBook")"><iconify-icon icon="solar:book-2-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.AbstractBook"]</span></a></li>
+                    <li><a href="@(Url.Action("Index", "ParticipationCertificates", new { culture }) ?? $"/{culture}/participation-certificates")" class="@(isParticipationCertificatesSection ? "active-page" : "")"><iconify-icon icon="solar:document-text-outline" class="menu-icon"></iconify-icon><span>@TextOrFallback("BackOffice.Sidebar.ParticipationCertificates", "Katılım Belgeleri", "Participation Certificates")</span></a></li>
+
+                    <li><a href="@Url.Action("FullTextBook", "SubmissionFinalFiles", new { culture })" class="@(currentPath.Contains("/submission-management/final-files/full-text-book") ? "active-page" : "")"><iconify-icon icon="solar:document-text-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.FullTextBook"]</span></a></li>
+                    <li><a href="@Url.Action("VideoPresentations", "SubmissionFinalFiles", new { culture })" class="@(currentPath.Contains("/submission-management/final-files/video-presentations") ? "active-page" : "")"><iconify-icon icon="solar:video-library-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.VideoPresentations"]</span></a></li>
+                }
+
+                @if (CanAny("BulkEmails.Admin", "BulkEmails.Read"))
+                {
+                    <li class="dropdown @(isBulkEmailSection ? "dropdown-open open" : string.Empty)"
+                        data-sidebar-dropdown-id="bulk-emails"
+                        data-sidebar-persist-open="false">
+                        <a href="#" aria-expanded="@(isBulkEmailSection ? "true" : "false")">
+                            <iconify-icon icon="solar:letter-opened-outline" class="menu-icon"></iconify-icon>
+                            <span>@TextOrFallback("BackOffice.Sidebar.BulkEmails", "Toplu E-Posta", "Bulk Email")</span>
+                        </a>
+                        <ul class="sidebar-submenu @(isBulkEmailSection ? "d-block" : string.Empty)">
+                            <li class="@(isBulkEmailCompose ? "active-page" : string.Empty)">
+                                <a href="@MenuUrl("BulkEmails")">
+                                    <i class="ri-circle-fill circle-icon text-success-main"></i>
+                                    <span>@TextOrFallback("BackOffice.Sidebar.BulkEmails.Send", "E-Posta Gönder", "Send Email")</span>
+                                </a>
+                            </li>
+                            <li class="@(isBulkEmailHistory ? "active-page" : string.Empty)">
+                                <a href="@Url.Action("History", "BulkEmails", new { culture })">
+                                    <i class="ri-circle-fill circle-icon text-primary-600"></i>
+                                    <span>@TextOrFallback("BackOffice.Sidebar.BulkEmails.History", "Gönderim Geçmişi", "Sending History")</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                }
+
+                @if (CanRead("ReviewerEvaluations"))
+                {
+                    <li><a href="@MenuUrl("ReviewerEvaluations")" class="@ActiveClass("ReviewerEvaluations")"><iconify-icon icon="solar:clipboard-check-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.ReviewerEvaluations"]</span></a></li>
+                }
+
+                @if (CanRead("Reviewers"))
+                {
+                    <li><a href="@MenuUrl("Reviewers")" class="@ActiveClass("Reviewers")"><iconify-icon icon="solar:user-check-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.Reviewers"]</span></a></li>
+                }
+            }
+
+            @if (canSystem)
+            {
+                <li class="sidebar-menu-group-title">@L["BackOffice.Sidebar.SystemManagement"]</li>
+
+                @if (CanRead("Users"))
+                {
+                    <li><a href="@MenuUrl("Users")" class="@ActiveClass("Users")"><iconify-icon icon="solar:users-group-rounded-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.Users"]</span></a></li>
+                }
+
+                @if (CanRead("Roles"))
+                {
+                    <li><a href="@MenuUrl("Roles")" class="@ActiveClass("Roles")"><iconify-icon icon="solar:shield-user-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.Roles"]</span></a></li>
+                }
+
+                @if (CanRead("MailDeliveries"))
+                {
+                    <li><a href="@MenuUrl("MailDeliveries")" class="@ActiveClass("MailDeliveries")"><iconify-icon icon="solar:letter-unread-outline" class="menu-icon"></iconify-icon><span>@TextOrFallback("BackOffice.Sidebar.MailDeliveries", "E-posta Gönderimleri", "Email Deliveries")</span></a></li>
+                }
+            }
+
+            @if (canWorkflow)
+            {
+                <li class="sidebar-menu-group-title">@L["BackOffice.Sidebar.Workflow"]</li>
+
+                @if (CanRead("TransactionStatusPhases"))
+                {
+                    <li><a href="@MenuUrl("TransactionStatusPhases")" class="@ActiveClass("TransactionStatusPhases")"><iconify-icon icon="solar:folder-with-files-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.TransactionStatusPhases"]</span></a></li>
+                }
+
+                @if (CanRead("TransactionStatuses"))
+                {
+                    <li><a href="@MenuUrl("TransactionStatuses")" class="@ActiveClass("TransactionStatuses")"><iconify-icon icon="solar:refresh-circle-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.TransactionStatuses"]</span></a></li>
+                }
+
+                @if (CanRead("TransactionStatusTransitions"))
+                {
+                    <li><a href="@MenuUrl("TransactionStatusTransitions")" class="@ActiveClass("TransactionStatusTransitions")"><iconify-icon icon="solar:routing-3-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.TransactionStatusTransitions"]</span></a></li>
+                }
+
+                @if (CanRead("WorkflowTemplates"))
+                {
+                    <li><a href="@MenuUrl("WorkflowTemplates")" class="@ActiveClass("WorkflowTemplates")"><iconify-icon icon="solar:clipboard-check-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.WorkflowTemplates"]</span></a></li>
+                }
+            }
+        </ul>
+    </div>
+</aside>

@@ -1,0 +1,39 @@
+@using Symplify.BackOffice.WebUI.Localization
+@inject IBackOfficeViewLocalizer L
+@model Symplify.BackOffice.Application.Features.Roles.Commands.Create.CreateRoleCommand
+@{
+    string T(string key, string fallback = "") {
+        var v = L.GetStringValue(key);
+        return string.IsNullOrWhiteSpace(v) || string.Equals(v, key, StringComparison.OrdinalIgnoreCase) ? (string.IsNullOrWhiteSpace(fallback) ? key : fallback) : v;
+    }
+    ViewData["Title"] = T("BackOffice.Roles.Create.PageTitle", "Rol Oluştur");
+    string culture = Context.Request.RouteValues["culture"]?.ToString() ?? "tr-TR";
+}
+
+<div class="dashboard-main-body">
+    <div class="d-flex align-items-center justify-content-between mb-24">
+        <div>
+            <h6 class="fw-semibold mb-0">@T("BackOffice.Roles.Create.PageTitle", "Rol Oluştur")</h6>
+            <small class="text-neutral-500">@T("BackOffice.Roles.Create.PageSubtitle", "Yeni dinamik rol oluşturun.")</small>
+        </div>
+        <a asp-controller="Roles" asp-action="Index" asp-route-culture="@culture" class="btn btn-outline-neutral-900 radius-8 px-16 py-10">@T("Common.BackToList", "Listeye Dön")</a>
+    </div>
+
+    <form asp-controller="Roles" asp-action="Create" asp-route-culture="@culture" method="post" class="card border shadow-none radius-12">
+        @Html.AntiForgeryToken()
+        <div class="card-body row gy-3">
+            <div class="col-md-6">
+                <label asp-for="Name" class="form-label">@T("BackOffice.Roles.RoleName", "Rol Adı")</label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Description" class="form-label">@T("Common.Description", "Açıklama")</label>
+                <input asp-for="Description" class="form-control" />
+            </div>
+        </div>
+        <div class="card-footer d-flex justify-content-end gap-2">
+            <button type="submit" class="btn btn-primary-600 radius-8 px-20 py-11">@T("Common.Save", "Kaydet")</button>
+        </div>
+    </form>
+</div>

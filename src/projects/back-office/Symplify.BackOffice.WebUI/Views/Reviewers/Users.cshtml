@@ -1,0 +1,141 @@
+@using Symplify.BackOffice.WebUI.Localization
+@inject IBackOfficeViewLocalizer L
+@model Symplify.BackOffice.WebUI.Models.Reviewers.ReviewerUserListViewModel
+
+@{
+    string T(string key, string fallback = "") {
+        var v = L.GetStringValue(key);
+        return string.IsNullOrWhiteSpace(v) || string.Equals(v, key, StringComparison.OrdinalIgnoreCase) ? (string.IsNullOrWhiteSpace(fallback) ? key : fallback) : v;
+    }
+
+    ViewData["Title"] = T("BackOffice.Reviewers.Users.PageTitle", "Hakem Ekle");
+    string? currentCulture = Context.Request.RouteValues["culture"]?.ToString();
+    int rowNumber = 1;
+}
+
+<div class="dashboard-main-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-0">@T("BackOffice.Reviewers.Users.PageTitle", "Hakem Ekle")</h6>
+            <small class="text-neutral-500">@T("BackOffice.Reviewers.Users.Subtitle", "Kullanıcı listesinde arama yapın ve uygun kullanıcıyı hakem havuzuna ekleyin.")</small>
+        </div>
+        <a asp-action="Index" asp-route-culture="@currentCulture" class="btn btn-outline-neutral-900 radius-8 px-20 py-11 d-inline-flex align-items-center gap-2">
+            <i class="ri-arrow-left-line"></i>
+            @T("BackOffice.Reviewers.Users.BackToReviewers", "Hakemlere Dön")
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] is not null)
+    {
+        <div class="alert alert-success border-success-100 text-success-700 mb-24">@TempData["SuccessMessage"]</div>
+    }
+
+    @if (TempData["ErrorMessage"] is not null)
+    {
+        <div class="alert alert-danger border-danger-100 text-danger-700 mb-24">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="card border shadow-none radius-12 mb-24">
+        <div class="card-body">
+            <form asp-action="Users" asp-route-culture="@currentCulture" method="get" class="row gy-3 align-items-end">
+                <div class="col-md-8">
+                    <label class="form-label">@T("BackOffice.Reviewers.Users.SearchLabel", "Hakem yapılacak kullanıcıyı ara")</label>
+                    <input type="text" name="searchText" value="@Model.SearchText" class="form-control" placeholder="Ad, soyad, e-posta, kurum veya ORCID ile ara" />
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary-600 radius-8 px-20 py-11">
+                        <i class="ri-search-line"></i>
+                        @T("Common.Search", "Ara")
+                    </button>
+                    <a asp-action="Users" asp-route-culture="@currentCulture" class="btn btn-outline-neutral-900 radius-8 px-20 py-11">@T("Common.Clear", "Temizle")</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border shadow-none radius-12">
+        <div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div>
+                <h6 class="text-lg mb-0">@T("BackOffice.Reviewers.Users.ResultsTitle", "Kullanıcı Arama Sonuçları")</h6>
+                <small class="text-neutral-500">@T("BackOffice.Reviewers.Users.ResultsSubtitle", "Hakemlik kullanıcı hesabı üzerinden açılır. Bu sayfa menüde ayrı görünmez; Hakem Havuzu içindeki Hakem Ekle akışıdır.")</small>
+            </div>
+            <span class="badge bg-primary-50 text-primary-600 rounded-pill px-12 py-8">@Model.Users.Count kayıt</span>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table bordered-table mb-0">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>@T("BackOffice.Reviewers.Users.ColUser", "Kullanıcı")</th>
+                        <th>@T("Common.Email", "E-posta")</th>
+                        <th>@T("Common.Institution", "Kurum")</th>
+                        <th>ORCID</th>
+                        <th>@T("BackOffice.Reviewers.Users.ColReviewerStatus", "Hakem Durumu")</th>
+                        <th class="text-end">@T("Common.Actions", "İşlem")</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @if (!Model.Users.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-neutral-500 py-24">@T("BackOffice.Reviewers.Users.NoUsers", "Kullanıcı bulunamadı.")</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var user in Model.Users)
+                        {
+                            <tr>
+                                <td>@rowNumber</td>
+                                <td>
+                                    <div class="fw-semibold text-primary-light">@user.FullName</div>
+                                    <small class="text-neutral-500">@user.UserId</small>
+                                </td>
+                                <td>@(user.Email ?? "-")</td>
+                                <td>@(user.Institution ?? "-")</td>
+                                <td>@(user.Orcid ?? "-")</td>
+                                <td>
+                                    @if (user.IsReviewer)
+                                    {
+                                        <span class="badge bg-success-100 text-success-600 rounded-pill">@T("BackOffice.Reviewers.Users.IsReviewer", "Hakem") · @user.ReviewerStatus</span>
+                                    }
+                                    else if (user.IsBlacklisted)
+                                    {
+                                        <span class="badge bg-danger-100 text-danger-600 rounded-pill">@T("BackOffice.Reviewers.Users.Blacklisted", "Kara Liste")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-neutral-200 text-neutral-700 rounded-pill">@T("BackOffice.Reviewers.Users.NotReviewer", "Hakem değil")</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex justify-content-end">
+                                        @if (!user.IsReviewer && !user.IsBlacklisted)
+                                        {
+                                            <form asp-action="CreateFromUser" asp-route-culture="@currentCulture" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="userId" value="@user.UserId" />
+                                                <button type="submit" class="btn btn-primary-600 radius-8 px-12 py-8">
+                                                    <i class="ri-user-star-line"></i>
+                                                    @T("BackOffice.Reviewers.Users.MakeReviewer", "Hakem Yap")
+                                                </button>
+                                            </form>
+                                        }
+                                        else if (user.ReviewerId.HasValue)
+                                        {
+                                            <a asp-action="Details" asp-route-id="@user.ReviewerId" asp-route-culture="@currentCulture" class="btn btn-info-100 text-info-600 radius-8 px-12 py-8">@T("BackOffice.Reviewers.Users.ReviewerDetails", "Hakem Detayı")</a>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+
+                            rowNumber++;
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

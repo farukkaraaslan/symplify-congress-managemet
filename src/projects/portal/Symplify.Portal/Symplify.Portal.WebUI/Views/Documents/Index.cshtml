@@ -1,0 +1,379 @@
+@model DocumentsIndexViewModel
+@{
+    string currentCulture = ViewData["CurrentCulture"] as string ?? "tr-TR";
+    CultureInfo culture = CultureInfo.GetCultureInfo(currentCulture);
+    bool isEnglish = currentCulture.StartsWith("en", StringComparison.OrdinalIgnoreCase);
+    string L(string tr, string en) => isEnglish ? en : tr;
+    string T(string key, string? fallback = null)
+    {
+        string value = Html.Text(key);
+        return string.Equals(value, key, StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(fallback)
+            ? fallback
+            : value;
+    }
+    string cultureQuery = "?culture=" + Uri.EscapeDataString(currentCulture);
+
+    string searchTerm = Context.Request.Query["q"].ToString().Trim();
+    string selectedType = Context.Request.Query["type"].ToString().Trim();
+    string selectedYear = Context.Request.Query["year"].ToString().Trim();
+    string selectedStatus = Context.Request.Query["status"].ToString().Trim();
+    string selectedSort = Context.Request.Query["sort"].ToString().Trim();
+    string currentStatusValue = "current";
+    string archiveStatusValue = "archive";
+    string newestSortValue = "newest";
+    string oldestSortValue = "oldest";
+    string titleSortValue = "title";
+    string pageTitle = string.IsNullOrWhiteSpace(selectedType) ? T("Portal.Documents.PageTitle", L("Evraklar", "Documents")) : selectedType;
+
+    var allDocuments = new List<(PublicDocumentResponse Document, PublicCongressDocumentGroupResponse CongressGroup, bool IsArchive)>();
+
+    if (Model.Data.CurrentCongress.Documents.Count > 0)
+    {
+        allDocuments.AddRange(Model.Data.CurrentCongress.Documents.Select(document =>
+            (Document: document, CongressGroup: Model.Data.CurrentCongress, IsArchive: false)));
+    }
+
+    foreach (var archiveCongress in Model.Data.ArchiveCongresses)
+    {
+        if (archiveCongress.Documents.Count == 0)
+        {
+            continue;
+        }
+
+        allDocuments.AddRange(archiveCongress.Documents.Select(document =>
+            (Document: document, CongressGroup: archiveCongress, IsArchive: true)));
+    }
+
+    var orderedDocuments = allDocuments
+        .OrderBy(item => item.IsArchive)
+        .ThenByDescending(item => item.CongressGroup.StartDate ?? item.CongressGroup.EndDate ?? DateTime.MinValue)
+        .ThenBy(item => item.Document.Order)
+        .ThenBy(item => item.Document.DisplayName)
+        .ToList();
+
+    var years = allDocuments
+        .Select(item => GetDocumentYear(item.CongressGroup))
+        .Where(year => year.HasValue)
+        .Select(year => year!.Value)
+        .Distinct()
+        .OrderByDescending(year => year)
+        .ToList();
+
+    var documentTypes = allDocuments
+        .Select(item => (
+            Value: GetDocumentTypeFilterValue(item.Document),
+            Label: GetDocumentTypeFilterLabel(item.Document),
+            Aliases: GetDocumentTypeAliases(item.Document)))
+        .Where(type => !string.IsNullOrWhiteSpace(type.Value))
+        .GroupBy(type => type.Value, StringComparer.CurrentCultureIgnoreCase)
+        .Select(group => group.First())
+        .OrderBy(type => type.Label)
+        .ToList();
+
+
+    string FormatMonth(DateTime? date)
+    {
+        if (!date.HasValue)
+        {
+            return "---";
+        }
+
+        string month = date.Value.ToString("MMM", culture).Replace(".", string.Empty);
+        return (month.Length <= 3 ? month : month[..3]).ToUpper(culture);
+    }
+
+    string FormatDay(DateTime? date) => date.HasValue ? date.Value.Day.ToString("00", culture) : "--";
+
+    DateTime? GetDocumentDate(PublicCongressDocumentGroupResponse group) => group.StartDate ?? group.EndDate;
+
+    int? GetDocumentYear(PublicCongressDocumentGroupResponse group) => GetDocumentDate(group)?.Year;
+
+    // Filtering must use the real document type name because navigation links use the plural category name.
+    // The card badge can use Description so portal can display the singular label.
+    string GetDocumentTypeFilterValue(PublicDocumentResponse document) => FirstNonEmpty(document.DocumentTypeName, document.DocumentTypeDisplayName, document.DocumentTypeDescription, document.FileExtension, T("Portal.Documents.DefaultType"))!;
+
+    string GetDocumentTypeFilterLabel(PublicDocumentResponse document) => GetDocumentTypeFilterValue(document);
+
+    string GetDocumentTypeBadge(PublicDocumentResponse document) => FirstNonEmpty(document.DocumentTypeDescription, document.DocumentTypeDisplayName, document.DocumentTypeName, document.FileExtension, T("Portal.Documents.DefaultType"))!;
+
+    string GetDocumentTypeAliases(PublicDocumentResponse document)
+    {
+        string[] aliases = new[]
+        {
+            document.DocumentTypeName,
+            document.DocumentTypeDisplayName,
+            document.DocumentTypeDescription,
+            document.FileExtension
+        }
+        .Where(alias => !string.IsNullOrWhiteSpace(alias))
+        .Select(alias => alias!.Trim())
+        .Distinct(StringComparer.CurrentCultureIgnoreCase)
+        .ToArray();
+
+        return aliases.Length == 0 ? GetDocumentTypeFilterValue(document) : string.Join("||", aliases);
+    }
+
+    string? GetDocumentDescription(PublicDocumentResponse document) => FirstNonEmpty(document.Description);
+
+    string GetDocumentTitle(PublicDocumentResponse document) => FirstNonEmpty(document.DisplayName, document.OriginalFileName, T("Portal.Documents.DefaultTitle"))!;
+
+    string? GetDocumentCoverUrl(PublicDocumentResponse document)
+    {
+        if (!string.IsNullOrWhiteSpace(document.CoverImageUrl))
+        {
+            return document.CoverImageUrl;
+        }
+
+        if (!string.IsNullOrWhiteSpace(document.ThumbnailUrl))
+        {
+            return document.ThumbnailUrl;
+        }
+
+        if (!string.IsNullOrWhiteSpace(document.ImageUrl))
+        {
+            return document.ImageUrl;
+        }
+
+        if (!string.IsNullOrWhiteSpace(document.Url) && (document.ContentType?.StartsWith("image/", StringComparison.OrdinalIgnoreCase) ?? false))
+        {
+            return document.Url;
+        }
+
+        return null;
+    }
+
+    string GetTypeColorClass(string type)
+    {
+        string value = type.ToLower(culture);
+
+        if (value.Contains("program", StringComparison.CurrentCultureIgnoreCase))
+        {
+            return "document-card__type--green";
+        }
+
+        if (value.Contains("tam", StringComparison.CurrentCultureIgnoreCase) || value.Contains("full", StringComparison.CurrentCultureIgnoreCase))
+        {
+            return "document-card__type--cyan";
+        }
+
+        if (value.Contains("bildiri", StringComparison.CurrentCultureIgnoreCase) || value.Contains("abstract", StringComparison.CurrentCultureIgnoreCase))
+        {
+            return "document-card__type--orange";
+        }
+
+        if (value.Contains("kitap", StringComparison.CurrentCultureIgnoreCase) || value.Contains("book", StringComparison.CurrentCultureIgnoreCase))
+        {
+            return "document-card__type--purple";
+        }
+
+        if (value.Contains("genel", StringComparison.CurrentCultureIgnoreCase) || value.Contains("general", StringComparison.CurrentCultureIgnoreCase))
+        {
+            return "document-card__type--yellow";
+        }
+
+        return string.Empty;
+    }
+
+    string ToFilterValue(string value) => value.Trim();
+
+    bool IsSelected(string value, string selected) => string.Equals(value, selected, StringComparison.CurrentCultureIgnoreCase);
+
+    bool IsDocumentTypeSelected(string value, string aliases, string selected)
+    {
+        if (string.IsNullOrWhiteSpace(selected))
+        {
+            return false;
+        }
+
+        if (IsSelected(value, selected))
+        {
+            return true;
+        }
+
+        return aliases
+            .Split("||", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(alias => IsSelected(alias, selected));
+    }
+
+    string? FirstNonEmpty(params string?[] values) => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+}
+
+<div class="page-title light-background">
+    <div class="container d-lg-flex justify-content-between align-items-center">
+        <h1 class="mb-2 mb-lg-0">@pageTitle</h1>
+        <nav class="breadcrumbs">
+            <ol>
+                <li><a href="/@(cultureQuery)">@T("Portal.Navigation.Home")</a></li>
+                @if (!string.IsNullOrWhiteSpace(selectedType))
+                {
+                    <li><a href="/documents@(cultureQuery)">@T("Portal.Documents.PageTitle")</a></li>
+                    <li class="current">@selectedType</li>
+                }
+                else
+                {
+                    <li class="current">@T("Portal.Documents.PageTitle")</li>
+                }
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="documents-section section" id="documents" data-documents>
+    <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="documents-toolbar" data-aos="fade-up" data-aos-delay="150">
+            <div class="documents-toolbar__search">
+                <i class="bi bi-search" aria-hidden="true"></i>
+                <input type="search"
+                       class="form-control"
+                       value="@searchTerm"
+                       placeholder='@T("Portal.Documents.SearchPlaceholder")'
+                       aria-label='@T("Portal.Documents.SearchTitle")'
+                       data-documents-search />
+            </div>
+
+            <div class="documents-toolbar__filters">
+                <select class="form-select" aria-label='@T("Portal.Documents.DocumentTypeFilter", L("Doküman türü", "Document type"))' data-documents-filter="type">
+                    <option value="all">@T("Portal.Documents.AllDocumentTypes", L("Doküman Türü", "Document Type"))</option>
+                    @foreach (var type in documentTypes)
+                    {
+                        string value = ToFilterValue(type.Value);
+                        <option value="@value" selected="@IsDocumentTypeSelected(value, type.Aliases, selectedType)">@type.Label</option>
+                    }
+                </select>
+
+                <select class="form-select" aria-label='@T("Portal.Common.SelectYear")' data-documents-filter="year">
+                    <option value="all">@T("Portal.Common.AllYears", L("Tüm Yıllar", "All Years"))</option>
+                    @foreach (int year in years)
+                    {
+                        string value = year.ToString(CultureInfo.InvariantCulture);
+                        <option value="@value" selected="@(selectedYear == value)">@year</option>
+                    }
+                </select>
+
+                <select class="form-select" aria-label='@T("Portal.Documents.StatusFilter", L("Durum", "Status"))' data-documents-filter="status">
+                    <option value="all">@T("Portal.Common.All")</option>
+                    <option value="@currentStatusValue" selected="@IsSelected(selectedStatus, currentStatusValue)">@T("Portal.Documents.Current", L("Güncel", "Current"))</option>
+                    <option value="@archiveStatusValue" selected="@IsSelected(selectedStatus, archiveStatusValue)">@T("Portal.Common.Archive")</option>
+                </select>
+
+                <select class="form-select" aria-label='@T("Portal.Common.Sort", L("Sıralama", "Sort"))' data-documents-sort>
+                    <option value="@newestSortValue" selected="@(string.IsNullOrWhiteSpace(selectedSort) || selectedSort == newestSortValue)">@T("Portal.Documents.SortNewest", L("Yeni → Eski", "Newest First"))</option>
+                    <option value="@oldestSortValue" selected="@(selectedSort == oldestSortValue)">@T("Portal.Documents.SortOldest", L("Eski → Yeni", "Oldest First"))</option>
+                    <option value="@titleSortValue" selected="@(selectedSort == titleSortValue)">@T("Portal.Documents.SortTitle", L("Başlığa Göre", "By Title"))</option>
+                </select>
+            </div>
+
+            <div class="documents-toolbar__views" aria-label='@T("Portal.Documents.ViewMode", L("Görünüm seçimi", "View mode"))'>
+                <button class="documents-view-btn active" type="button" aria-label='@T("Portal.Documents.GridView", L("Kart görünümü", "Grid view"))' aria-pressed="true" data-documents-view="grid">
+                    <i class="bi bi-grid-3x3-gap" aria-hidden="true"></i>
+                </button>
+                <button class="documents-view-btn" type="button" aria-label='@T("Portal.Documents.ListView", L("Liste görünümü", "List view"))' aria-pressed="false" data-documents-view="list">
+                    <i class="bi bi-list-ul" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+
+        @if (allDocuments.Count == 0)
+        {
+            <div class="documents-empty" data-aos="fade-up" data-aos-delay="180">
+                <i class="bi bi-file-earmark-text" aria-hidden="true"></i>
+                <h3>@T("Portal.Documents.NoPublishedTitle")</h3>
+                <p>@T("Portal.Documents.NoPublishedDescription")</p>
+            </div>
+        }
+        else
+        {
+            <div class="documents-summary" data-aos="fade-up" data-aos-delay="170">
+                <span><strong data-documents-count>@orderedDocuments.Count</strong> @T("Portal.Documents.DocumentsShowing", L("evrak gösteriliyor", "documents showing"))</span>
+            </div>
+
+            <div class="documents-layout" data-documents-list data-view="grid">
+                @foreach (var pair in orderedDocuments.Select((item, index) => new { item, index }))
+                {
+                    var document = pair.item.Document;
+                    var congressGroup = pair.item.CongressGroup;
+                    var documentDate = GetDocumentDate(congressGroup);
+                    var documentTypeFilterValue = GetDocumentTypeFilterValue(document);
+                    var documentTypeBadge = GetDocumentTypeBadge(document);
+                    var documentTypeAliases = GetDocumentTypeAliases(document);
+                    var documentTitle = GetDocumentTitle(document);
+                    var documentDescription = GetDocumentDescription(document);
+                    var coverImageUrl = GetDocumentCoverUrl(document);
+                    var congressTitle = FirstNonEmpty(congressGroup.CongressTitle, documentTitle, T("Portal.Documents.DefaultTitle"))!;
+                    var searchText = $"{documentTitle} {documentTypeFilterValue} {documentTypeBadge} {congressTitle} {documentDescription}".Trim();
+                    var year = GetDocumentYear(congressGroup);
+                    var status = pair.item.IsArchive ? "archive" : "current";
+                    var animationDelay = 200 + Math.Min(pair.index, 8) * 20;
+                    string typeColorClass = GetTypeColorClass(documentTypeBadge);
+
+                    <article class="document-card"
+                             data-title="@searchText"
+                             data-type="@ToFilterValue(documentTypeFilterValue)"
+                             data-type-aliases="@documentTypeAliases"
+                             data-year="@(year?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)"
+                             data-status="@status"
+                             data-date="@(documentDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? string.Empty)"
+                             data-aos="fade-up"
+                             data-aos-delay="@animationDelay">
+                        <div class="document-card__date" aria-label="@(documentDate?.ToString("dd MMMM yyyy", culture) ?? string.Empty)">
+                            <strong>@FormatDay(documentDate)</strong>
+                            <span>@FormatMonth(documentDate)</span>
+                            <small>@(year?.ToString(CultureInfo.InvariantCulture) ?? "----")</small>
+                        </div>
+
+                        <div class="document-card__cover @(string.IsNullOrWhiteSpace(coverImageUrl) ? "document-card__cover--empty" : string.Empty)">
+                            @if (!string.IsNullOrWhiteSpace(coverImageUrl))
+                            {
+                                <img src="@coverImageUrl"
+                                     alt="@documentTitle"
+                                     loading="lazy"
+                                     onerror="if(this.parentElement){this.parentElement.classList.add('document-card__cover--empty');} this.remove();" />
+                            }
+                            else
+                            {
+                                <i class="bi bi-file-earmark-text" aria-hidden="true"></i>
+                            }
+                        </div>
+
+                        <div class="document-card__content">
+                            <div class="document-card__topline">
+                                <span class="document-card__type @typeColorClass"><i class="bi bi-file-earmark-text"></i> @documentTypeBadge</span>
+                                <span class="document-card__status @(pair.item.IsArchive ? string.Empty : "document-card__status--current")">
+                                    @(pair.item.IsArchive ? T("Portal.Common.Archive") : T("Portal.Documents.Current", L("Güncel", "Current")))
+                                </span>
+                            </div>
+                            <h2 class="document-card__title">@congressTitle</h2>
+                            @if (!string.IsNullOrWhiteSpace(documentDescription))
+                            {
+                                <p class="document-card__description">@documentDescription</p>
+                            }
+                        </div>
+
+                        <div class="document-card__action">
+                            @if (!string.IsNullOrWhiteSpace(document.Url))
+                            {
+                                <a class="document-download" href="@document.Url" target="_blank" rel="noopener" download>
+                                    <i class="bi bi-download" aria-hidden="true"></i>
+                                    <span>@T("Portal.Documents.DownloadButton")</span>
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="document-download disabled" aria-disabled="true">
+                                    <i class="bi bi-lock" aria-hidden="true"></i>
+                                    <span>@T("Portal.Documents.NoFile")</span>
+                                </span>
+                            }
+                        </div>
+                    </article>
+                }
+            </div>
+
+            <div class="documents-empty" data-documents-empty hidden>
+                <i class="bi bi-search" aria-hidden="true"></i>
+                <h3>@T("Portal.Documents.NoFilterResultTitle")</h3>
+                <p>@T("Portal.Documents.NoFilterResultDescription")</p>
+            </div>
+        }
+    </div>
+</section>

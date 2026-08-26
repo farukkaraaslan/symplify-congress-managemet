@@ -1,0 +1,387 @@
+@model Symplify.BackOffice.WebUI.Models.OrganizationApiKeys.CreateOrganizationApiKeyViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+
+    ViewData["Title"] = L.GetStringValue("BackOffice.OrganizationApiKeys.Create.Title");
+
+    string homeUrl = Url.Action("Index", "Home", new { culture = currentCulture })
+        ?? $"/{currentCulture}/home/index";
+
+    string indexUrl = Url.Action("Index", "OrganizationApiKeys", new { culture = currentCulture, organizationId = Model.OrganizationId })
+        ?? $"/{currentCulture}/organizationapikeys/index?organizationId={Model.OrganizationId}";
+
+    string organizationIndexUrl = Url.Action("Index", "Organizations", new { culture = currentCulture })
+        ?? $"/{currentCulture}/organizations/index";
+
+    string organizationRequiredMessage = L.GetStringValue("BackOffice.OrganizationApiKeys.Validation.OrganizationRequired");
+    string nameRequiredMessage = L.GetStringValue("BackOffice.OrganizationApiKeys.Validation.NameRequired");
+    string environmentRequiredMessage = L.GetStringValue("BackOffice.OrganizationApiKeys.Validation.EnvironmentRequired");
+    string keyTypeRequiredMessage = L.GetStringValue("BackOffice.OrganizationApiKeys.Validation.KeyTypeRequired");
+    string scopeRequiredMessage = L.GetStringValue("BackOffice.OrganizationApiKeys.Validation.ScopeRequired");
+}
+
+<div class="dashboard-main-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-0">@L.GetStringValue("BackOffice.OrganizationApiKeys.Create.Title")</h6>
+            <small class="text-neutral-500">
+                @L.GetStringValue("BackOffice.OrganizationApiKeys.Create.PageDescription")
+            </small>
+        </div>
+
+        <ul class="d-flex align-items-center gap-2">
+            <li class="fw-medium">
+                <a href="@homeUrl"
+                   class="d-flex align-items-center gap-1 hover-text-primary text-neutral-600">
+                    <iconify-icon icon="solar:home-smile-angle-outline" class="icon text-lg"></iconify-icon>
+                    @L.GetStringValue("Common.Panel")
+                </a>
+            </li>
+            <li>-</li>
+            <li class="fw-medium">
+                <a href="@organizationIndexUrl" class="hover-text-primary text-neutral-600">
+                    @L.GetStringValue("BackOffice.Organizations.PageTitle")
+                </a>
+            </li>
+            <li>-</li>
+            <li class="fw-medium">
+                <a href="@indexUrl" class="hover-text-primary text-neutral-600">
+                    @L.GetStringValue("BackOffice.OrganizationApiKeys.PageTitle")
+                </a>
+            </li>
+            <li>-</li>
+            <li class="fw-medium">@L.GetStringValue("BackOffice.OrganizationApiKeys.Create.Title")</li>
+        </ul>
+    </div>
+
+    <div class="alert alert-info bg-primary-50 border-primary-100 text-primary-700 d-flex align-items-start gap-3 mb-24">
+        <i class="ri-information-line text-xl mt-1"></i>
+        <div class="flex-grow-1">
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                <h6 class="text-md mb-0">@Model.OrganizationName</h6>
+
+                @if (!string.IsNullOrWhiteSpace(Model.OrganizationCode))
+                {
+                    <span class="badge bg-primary-100 text-primary-600 rounded-pill px-12 py-6">
+                        @Model.OrganizationCode.ToUpperInvariant()
+                    </span>
+                }
+
+                <span class="badge @(Model.IsOrganizationActive ? "bg-success-100 text-success-600" : "bg-danger-100 text-danger-600") rounded-pill px-12 py-6">
+                    @(Model.IsOrganizationActive
+                        ? L.GetStringValue("BackOffice.Organizations.Status.ActiveOrganization")
+                        : L.GetStringValue("BackOffice.Organizations.Status.PassiveOrganization"))
+                </span>
+            </div>
+
+            <p class="mb-0">
+                @L.GetStringValue("BackOffice.OrganizationApiKeys.Create.ManagementDescription")
+            </p>
+        </div>
+    </div>
+
+    @if (!Model.IsOrganizationActive)
+    {
+        <div class="alert alert-warning bg-warning-100 border-warning-200 text-warning-700 d-flex align-items-start gap-3 mb-24">
+            <i class="ri-alert-line text-xl mt-1"></i>
+            <div>
+                @L.GetStringValue("BackOffice.OrganizationApiKeys.OrganizationInactiveWarning")
+            </div>
+        </div>
+    }
+
+    <form id="organizationApiKeyCreateForm"
+          asp-controller="OrganizationApiKeys"
+          asp-action="Create"
+          asp-route-culture="@currentCulture"
+          method="post"
+          autocomplete="off"
+          novalidate>
+
+        @Html.AntiForgeryToken()
+
+        <input asp-for="OrganizationId"
+               type="hidden"
+               data-val="true"
+               data-val-required="@organizationRequiredMessage" />
+
+        <input asp-for="OrganizationName" type="hidden" />
+        <input asp-for="OrganizationCode" type="hidden" />
+        <input asp-for="IsOrganizationActive" type="hidden" />
+
+        <div class="card border shadow-none radius-12">
+            <div class="card-header border-bottom d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <h6 class="mb-1">@L.GetStringValue("BackOffice.OrganizationApiKeys.Create.FormTitle")</h6>
+                    <small class="text-neutral-500">
+                        @L.GetStringValue("BackOffice.OrganizationApiKeys.Create.FormDescription")
+                    </small>
+                </div>
+
+                <a href="@indexUrl" class="btn btn-outline-neutral-900 radius-8 px-16 py-9 d-inline-flex align-items-center gap-2">
+                    <i class="ri-arrow-left-line"></i>
+                    @L.GetStringValue("Common.Back")
+                </a>
+            </div>
+
+            <div class="card-body">
+                <div class="alert alert-danger d-none js-validation-summary" data-symplify-validation-summary></div>
+
+                <div class="row gy-4">
+                    <div class="col-lg-6">
+                        <label asp-for="Name" class="form-label">
+                            @L.GetStringValue("BackOffice.OrganizationApiKeys.Fields.Name") <required-mark></required-mark>
+                        </label>
+
+                        <input asp-for="Name"
+                               class="form-control radius-8"
+                               maxlength="200"
+                               placeholder="@L.GetStringValue("BackOffice.OrganizationApiKeys.Placeholders.Name")"
+                               data-val="true"
+                               data-val-required="@nameRequiredMessage" />
+
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-lg-3">
+                        <label asp-for="Environment" class="form-label">
+                            @L.GetStringValue("BackOffice.OrganizationApiKeys.Fields.Environment") <required-mark></required-mark>
+                        </label>
+
+                        <select asp-for="Environment"
+                                class="form-select radius-8"
+                                data-val="true"
+                                data-val-required="@environmentRequiredMessage">
+                            <option value="">@L.GetStringValue("Common.Select")</option>
+                            <option value="Production">Production</option>
+                            <option value="Sandbox">Sandbox</option>
+                            <option value="Development">Development</option>
+                        </select>
+
+                        <span asp-validation-for="Environment" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-lg-3">
+                        <label asp-for="KeyType" class="form-label">
+                            @L.GetStringValue("BackOffice.OrganizationApiKeys.Fields.KeyType") <required-mark></required-mark>
+                        </label>
+
+                        <select asp-for="KeyType"
+                                class="form-select radius-8"
+                                data-val="true"
+                                data-val-required="@keyTypeRequiredMessage">
+                            <option value="">@L.GetStringValue("Common.Select")</option>
+                            <option value="SecretKey">SecretKey</option>
+                            <option value="PublicKey">PublicKey</option>
+                            <option value="IntegrationKey">IntegrationKey</option>
+                        </select>
+
+                        <span asp-validation-for="KeyType" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <label asp-for="ExpiresAt" class="form-label">
+                            @L.GetStringValue("BackOffice.OrganizationApiKeys.Fields.ExpiresAt")
+                        </label>
+                        <input asp-for="ExpiresAt" type="date" class="form-control radius-8" />
+                        <span asp-validation-for="ExpiresAt" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-lg-6 d-flex align-items-end">
+                        <div class="form-switch switch-primary d-flex align-items-center gap-3 mb-10">
+                            <input asp-for="IsActive" class="form-check-input" type="checkbox" role="switch" />
+                            <label asp-for="IsActive" class="form-check-label line-height-1 fw-medium text-secondary-light">
+                                @L.GetStringValue("BackOffice.OrganizationApiKeys.Fields.IsActive")
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="Description" class="form-label">
+                            @L.GetStringValue("BackOffice.OrganizationApiKeys.Fields.Description")
+                        </label>
+
+                        <textarea asp-for="Description"
+                                  class="form-control radius-8"
+                                  rows="3"
+                                  maxlength="1000"
+                                  placeholder="@L.GetStringValue("BackOffice.OrganizationApiKeys.Placeholders.Description")"></textarea>
+
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <label asp-for="AllowedIpAddresses" class="form-label">
+                            @L.GetStringValue("BackOffice.OrganizationApiKeys.Fields.AllowedIpAddresses")
+                        </label>
+
+                        <textarea asp-for="AllowedIpAddresses"
+                                  class="form-control radius-8"
+                                  rows="4"
+                                  maxlength="2000"
+                                  placeholder="@L.GetStringValue("BackOffice.OrganizationApiKeys.Placeholders.AllowedIpAddresses")"></textarea>
+
+                        <span asp-validation-for="AllowedIpAddresses" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <label asp-for="AllowedDomains" class="form-label">
+                            @L.GetStringValue("BackOffice.OrganizationApiKeys.Fields.AllowedDomains")
+                        </label>
+
+                        <textarea asp-for="AllowedDomains"
+                                  class="form-control radius-8"
+                                  rows="4"
+                                  maxlength="2000"
+                                  placeholder="@L.GetStringValue("BackOffice.OrganizationApiKeys.Placeholders.AllowedDomains")"></textarea>
+
+                        <span asp-validation-for="AllowedDomains" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">
+                            @L.GetStringValue("BackOffice.OrganizationApiKeys.Fields.Scopes") <required-mark></required-mark>
+                        </label>
+
+                        <div id="organizationApiKeyScopes"
+                             class="row gy-3"
+                             data-required-message="@scopeRequiredMessage">
+
+                            @if (Model.AvailableScopes is { Count: > 0 })
+                            {
+                                foreach (var scope in Model.AvailableScopes)
+                                {
+                                    string scopeId = $"scope_{scope.Value}".Replace(".", "_").Replace(":", "_").Replace("/", "_");
+
+                                    <div class="col-md-6 col-xl-4">
+                                        <div class="border radius-12 p-16 h-100 bg-neutral-50">
+                                            <div class="form-check d-flex align-items-start gap-2 mb-0">
+                                                <input class="form-check-input js-organization-api-key-scope mt-1"
+                                                       type="checkbox"
+                                                       id="@scopeId"
+                                                       name="Scopes"
+                                                       value="@scope.Value"
+                                                       checked="@scope.IsSelected" />
+
+                                                <label class="form-check-label flex-grow-1" for="@scopeId">
+                                                    <span class="fw-semibold d-block text-secondary-light">@scope.Title</span>
+                                                    <code class="text-xs d-block mt-1">@scope.Value</code>
+
+                                                    @if (!string.IsNullOrWhiteSpace(scope.Description))
+                                                    {
+                                                        <span class="d-block text-neutral-500 text-sm mt-1">@scope.Description</span>
+                                                    }
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="col-12">
+                                    <div class="alert alert-warning mb-0">
+                                        @L.GetStringValue("BackOffice.OrganizationApiKeys.Scopes.Empty")
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <span class="text-danger field-validation-valid"
+                              data-valmsg-for="Scopes"
+                              data-valmsg-replace="true"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-footer border-top d-flex flex-wrap justify-content-end gap-2">
+                <a href="@indexUrl" class="btn btn-light-100 text-dark radius-8 px-20 py-11">
+                    @L.GetStringValue("Common.Cancel")
+                </a>
+
+                <button type="submit" class="btn btn-primary-600 radius-8 px-20 py-11 d-inline-flex align-items-center gap-2" data-submit-button>
+                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                    <span class="submit-text">@L.GetStringValue("Common.Save")</span>
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="modal fade"
+     id="oneTimeApiKeyModal"
+     tabindex="-1"
+     aria-labelledby="oneTimeApiKeyModalLabel"
+     aria-hidden="true"
+     data-bs-backdrop="static"
+     data-bs-keyboard="false">
+
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content radius-16">
+            <div class="modal-header border-bottom">
+                <h6 id="oneTimeApiKeyModalLabel" class="modal-title mb-0">
+                    @L.GetStringValue("BackOffice.OrganizationApiKeys.OneTimeKey.Title")
+                </h6>
+            </div>
+
+            <div class="modal-body">
+                <div class="alert alert-warning bg-warning-100 border-warning-200 text-warning-700 d-flex align-items-start gap-3">
+                    <i class="ri-alert-line text-xl mt-1"></i>
+                    <div>
+                        @L.GetStringValue("BackOffice.OrganizationApiKeys.OneTimeKey.Warning")
+                    </div>
+                </div>
+
+                <label class="form-label">
+                    @L.GetStringValue("BackOffice.OrganizationApiKeys.OneTimeKey.Value")
+                </label>
+
+                <div class="input-group">
+                    <input id="oneTimeApiKeyValue"
+                           type="text"
+                           class="form-control font-monospace radius-8"
+                           readonly />
+
+                    <button id="copyOneTimeApiKeyButton"
+                            type="button"
+                            class="btn btn-outline-neutral-900">
+                        <i class="ri-file-copy-line me-1"></i>
+                        @L.GetStringValue("Common.Copy")
+                    </button>
+                </div>
+            </div>
+
+            <div class="modal-footer border-top">
+                <button id="continueAfterApiKeyButton"
+                        type="button"
+                        class="btn btn-primary-600 radius-8 px-20 py-11">
+                    @L.GetStringValue("Common.Continue")
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_LocalizationScripts")
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+
+    <script>
+        window.Symplify = window.Symplify || {};
+        window.Symplify.OrganizationApiKeys = window.Symplify.OrganizationApiKeys || {};
+        window.Symplify.OrganizationApiKeys.texts = Object.assign(window.Symplify.OrganizationApiKeys.texts || {}, {
+            created: window.Symplify.t("BackOffice.OrganizationApiKeys.Messages.Created", "API key oluşturuldu."),
+            copied: window.Symplify.t("Common.Copied", "Kopyalandı."),
+            copyFailed: window.Symplify.t("Common.CopyFailed", "Kopyalama işlemi başarısız oldu."),
+            genericError: window.Symplify.t("Common.GenericError", "İşlem sırasında bir hata oluştu."),
+            invalidRequest: window.Symplify.t("Common.InvalidRequest", "Geçersiz istek."),
+            scopeRequired: window.Symplify.t("BackOffice.OrganizationApiKeys.Validation.ScopeRequired", "En az bir yetki kapsamı seçmelisiniz.")
+        });
+    </script>
+
+    <script src="~/js/features/organization-api-keys/organization-api-keys.create.js" asp-append-version="true"></script>
+    <script src="~/js/features/organization-api-keys/organization-api-keys.index.js" asp-append-version="true"></script>
+}
+

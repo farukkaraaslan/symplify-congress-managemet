@@ -1,0 +1,184 @@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model Symplify.BackOffice.WebUI.Models.CongressPaymentPlans.CreateCongressPaymentPlanViewModel
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+@{
+    string currentCulture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    string defaultLanguageLabel = L.GetStringValue("Common.Default");
+    if (string.IsNullOrWhiteSpace(defaultLanguageLabel) || string.Equals(defaultLanguageLabel, "Common.Default", StringComparison.OrdinalIgnoreCase))
+    {
+        defaultLanguageLabel = "Varsayılan";
+    }
+}
+
+<div class="modal fade" id="createPaymentPlanModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <form id="createCongressPaymentPlanForm"
+              class="modal-content radius-16"
+              asp-controller="CongressPaymentPlans"
+              asp-action="Create"
+              asp-route-culture="@currentCulture"
+              method="post"
+              autocomplete="off">
+            @Html.AntiForgeryToken()
+            <input asp-for="CongressId" type="hidden" />
+
+            <div class="modal-header border-bottom">
+                <div>
+                    <h6 class="modal-title mb-1">@L.GetStringValue("BackOffice.CongressPaymentPlans.Create.Title")</h6>
+                    <small class="text-neutral-500">@L.GetStringValue("BackOffice.CongressPaymentPlans.Create.Description")</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label='@L.GetStringValue("Common.Close")'></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="card border shadow-none mb-4">
+                    <div class="card-header border-bottom">
+                        <h6 class="text-md mb-0">@L.GetStringValue("BackOffice.CongressPaymentPlans.BasicInfo")</h6>
+                    </div>
+                    <div class="card-body row gy-4">
+                        <div class="col-md-6">
+                            <label asp-for="AudienceType" class="form-label">
+                                @L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.AudienceType") <required-mark></required-mark>
+                            </label>
+                            <select asp-for="AudienceType" asp-items="@(new SelectList(Model.AudienceTypeOptions, "Value", "Text", Model.AudienceType))" class="form-control form-select radius-8" data-val="true" data-val-required='@L.GetStringValue("BackOffice.CongressPaymentPlans.Validation.AudienceTypeRequired")'></select>
+                            <span asp-validation-for="AudienceType" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="PaymentCategory" class="form-label">
+                                @L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.PaymentCategory") <required-mark></required-mark>
+                            </label>
+                            <select asp-for="PaymentCategory" asp-items="@(new SelectList(Model.PaymentCategoryOptions, "Value", "Text", Model.PaymentCategory))" class="form-control form-select radius-8" data-val="true" data-val-required='@L.GetStringValue("BackOffice.CongressPaymentPlans.Validation.PaymentCategoryRequired")'></select>
+                            <span asp-validation-for="PaymentCategory" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Amount" class="form-label">
+                                @L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.Amount") <required-mark></required-mark>
+                            </label>
+                            <input asp-for="Amount" class="form-control radius-8" type="number" min="0" step="0.01" data-val="true" data-val-required='@L.GetStringValue("BackOffice.CongressPaymentPlans.Validation.AmountRequired")' />
+                            <span asp-validation-for="Amount" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Currency" class="form-label">
+                                @L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.Currency") <required-mark></required-mark>
+                            </label>
+                            <select asp-for="Currency" asp-items="@(new SelectList(Model.CurrencyOptions, "Value", "Text", Model.Currency))" class="form-control form-select radius-8" data-val="true" data-val-required='@L.GetStringValue("BackOffice.CongressPaymentPlans.Validation.CurrencyRequired")'></select>
+                            <span asp-validation-for="Currency" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Code" class="form-label">@L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.Code")</label>
+                            <input asp-for="Code" class="form-control radius-8" maxlength="128" placeholder="DOMESTIC_PARTICIPATION_TRY" />
+                            <span asp-validation-for="Code" class="text-danger"></span>
+                            <small class="text-neutral-500">@L.GetStringValue("BackOffice.CongressPaymentPlans.Code.Help")</small>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="ValidFromText" class="form-label">@L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.ValidFrom")</label>
+                            <input asp-for="ValidFromText" class="form-control radius-8" type="text" placeholder="gg.aa.yyyy" data-symplify-datetime data-datetime-format="dd.MM.yyyy" />
+                            <span asp-validation-for="ValidFromText" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="ValidUntilText" class="form-label">@L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.ValidUntil")</label>
+                            <input asp-for="ValidUntilText" class="form-control radius-8" type="text" placeholder="gg.aa.yyyy" data-symplify-datetime data-datetime-format="dd.MM.yyyy" />
+                            <span asp-validation-for="ValidUntilText" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="DueDateText" class="form-label">@L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.DueDate")</label>
+                            <input asp-for="DueDateText" class="form-control radius-8" type="text" placeholder="gg.aa.yyyy" data-symplify-datetime data-datetime-format="dd.MM.yyyy" />
+                            <span asp-validation-for="DueDateText" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-switch switch-primary d-flex align-items-center gap-3 mb-0">
+                                <input asp-for="IsPublicVisible" class="form-check-input" type="checkbox" role="switch" />
+                                <label asp-for="IsPublicVisible" class="form-check-label line-height-1 fw-medium text-secondary-light">@L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.IsPublicVisible")</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-switch switch-primary d-flex align-items-center gap-3 mb-0">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" role="switch" />
+                                <label asp-for="IsActive" class="form-check-label line-height-1 fw-medium text-secondary-light">@L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.IsActive")</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border shadow-none">
+                    <div class="card-header border-bottom">
+                        <h6 class="text-md mb-0">@L.GetStringValue("Common.Translations")</h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="nav nav-pills mb-3" role="tablist">
+                                @for (int i = 0; i < Model.Translations.Count; i++)
+                                {
+                                    string paneId = "create-payment-plan-lang-" + i;
+                                    string tabId = paneId + "-tab";
+
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link @(i == 0 ? "active" : string.Empty)"
+                                                id="@tabId"
+                                                data-bs-toggle="pill"
+                                                data-bs-target="#@paneId"
+                                                type="button"
+                                                role="tab"
+                                                aria-controls="@paneId"
+                                                aria-selected="@(i == 0 ? "true" : "false")">
+                                            <span class="d-inline-flex align-items-center gap-2">
+                                                <span>@Model.Translations[i].LanguageName</span>
+                                                @if (Model.Translations[i].IsDefault)
+                                                {
+                                                    <span class="badge bg-primary-50 text-primary-600 rounded-pill">@defaultLanguageLabel</span>
+                                                }
+                                            </span>
+                                        </button>
+                                    </li>
+                                }
+                            </ul>
+
+                        <div class="tab-content">
+                            @for (int i = 0; i < Model.Translations.Count; i++)
+                            {
+                                <div class="tab-pane fade @(i == 0 ? "show active" : null)" id="create-payment-plan-lang-@i" role="tabpanel" aria-labelledby="create-payment-plan-lang-@i-tab" tabindex="0">
+                                    <input asp-for="Translations[i].LanguageId" type="hidden" />
+                                    <input asp-for="Translations[i].Culture" type="hidden" />
+                                    <input asp-for="Translations[i].LanguageName" type="hidden" />
+                                    <input asp-for="Translations[i].IsDefault" type="hidden" />
+                                    <input asp-for="Translations[i].Exists" type="hidden" />
+
+                                    <div class="row gy-3">
+                                        <div class="col-12">
+                                            <label asp-for="Translations[i].Name" class="form-label">
+                                                @L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.Name")
+                                                <required-mark visible="@Model.Translations[i].IsDefault"></required-mark>
+                                            </label>
+                                            <input asp-for="Translations[i].Name" class="form-control radius-8" maxlength="200" placeholder='@L.GetStringValue("BackOffice.CongressPaymentPlans.Placeholders.Name")' />
+                                            <span asp-validation-for="Translations[i].Name" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label asp-for="Translations[i].Description" class="form-label">@L.GetStringValue("BackOffice.CongressPaymentPlans.Fields.Description")</label>
+                                            <textarea asp-for="Translations[i].Description" class="form-control radius-8" rows="3" maxlength="1000" placeholder='@L.GetStringValue("BackOffice.CongressPaymentPlans.Placeholders.Description")'></textarea>
+                                            <span asp-validation-for="Translations[i].Description" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer border-top">
+                <button type="button" class="btn btn-light-100 text-dark radius-8 px-20 py-11" data-bs-dismiss="modal">@L.GetStringValue("Common.Cancel")</button>
+                <button type="submit" class="btn btn-primary-600 radius-8 px-20 py-11">@L.GetStringValue("BackOffice.CongressPaymentPlans.Buttons.Save")</button>
+            </div>
+        </form>
+    </div>
+</div>
+

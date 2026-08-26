@@ -1,0 +1,14 @@
+@model string
+@inject Symplify.BackOffice.WebUI.Localization.IBackOfficeViewLocalizer L
+
+<div class="card border shadow-none mb-4">
+    <div class="card-body">
+        <div class="alert alert-info bg-primary-50 border-primary-100 text-primary-700 d-flex align-items-start gap-3 mb-0">
+            <i class="ri-information-line text-xl mt-1"></i>
+            <div>
+                <h6 class="text-md mb-1">@Model</h6>
+                <p class="mb-0">@L["BackOffice.Congresses.Manage.PlaceholderDescription"]</p>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,18 @@
+@use "../abstracts" as a;
+
+section,
+.section {
+  color: var(--default-color);
+  background-color: var(--background-color);
+  padding: 60px 0;
+  scroll-margin-top: 90px;
+  overflow-x: clip;
+  overflow-y: visible;
+}
+
+@include a.mq-down(xl) {
+  section,
+  .section {
+    scroll-margin-top: 66px;
+  }
+}

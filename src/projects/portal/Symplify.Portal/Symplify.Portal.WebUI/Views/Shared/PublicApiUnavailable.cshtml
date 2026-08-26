@@ -1,0 +1,62 @@
+@using Symplify.Portal.WebUI.Models.PublicSite
+@{
+    var shell = ViewData["Shell"] as PublicSiteBootstrapResponse ?? new PublicSiteBootstrapResponse();
+    string currentCulture = ViewData["CurrentCulture"] as string ?? Context.Request.Query["culture"].FirstOrDefault() ?? "tr-TR";
+    string cultureQuery = "?culture=" + Uri.EscapeDataString(currentCulture);
+    string retryUrl = Context.Request.Path + cultureQuery;
+    string homeUrl = "/" + cultureQuery;
+
+    string T(string key) => Html.Text(key);
+
+    string pageTitle = T("Portal.Error.UnavailableTitle");
+    string breadcrumb = T("Portal.Common.ServiceStatus");
+    string heading = T("Portal.Error.UnavailableHeading");
+    string description = T("Portal.Error.UnavailableDescription");
+    string supportText = T("Portal.Error.UnavailableSupportText");
+    string retryText = T("Portal.Common.TryAgain");
+    string homeText = T("Portal.Common.BackToHome");
+    string homeLabel = T("Portal.Navigation.Home");
+
+    ViewData["Title"] = pageTitle;
+    ViewData["BodyClass"] = ViewData["BodyClass"] as string ?? "service-unavailable-page";
+}
+
+<div class="page-title light-background">
+    <div class="container d-lg-flex justify-content-between align-items-center">
+        <h1 class="mb-2 mb-lg-0">@pageTitle</h1>
+        <nav class="breadcrumbs">
+            <ol>
+                <li><a href="@homeUrl">@homeLabel</a></li>
+                <li class="current">@breadcrumb</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-xl-7">
+                <div class="card border-0 shadow-sm text-center">
+                    <div class="card__body p-4 p-lg-5">
+                        <div class="card__icon mx-auto mb-4">
+                            <i class="bi bi-cloud-slash"></i>
+                        </div>
+                        <h2 class="h3 fw-bold mb-3">@heading</h2>
+                        <p class="card__desc mb-3">@description</p>
+                        <p class="text-muted mb-4">@supportText</p>
+
+                        <div class="d-flex flex-column flex-sm-row justify-content-center gap-2">
+                            <a class="btn btn-primary" href="@retryUrl">
+                                <i class="bi bi-arrow-clockwise me-1"></i>@retryText
+                            </a>
+                            <a class="btn btn-outline-primary" href="@homeUrl">
+                                <i class="bi bi-house me-1"></i>@homeText
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

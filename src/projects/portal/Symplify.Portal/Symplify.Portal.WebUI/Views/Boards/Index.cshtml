@@ -1,0 +1,214 @@
+@model BoardsIndexViewModel
+@{
+    string currentCulture = ViewData["CurrentCulture"] as string ?? "tr-TR";
+    string T(string key) => Html.Text(key);
+    string cultureQuery = "?culture=" + Uri.EscapeDataString(currentCulture);
+    ViewData["Title"] = T("Portal.Boards.PageTitle");
+    ViewData["SeoTitle"] = T("Portal.Boards.PageTitle");
+    ViewData["SeoDescription"] = T("Portal.Boards.SeoDescription");
+
+    string MemberInitials(PublicBoardMemberResponse member)
+    {
+        if (string.IsNullOrWhiteSpace(member.FullName))
+            return "?";
+
+        var ignoredWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Prof", "Prof.", "Dr", "Dr.", "Doç", "Doç.", "Doc", "Doc.",
+            "Assoc", "Assoc.", "Asst", "Asst.", "Öğr", "Öğr.", "Üyesi",
+            "Arş", "Arş.", "Gör", "Gör.", "Uzm", "Uzm.", "Dt", "Dt.",
+            "Instructor", "Lecturer", "PhD", "Ph.D.", "MSc"
+        };
+
+        var parts = member.FullName
+            .Replace(",", " ")
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(part => part.Trim())
+            .Where(part => part.Any(char.IsLetter))
+            .Where(part => !ignoredWords.Contains(part))
+            .ToArray();
+
+        if (parts.Length == 0)
+            return "?";
+
+        var culture = new System.Globalization.CultureInfo("tr-TR");
+        var firstInitial = parts[0].Substring(0, 1);
+        var lastInitial = parts.Length > 1 ? parts[^1].Substring(0, 1) : string.Empty;
+
+        return (firstInitial + lastInitial).ToUpper(culture);
+    }
+
+    string MemberTitle(PublicBoardMemberResponse member)
+    {
+        return !string.IsNullOrWhiteSpace(member.AcademicTitleShortName)
+            ? member.AcademicTitleShortName!
+            : member.AcademicTitle ?? string.Empty;
+    }
+
+    string MemberDisplayName(PublicBoardMemberResponse member)
+    {
+        string title = MemberTitle(member);
+
+        if (string.IsNullOrWhiteSpace(title))
+            return member.FullName;
+
+        if (member.FullName.StartsWith(title, StringComparison.OrdinalIgnoreCase))
+            return member.FullName;
+
+        return $"{title} {member.FullName}".Trim();
+    }
+
+    string? MemberRole(PublicBoardMemberResponse member)
+    {
+        if (!string.IsNullOrWhiteSpace(member.Role))
+            return member.Role;
+
+        return !string.IsNullOrWhiteSpace(member.Biography)
+            ? member.Biography
+            : null;
+    }
+
+    string? MemberInstitution(PublicBoardMemberResponse member)
+    {
+        return !string.IsNullOrWhiteSpace(member.Institution)
+            ? member.Institution
+            : null;
+    }
+}
+
+<div class="page-title light-background">
+    <div class="container d-lg-flex justify-content-between align-items-center">
+        <h1 class="mb-2 mb-lg-0">@T("Portal.Boards.PageTitle")</h1>
+        <nav class="breadcrumbs">
+            <ol>
+                <li><a href="/@(cultureQuery)">@T("Portal.Navigation.Home")</a></li>
+                <li class="current">@T("Portal.Boards.PageTitle")</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container" data-aos="fade-up" data-aos-delay="100">
+        @if (Model.Data.Boards.Count == 0)
+        {
+            <div class="card card--member">
+                <div class="card__body text-center p-4">
+                    <div class="avatar avatar--md mx-auto mb-3">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <h2 class="h5 fw-bold mb-2">@T("Portal.Boards.EmptyTitle")</h2>
+                    <p class="text-muted mb-0">@T("Portal.Boards.EmptyDescription")</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            var boards = Model.Data.Boards
+                .OrderBy(board => board.Order <= 0 ? int.MaxValue : board.Order)
+                .ThenBy(board => board.Name)
+                .ToArray();
+
+            <div class="row g-4">
+                <div class="col-lg-4 col-xl-3">
+                    <div class="tabs">
+                        <div id="boardsNav" class="tabs__nav nav nav-pills flex-lg-column" role="tablist" aria-label='@T("Portal.Boards.PageTitle")'>
+                            @for (int i = 0; i < boards.Length; i++)
+                            {
+                                var board = boards[i];
+                                <button class="nav-link @(i == 0 ? "active" : string.Empty)"
+                                        id="boards-tab-@i"
+                                        data-bs-toggle="pill"
+                                        data-bs-target="#boards-pane-@i"
+                                        type="button"
+                                        role="tab"
+                                        aria-controls="boards-pane-@i"
+                                        aria-selected="@(i == 0 ? "true" : "false")">
+                                    <span class="tabs__num">@(i + 1)</span>
+                                    <span class="tabs__label">@board.Name</span>
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-8 col-xl-9">
+                    <div class="tabs__content tab-content">
+                        @for (int i = 0; i < boards.Length; i++)
+                        {
+                            var board = boards[i];
+                            var members = board.Members
+                                .OrderBy(member => member.Order <= 0 ? int.MaxValue : member.Order)
+                                .ThenBy(member => member.FullName)
+                                .ToArray();
+
+                            <div class="tab-pane fade @(i == 0 ? "show active" : string.Empty)"
+                                 id="boards-pane-@i"
+                                 role="tabpanel"
+                                 aria-labelledby="boards-tab-@i"
+                                 tabindex="0">
+                                <h2 class="h5 fw-bold mb-3">@board.Name</h2>
+
+                                @if (!string.IsNullOrWhiteSpace(board.Description))
+                                {
+                                    <p class="text-muted mb-4">@board.Description</p>
+                                }
+
+                                @if (members.Length == 0)
+                                {
+                                    <div class="card card--member">
+                                        <div class="card__body">
+                                            <div class="text-muted">@T("Portal.Boards.EmptyMembers")</div>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="row g-3">
+                                        @foreach (var pair in members.Select((member, index) => new { member, index }))
+                                        {
+                                            <div class="col-md-6 col-lg-4">
+                                                <div class="card card--member">
+                                                    <div class="card__body d-flex align-items-center gap-3">
+                                                        <div class="avatar avatar--md" aria-label="@pair.member.FullName">
+                                                            @if (!string.IsNullOrWhiteSpace(pair.member.ImageUrl))
+                                                            {
+                                                                <img class="avatar__img"
+                                                                     src="@pair.member.ImageUrl"
+                                                                     alt=""
+                                                                     loading="lazy"
+                                                                     onerror="this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none');">
+                                                                <span class="avatar__fallback d-none">@MemberInitials(pair.member)</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="avatar__fallback">@MemberInitials(pair.member)</span>
+                                                            }
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <div class="card__title mb-1">@MemberDisplayName(pair.member)</div>
+                                                            @if (!string.IsNullOrWhiteSpace(MemberRole(pair.member)))
+                                                            {
+                                                                <div class="fw-semibold text-primary">@MemberRole(pair.member)</div>
+                                                            }
+                                                            @if (!string.IsNullOrWhiteSpace(MemberInstitution(pair.member)))
+                                                            {
+                                                                <div class="board-member-institution mt-1">
+                                                                    <i class="bi bi-building me-1"></i>@MemberInstitution(pair.member)
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</section>

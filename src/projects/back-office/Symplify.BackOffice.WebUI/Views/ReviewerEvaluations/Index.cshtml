@@ -1,0 +1,198 @@
+@using Symplify.BackOffice.Application.Features.ReviewerEvaluations.Constants
+@using Symplify.BackOffice.Application.Features.ReviewerEvaluations.Queries.GetList
+@using Symplify.BackOffice.WebUI.Localization
+@using Symplify.BackOffice.WebUI.Models.ReviewerEvaluations
+@model ReviewerEvaluationIndexViewModel
+@inject IBackOfficeViewLocalizer L
+
+@{
+    ViewData["Title"] = L.GetStringValue(ReviewerEvaluationResourceKeys.IndexPageTitle);
+    ViewData["ClientResourcePrefixes"] = new[] { "BackOffice.ReviewerEvaluations." };
+    string? currentCulture = Context.Request.RouteValues["culture"]?.ToString();
+
+    Guid routeTemplateId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+    string routeTemplateToken = routeTemplateId.ToString();
+    string getListUrl = Url.Action("GetList", "ReviewerEvaluations", new { culture = currentCulture }) ?? $"/{currentCulture}/reviewer-evaluations/get-list";
+    string evaluateUrlTemplate = (Url.Action("Evaluate", "ReviewerEvaluations", new { culture = currentCulture, id = routeTemplateId }) ?? $"/{currentCulture}/reviewer-evaluations/{routeTemplateToken}").Replace(routeTemplateToken, "__id__");
+}
+
+<div class="dashboard-main-body">
+@Html.AntiForgeryToken()
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+            <h6 class="fw-semibold mb-0">@L[ReviewerEvaluationResourceKeys.IndexTitle]</h6>
+            <small class="text-neutral-500">@L[ReviewerEvaluationResourceKeys.IndexSubtitle]</small>
+        </div>
+        <ul class="d-flex align-items-center gap-2 mb-0 list-unstyled">
+            <li class="fw-medium">
+                <a class="d-flex align-items-center gap-1 hover-text-primary text-neutral-600" href="@Url.Action("Index", "Home", new { culture = currentCulture })">
+                    <iconify-icon class="icon text-lg" icon="solar:home-smile-angle-outline"></iconify-icon>
+                    @T("Common.Panel")
+                </a>
+            </li>
+            <li>-</li>
+            <li class="fw-medium">@L[ReviewerEvaluationResourceKeys.IndexTitle]</li>
+        </ul>
+    </div>
+
+    @if (TempData["SuccessMessage"] is not null)
+    {
+        <div class="alert alert-success border-success-100 text-success-700 mb-24">@T(TempData["SuccessMessage"]?.ToString())</div>
+    }
+
+    @if (TempData["ErrorMessage"] is not null)
+    {
+        <div class="alert alert-danger border-danger-100 text-danger-700 mb-24">@T(TempData["ErrorMessage"]?.ToString())</div>
+    }
+
+    <div class="alert alert-info bg-primary-50 border-primary-100 text-primary-700 d-flex align-items-start gap-3 mb-24">
+        <i class="ri-information-line text-xl mt-1"></i>
+        <div>
+            <h6 class="text-md mb-1">@L[ReviewerEvaluationResourceKeys.InfoTitle]</h6>
+            <p class="mb-0">@L[ReviewerEvaluationResourceKeys.InfoDescription]</p>
+        </div>
+    </div>
+
+    <div class="row gy-4 mb-24" id="reviewerEvaluationStats">
+        @RenderStat("total", ReviewerEvaluationResourceKeys.StatAssigned, Model.Evaluations.TotalCount, "bg-primary-50 text-primary-600", "ri-file-list-3-line")
+        @RenderStat("pending", ReviewerEvaluationResourceKeys.StatPending, Model.Evaluations.PendingCount, "bg-warning-100 text-warning-600", "ri-time-line")
+        @RenderStat("completed", ReviewerEvaluationResourceKeys.StatCompleted, Model.Evaluations.CompletedCount, "bg-success-100 text-success-600", "ri-check-line")
+        @RenderStat("dueSoon", ReviewerEvaluationResourceKeys.StatDueSoon, Model.Evaluations.DueSoonCount, "bg-danger-100 text-danger-600", "ri-alarm-warning-line")
+    </div>
+
+    <div class="card border shadow-none radius-12 mb-24" id="reviewerEvaluationFilters">
+        <div class="card-header border-bottom">
+            <h6 class="text-md mb-0">@L[ReviewerEvaluationResourceKeys.FiltersTitle]</h6>
+        </div>
+        <div class="card-body">
+            <div class="row gy-3 align-items-end">
+                <div class="col-md-6 col-xl-3">
+                    <label class="form-label" for="reviewerEvaluationSearchText">@L[ReviewerEvaluationResourceKeys.SearchLabel]</label>
+                    <input id="reviewerEvaluationSearchText"
+                           type="text"
+                           name="searchText"
+                           value="@Model.SearchText"
+                           class="form-control js-reviewer-evaluation-filter"
+                           placeholder="@L[ReviewerEvaluationResourceKeys.SearchPlaceholder]" />
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <label class="form-label" for="reviewerEvaluationCongressId">@L[ReviewerEvaluationResourceKeys.FilterCongress]</label>
+                    <select id="reviewerEvaluationCongressId" name="congressId" class="form-select js-reviewer-evaluation-filter">
+                        <option value="">@L[ReviewerEvaluationResourceKeys.AllPublishedCongresses]</option>
+                        @foreach (ReviewerEvaluationFilterOptionViewModel option in Model.FilterOptions.Congresses)
+                        {
+                            <option value="@option.Value" selected="@(Model.CongressId?.ToString() == option.Value)">@option.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6 col-xl-2">
+                    <label class="form-label" for="reviewerEvaluationStatus">@L[ReviewerEvaluationResourceKeys.FilterStatus]</label>
+                    <select id="reviewerEvaluationStatus" name="status" class="form-select js-reviewer-evaluation-filter">
+                        <option value="">@L[ReviewerEvaluationResourceKeys.AllStatuses]</option>
+                        @foreach (ReviewerEvaluationFilterOptionViewModel option in Model.FilterOptions.Statuses)
+                        {
+                            <option value="@option.Value" selected="@(string.Equals(Model.Status, option.Value, StringComparison.OrdinalIgnoreCase))">@T(option.Text)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6 col-xl-2">
+                    <label class="form-label" for="reviewerEvaluationTopicId">@L[ReviewerEvaluationResourceKeys.FilterTopic]</label>
+                    <select id="reviewerEvaluationTopicId" name="topicId" class="form-select js-reviewer-evaluation-filter">
+                        <option value="">@L[ReviewerEvaluationResourceKeys.AllTopics]</option>
+                        @foreach (ReviewerEvaluationFilterOptionViewModel option in Model.FilterOptions.Topics)
+                        {
+                            <option value="@option.Value" selected="@(Model.TopicId?.ToString() == option.Value)">@option.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6 col-xl-2">
+                    <label class="form-label" for="reviewerEvaluationSubmissionTypeId">@L[ReviewerEvaluationResourceKeys.FilterSubmissionType]</label>
+                    <select id="reviewerEvaluationSubmissionTypeId" name="submissionTypeId" class="form-select js-reviewer-evaluation-filter">
+                        <option value="">@L[ReviewerEvaluationResourceKeys.AllSubmissionTypes]</option>
+                        @foreach (ReviewerEvaluationFilterOptionViewModel option in Model.FilterOptions.SubmissionTypes)
+                        {
+                            <option value="@option.Value" selected="@(Model.SubmissionTypeId?.ToString() == option.Value)">@option.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12 d-flex justify-content-end">
+                    <button id="reviewerEvaluationResetFilters" type="button" class="btn btn-outline-neutral-600 radius-8 px-20 py-11 d-flex align-items-center justify-content-center gap-2 min-w-220-px">
+                        <i class="ri-refresh-line"></i>
+                        @L[ReviewerEvaluationResourceKeys.ResetFilters]
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border shadow-none radius-12">
+        <div class="card-header border-bottom d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div>
+                <h6 class="text-lg mb-0">@L[ReviewerEvaluationResourceKeys.ListTitle]</h6>
+                <small class="text-neutral-500">@L[ReviewerEvaluationResourceKeys.ListSubtitle]</small>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table bordered-table mb-0 js-reviewer-evaluations-data-table"
+                       id="reviewerEvaluationsTable"
+                       data-source-url="@getListUrl"
+                       data-evaluate-url-template="@evaluateUrlTemplate"
+                       data-filters-container="#reviewerEvaluationFilters"
+                       data-stats-container="#reviewerEvaluationStats"
+                       data-blind-review-text="@L[ReviewerEvaluationResourceKeys.BlindReviewShort]"
+                       data-due-today-text="@L[ReviewerEvaluationResourceKeys.DueToday]"
+                       data-due-overdue-text="@L[ReviewerEvaluationResourceKeys.DueOverdue]"
+                       data-due-remaining-format="@T(ReviewerEvaluationResourceKeys.DueRemainingFormat)">
+                    <thead>
+                    <tr>
+                        <th>@L[ReviewerEvaluationResourceKeys.ColumnAction]</th>
+                        <th>@L[ReviewerEvaluationResourceKeys.ColumnSubmissionNumber]</th>
+                        <th>@L[ReviewerEvaluationResourceKeys.ColumnType]</th>
+                        <th>@L[ReviewerEvaluationResourceKeys.ColumnTitle]</th>
+                        <th>@L[ReviewerEvaluationResourceKeys.ColumnTopic]</th>
+                        <th>@L[ReviewerEvaluationResourceKeys.ColumnCongress]</th>
+                        <th>@L[ReviewerEvaluationResourceKeys.ColumnAssignedAt]</th>
+                        <th>@L[ReviewerEvaluationResourceKeys.ColumnDueDate]</th>
+                        <th>@L[ReviewerEvaluationResourceKeys.ColumnStatus]</th>
+                        <th>@L[ReviewerEvaluationResourceKeys.ColumnRecommendation]</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string T(string? key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+            return string.Empty;
+
+        return L.GetStringValue(key);
+    }
+
+    private Microsoft.AspNetCore.Html.IHtmlContent RenderStat(string statKey, string labelKey, int count, string iconClass, string icon)
+    {
+        string html = $@"<div class=""col-sm-6 col-xl"">
+        <div class=""card border shadow-none h-100"">
+            <div class=""card-body d-flex align-items-center justify-content-between gap-3"">
+                <div>
+                    <span class=""text-sm text-neutral-500 d-block mb-1"">{System.Net.WebUtility.HtmlEncode(T(labelKey))}</span>
+                    <h5 class=""mb-0"" data-stat-count=""{System.Net.WebUtility.HtmlEncode(statKey)}"">{count}</h5>
+                </div>
+                <span class=""w-48-px h-48-px {iconClass} rounded-circle d-flex align-items-center justify-content-center text-xl""><i class=""{icon}""></i></span>
+            </div>
+        </div>
+    </div>";
+        return new Microsoft.AspNetCore.Html.HtmlString(html);
+    }
+}
+
+@section Scripts {
+    @await Html.PartialAsync("_LocalizationScripts")
+    <script src="~/js/features/reviewer-evaluations/reviewer-evaluations.table.js" asp-append-version="true"></script>
+}

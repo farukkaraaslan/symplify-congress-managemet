@@ -1,0 +1,591 @@
+@using System.Globalization
+@using Symplify.BackOffice.Application.Features.Submissions.Constants
+@using Symplify.BackOffice.Application.Features.Submissions.Queries.GetById
+@using Symplify.BackOffice.Domain.Enums
+@using Symplify.BackOffice.WebUI.Localization
+@model GetByIdSubmissionResponse
+@inject IBackOfficeViewLocalizer L
+
+@{
+    string T(string key, string fallback)
+    {
+        var value = L.GetStringValue(key);
+        return string.IsNullOrWhiteSpace(value) || string.Equals(value, key, StringComparison.OrdinalIgnoreCase)
+            ? fallback
+            : value;
+    }
+
+    string TDetail(string key) => L.GetStringValue(key);
+
+    ViewData["Title"] = Model.IsExhibitionApplication
+        ? T(SubmissionDetailResourceKeys.ExhibitionPageTitle, "Sergi Başvurusu Detayı")
+        : T(SubmissionDetailResourceKeys.PageTitle, "Bildiri Detayı");
+    ViewData["ClientResourcePrefixes"] = new[] { "BackOffice.Submissions.Detail.", "Common." };
+    ViewData["SuppressSidebar"] = true;
+    ViewData["UseAuthorTemplate"] = true;
+
+    string culture = Context.Request.RouteValues["culture"]?.ToString() ?? CultureInfo.CurrentUICulture.Name;
+    string backUrl = Url.Action("Index", "Submissions", new { culture }) ?? $"/{culture}/submissions";
+    string submissionNumber = string.IsNullOrWhiteSpace(Model.SubmissionNumber)
+        ? Model.Id.ToString("N")[..8].ToUpperInvariant()
+        : Model.SubmissionNumber;
+    string title = ResolveDisplayTitle();
+    string subtitle = string.Join(" • ", new[]
+    {
+        $"{T(SubmissionDetailResourceKeys.SubmissionNumber, "Bildiri No")}: {submissionNumber}",
+        Model.SubmissionTypeName,
+        Model.CongressName
+    }.Where(value => !string.IsNullOrWhiteSpace(value)));
+    string statusName = string.IsNullOrWhiteSpace(Model.TransactionStatusName)
+        ? (Model.IsSubmitted ? T(SubmissionDetailResourceKeys.StatusSubmitted, "Gönderildi") : T(SubmissionDetailResourceKeys.StatusDraft, "Taslak"))
+        : Model.TransactionStatusName;
+    string paymentStatusName = string.IsNullOrWhiteSpace(Model.PaymentStatusName) ? "-" : Model.PaymentStatusName;
+    bool showPaymentStatus = paymentStatusName != "-";
+    bool canEdit = Model.CanEdit;
+    var visibleFiles = Model.Files.Where(file => file.IsActive).OrderByDescending(file => file.DisplayDate ?? file.UploadedAt).ToList();
+    var latestAcceptanceLetters = visibleFiles.Where(file => file.FileKind == SubmissionFileKind.AcceptanceLetter).ToList();
+    var downloadableFiles = visibleFiles.ToList();
+}
+
+<div class="author-container">
+    @if (TempData["SuccessMessage"] is not null)
+    {
+        <div data-symplify-toast data-toast-icon="success" data-toast-title="@TempData["SuccessMessage"]"></div>
+    }
+
+    @if (TempData["ErrorMessage"] is not null)
+    {
+        <div data-symplify-toast data-toast-icon="error" data-toast-title="@TempData["ErrorMessage"]"></div>
+    }
+
+    <div class="author-page-head">
+        <div>
+            <span class="author-kicker"><i class="ri-eye-line"></i> @T(SubmissionDetailResourceKeys.PageTitle, "Bildiri Detayı")</span>
+            <h1 class="author-title h4">@title</h1>
+            <p class="author-subtitle">@subtitle</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="@backUrl" class="btn btn-outline-primary-600 radius-10 px-16 py-10"><i class="ri-arrow-left-line me-1"></i> @T(SubmissionDetailResourceKeys.BackToList, "Listeye Dön")</a>
+            @if (canEdit)
+            {
+                <a asp-action="Edit" asp-route-culture="@culture" asp-route-id="@Model.Id" class="btn btn-primary-600 radius-10 px-16 py-10"><i class="ri-edit-2-line me-1"></i> @T(SubmissionDetailResourceKeys.Edit, "Düzenle")</a>
+            }
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-xl-8">
+            <section class="card border-0 radius-12 mb-24">
+                <div class="card-header bg-base border-bottom py-16 px-24 d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                    <div><h5 class="fw-semibold mb-1">@T(SubmissionDetailResourceKeys.SubmissionInfo, "Bildiri Özeti")</h5></div>
+                    <div class="d-flex gap-2 flex-wrap justify-content-end">
+                        <span class="@ToStatusPillClass(Model.TransactionStatusBadgeClass)"><i class="ri-check-line"></i> @statusName</span>
+                        @if (showPaymentStatus)
+                        {
+                            <span class="@ToStatusPillClass(Model.PaymentStatusBadgeClass)"><i class="ri-bank-card-line"></i> @paymentStatusName</span>
+                        }
+                    </div>
+                </div>
+                <div class="card-body p-24">
+                    <div class="row g-3 mb-24">
+                        <div class="col-md-4">
+                            <div class="help-box"><span class="text-neutral-500 text-xs">@T(SubmissionDetailResourceKeys.StatSubmittedAt, "Gönderim Tarihi")</span><h6 class="text-sm mb-0 mt-1">@FormatDate(Model.SubmittedAt ?? Model.CreatedDate)</h6></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="help-box"><span class="text-neutral-500 text-xs">@T(SubmissionDetailResourceKeys.SubmissionType, "Bildiri Türü")</span><h6 class="text-sm mb-0 mt-1">@Model.SubmissionTypeName</h6></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="help-box"><span class="text-neutral-500 text-xs">@T(SubmissionDetailResourceKeys.PresentationLanguage, "Dil")</span><h6 class="text-sm mb-0 mt-1">@Model.LanguageName</h6></div>
+                        </div>
+                    </div>
+
+                    @if (Model.IsExhibitionApplication && Model.ExhibitionDetail is not null)
+                    {
+                        <h6 class="mb-2">@T(SubmissionDetailResourceKeys.ExhibitionSectionTitle, "Sergi Bilgileri")</h6>
+                        <div class="row g-3 mb-16">
+                            <div class="col-md-6"><div class="help-box"><span class="text-neutral-500 text-xs">@T(SubmissionDetailResourceKeys.ExhibitionWorkName, "Eser Adı")</span><h6 class="text-sm mb-0 mt-1">@Model.ExhibitionDetail.WorkName</h6></div></div>
+                            <div class="col-md-6"><div class="help-box"><span class="text-neutral-500 text-xs">@T(SubmissionDetailResourceKeys.ExhibitionTechnique, "Teknik")</span><h6 class="text-sm mb-0 mt-1">@Model.ExhibitionDetail.Technique</h6></div></div>
+                            <div class="col-md-6"><div class="help-box"><span class="text-neutral-500 text-xs">@T(SubmissionDetailResourceKeys.ExhibitionDimensions, "Ölçüler")</span><h6 class="text-sm mb-0 mt-1">@(string.IsNullOrWhiteSpace(Model.ExhibitionDetail.Dimensions) ? "-" : Model.ExhibitionDetail.Dimensions)</h6></div></div>
+                            <div class="col-md-6"><div class="help-box"><span class="text-neutral-500 text-xs">@T(SubmissionDetailResourceKeys.ExhibitionAddress, "Adres")</span><h6 class="text-sm mb-0 mt-1">@Model.ExhibitionDetail.Address</h6></div></div>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(Model.ExhibitionDetail.Description))
+                        {
+                            <div class="text-neutral-600 mb-16 author-rich-content">@Html.Raw(Model.ExhibitionDetail.Description)</div>
+                        }
+                    }
+                    else
+                    {
+                        <h6 class="mb-3">@T(SubmissionDetailResourceKeys.AbstractsTitle, "Özet Bilgileri")</h6>
+
+                        <ul class="nav author-tabs gap-2 mb-24" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="detailTurkishContentTab" data-bs-toggle="tab" data-bs-target="#detailTurkishContent" type="button" role="tab" aria-controls="detailTurkishContent" aria-selected="true">
+                                    @T(SubmissionDetailResourceKeys.TurkishAbstract, "Türkçe Özet")
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="detailEnglishContentTab" data-bs-toggle="tab" data-bs-target="#detailEnglishContent" type="button" role="tab" aria-controls="detailEnglishContent" aria-selected="false">
+                                    @T(SubmissionDetailResourceKeys.EnglishAbstract, "English Abstract")
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="detailTurkishContent" role="tabpanel" aria-labelledby="detailTurkishContentTab" tabindex="0">
+                                <div class="row g-3 mb-16">
+                                    <div class="col-12">
+                                        <div class="help-box">
+                                            <span class="text-neutral-500 text-xs">@T(SubmissionDetailResourceKeys.TitleLabel, "Başlık")</span>
+                                            <h6 class="text-sm mb-0 mt-1">@(string.IsNullOrWhiteSpace(Model.Title) ? "-" : Model.Title)</h6>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @if (string.IsNullOrWhiteSpace(Model.Abstract))
+                                {
+                                    <p class="text-neutral-600 mb-16">@T(SubmissionDetailResourceKeys.TurkishAbstractEmpty, "Türkçe özet bilgisi bulunamadı.")</p>
+                                }
+                                else
+                                {
+                                    <div class="text-neutral-600 mb-16 author-rich-content">@Html.Raw(Model.Abstract)</div>
+                                }
+
+                                <div class="d-flex gap-2 flex-wrap">
+                                    @if (!ResolveKeywordList(Model.Keywords).Any())
+                                    {
+                                        <span class="badge bg-neutral-100 text-neutral-600 rounded-pill px-12 py-8">@T(SubmissionDetailResourceKeys.KeywordsEmpty, "Anahtar kelime yok")</span>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var keyword in ResolveKeywordList(Model.Keywords))
+                                        {
+                                            <span class="badge bg-primary-50 text-primary-600 rounded-pill px-12 py-8">@keyword</span>
+                                        }
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="detailEnglishContent" role="tabpanel" aria-labelledby="detailEnglishContentTab" tabindex="0">
+                                <div class="row g-3 mb-16">
+                                    <div class="col-12">
+                                        <div class="help-box">
+                                            <span class="text-neutral-500 text-xs">@T(SubmissionDetailResourceKeys.TitleLabel, "Title")</span>
+                                            <h6 class="text-sm mb-0 mt-1">@(string.IsNullOrWhiteSpace(Model.TitleEn) ? "-" : Model.TitleEn)</h6>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @if (string.IsNullOrWhiteSpace(Model.AbstractEn))
+                                {
+                                    <p class="text-neutral-600 mb-16">@T(SubmissionDetailResourceKeys.EnglishAbstractEmpty, "English abstract information was not found.")</p>
+                                }
+                                else
+                                {
+                                    <div class="text-neutral-600 mb-16 author-rich-content">@Html.Raw(Model.AbstractEn)</div>
+                                }
+
+                                <div class="d-flex gap-2 flex-wrap">
+                                    @if (!ResolveKeywordList(Model.KeywordsEn).Any())
+                                    {
+                                        <span class="badge bg-neutral-100 text-neutral-600 rounded-pill px-12 py-8">@T(SubmissionDetailResourceKeys.KeywordsEmpty, "No keywords")</span>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var keyword in ResolveKeywordList(Model.KeywordsEn))
+                                        {
+                                            <span class="badge bg-primary-50 text-primary-600 rounded-pill px-12 py-8">@keyword</span>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </section>
+
+            <section class="card border-0 radius-12 mb-24">
+                <div class="card-header bg-base border-bottom py-16 px-24 d-flex align-items-center justify-content-between gap-3 flex-wrap"><div><h5 class="fw-semibold mb-1">@T(SubmissionDetailResourceKeys.Authors, "Yazarlar")</h5></div></div>
+                <div class="card-body p-24 d-grid gap-3">
+                    @if (Model.Authors.Count == 0)
+                    {
+                        <div class="empty-state py-24">
+                            <span class="empty-state__icon"><i class="ri-user-line text-3xl"></i></span>
+                            <h6>@T(SubmissionDetailResourceKeys.AuthorsEmpty, "Yazar bilgisi bulunamadı.")</h6>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var author in Model.Authors)
+                        {
+                            <div class="author-list-card">
+                                <span class="author-mini-avatar"><i class="ri-user-line"></i></span>
+                                <div>
+                                    <h6 class="text-sm mb-1">@BuildAuthorDisplayName(author)</h6>
+                                    <p class="text-neutral-500 text-xs mb-0">
+                                        @(author.IsCorrespondingAuthor ? T(SubmissionDetailResourceKeys.AuthorRoleCorresponding, "Sorumlu Yazar") : T(SubmissionDetailResourceKeys.AuthorRoleDefault, "Yazar"))
+                                        @if (!string.IsNullOrWhiteSpace(author.Institution))
+                                        {
+                                            <text> • @author.Institution</text>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(author.Email))
+                                        {
+                                            <text> • @author.Email</text>
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </section>
+
+            <section class="card border-0 radius-12">
+                <div class="card-header bg-base border-bottom py-16 px-24 d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                    <div>
+                        <h5 class="fw-semibold mb-1">@T(SubmissionDetailResourceKeys.FilesTitle, "Dosyalar ve Belgeler")</h5>
+                        <p class="text-sm text-neutral-500 mb-0">@T(SubmissionDetailResourceKeys.FilesDescription, "Hazır olan belgelerinizi buradan indirebilirsiniz.")</p>
+                    </div>
+                </div>
+                <div class="card-body p-24 d-grid gap-3">
+                    @if (downloadableFiles.Count == 0)
+                    {
+                        <div class="empty-state py-24">
+                            <span class="empty-state__icon"><i class="ri-folder-open-line text-3xl"></i></span>
+                            <h6>@T(SubmissionDetailResourceKeys.FilesEmpty, "Bu bildiriye ait yüklü dosya bulunamadı.")</h6>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var file in downloadableFiles)
+                        {
+                            <div class="author-list-card">
+                                <span class="author-mini-avatar"><i class="@ResolveFileIcon(file)"></i></span>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                                        <div>
+                                            <h6 class="text-sm mb-1">@DisplaySubmissionFileName(file)</h6>
+                                            <p class="text-neutral-500 text-xs mb-0">@DisplayFileKind(file) • @FormatDateTime(file.DisplayDate ?? file.UploadedAt)</p>
+                                        </div>
+                                        <a href="@BuildFileDownloadUrl(file)" class="btn btn-sm btn-primary-600 radius-8"><i class="ri-download-2-line me-1"></i> @T(SubmissionDetailResourceKeys.Download, "İndir")</a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </section>
+        </div>
+
+        <div class="col-xl-4">
+            <aside class="help-panel">
+                <section class="card border-0 radius-12">
+                    <div class="card-header bg-base border-bottom py-16 px-24 d-flex align-items-center justify-content-between gap-3 flex-wrap"><h5 class="fw-semibold mb-1">@T(SubmissionDetailResourceKeys.FlowTitle, "Süreç")</h5></div>
+                    <div class="card-body p-24">
+                        <div class="timeline">
+                            @if (Model.Histories.Count == 0)
+                            {
+                                <div class="timeline-item"><span class="timeline-dot"><i class="ri-time-line"></i></span><div class="timeline-content"><h6 class="text-sm mb-1">@statusName</h6><p class="text-neutral-500 text-xs mb-0">@FormatDateTime(Model.SubmittedAt ?? Model.CreatedDate)</p></div></div>
+                            }
+                            else
+                            {
+                                @foreach (var history in Model.Histories.Take(8))
+                                {
+                                    <div class="timeline-item">
+                                        <span class="timeline-dot"><i class="ri-check-line"></i></span>
+                                        <div class="timeline-content">
+                                            <h6 class="text-sm mb-1">@ResolveHistoryTitle(history)</h6>
+                                            <p class="text-neutral-500 text-xs mb-0">@FormatDateTime(history.PerformedAt)</p>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card border-0 radius-12">
+                    <div class="card-header bg-base border-bottom py-16 px-24 d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                        <div>
+                            <h5 class="fw-semibold mb-1">@T(SubmissionDetailResourceKeys.TabReviews, "Hakem Değerlendirmesi")</h5>
+                            <p class="text-sm text-neutral-500 mb-0">@T(SubmissionDetailResourceKeys.ReviewsPrivateDescription, "Değerlendirme kriterleri ve puanları")</p>
+                        </div>
+                        <span class="@ToStatusPillClass(Model.TransactionStatusBadgeClass)">@statusName</span>
+                    </div>
+                    <div class="card-body p-24">
+                        @if (Model.Reviews.Count == 0)
+                        {
+                            <div class="empty-state py-24">
+                                <span class="empty-state__icon"><i class="ri-medal-line text-3xl"></i></span>
+                                <h6>@T(SubmissionDetailResourceKeys.ReviewsEmpty, "Henüz tamamlanmış değerlendirme bulunmuyor.")</h6>
+                            </div>
+                        }
+                        else
+                        {
+                            var firstReview = Model.Reviews.First();
+                            <div class="review-score-summary mb-16">
+                                <div>
+                                    <span class="text-neutral-500 text-xs">@T(SubmissionDetailResourceKeys.ScoreSummary, "Puan Özeti")</span>
+                                    <h6 class="mb-0 mt-1">@(firstReview.TotalScore?.ToString("0.##", CultureInfo.CurrentCulture) ?? "-")</h6>
+                                </div>
+                                <span class="review-score-badge">@firstReview.ScoreCount</span>
+                            </div>
+
+                            <div class="table-responsive review-score-table">
+                                <table class="table mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>@T(SubmissionDetailResourceKeys.ReviewsCriterion, "Kriter")</th>
+                                            <th class="text-end">@T(SubmissionDetailResourceKeys.ReviewsScore, "Puan")</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var score in firstReview.Scores)
+                                        {
+                                            <tr><td>@score.CriterionName</td><td class="text-end fw-bold">@score.Score.ToString("0.##", CultureInfo.CurrentCulture)</td></tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="help-box mt-16">
+                                <span class="text-neutral-500 text-xs">@T(SubmissionDetailResourceKeys.ReviewsComment, "Hakem Notu")</span>
+                                <p class="text-neutral-600 text-sm mb-0 mt-1">@(string.IsNullOrWhiteSpace(firstReview.Comment) ? T(SubmissionDetailResourceKeys.ReviewCommentEmpty, "Değerlendirme notu bulunmuyor.") : firstReview.Comment)</p>
+                            </div>
+                        }
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_LocalizationScripts")
+    <script src="~/js/features/submissions/submissions-actions.js" asp-append-version="true"></script>
+}
+
+@functions {
+    private string R(string key, string fallback)
+    {
+        var value = L.GetStringValue(key);
+        return string.IsNullOrWhiteSpace(value) || string.Equals(value, key, StringComparison.OrdinalIgnoreCase)
+            ? fallback
+            : value;
+    }
+
+    private string ResolveDisplayTitle()
+    {
+        string culture = Context.Request.RouteValues["culture"]?.ToString() ?? CultureInfo.CurrentUICulture.Name;
+        bool english = culture.StartsWith("en", StringComparison.OrdinalIgnoreCase);
+
+        if (english && !string.IsNullOrWhiteSpace(Model.TitleEn))
+            return Model.TitleEn!;
+
+        return string.IsNullOrWhiteSpace(Model.Title) ? "-" : Model.Title;
+    }
+
+    private string? ResolveDisplayAbstract()
+    {
+        string culture = Context.Request.RouteValues["culture"]?.ToString() ?? CultureInfo.CurrentUICulture.Name;
+        bool english = culture.StartsWith("en", StringComparison.OrdinalIgnoreCase);
+
+        if (english && !string.IsNullOrWhiteSpace(Model.AbstractEn))
+            return Model.AbstractEn;
+
+        return Model.Abstract;
+    }
+
+    private IEnumerable<string> ResolveKeywords()
+    {
+        string culture = Context.Request.RouteValues["culture"]?.ToString() ?? CultureInfo.CurrentUICulture.Name;
+        bool english = culture.StartsWith("en", StringComparison.OrdinalIgnoreCase);
+        string? rawKeywords = english && !string.IsNullOrWhiteSpace(Model.KeywordsEn) ? Model.KeywordsEn : Model.Keywords;
+
+        return ResolveKeywordList(rawKeywords);
+    }
+
+    private IEnumerable<string> ResolveKeywordList(string? rawKeywords)
+    {
+        if (string.IsNullOrWhiteSpace(rawKeywords))
+            yield break;
+
+        foreach (string keyword in rawKeywords.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            yield return keyword;
+    }
+
+    private string BuildAuthorDisplayName(SubmissionDetailAuthorDto author)
+    {
+        return string.Join(' ', new[] { author.TitleName, author.FullName }.Where(value => !string.IsNullOrWhiteSpace(value))).Trim();
+    }
+
+    private string FormatDate(DateTime? value)
+    {
+        if (!value.HasValue || value.Value.Year < 1900)
+            return "-";
+
+        return value.Value.ToString("dd.MM.yyyy", CultureInfo.CurrentCulture);
+    }
+
+    private string FormatDateTime(DateTime? value)
+    {
+        if (!value.HasValue || value.Value.Year < 1900)
+            return "-";
+
+        return value.Value.ToString("dd.MM.yyyy HH:mm", CultureInfo.CurrentCulture);
+    }
+
+    private string ResolveHistoryTitle(SubmissionDetailHistoryDto history)
+    {
+        string fromCode = NormalizeHistoryCode(history.FromStatusCode);
+        string toCode = NormalizeHistoryCode(history.ToStatusCode);
+        string searchableText = string.Join(" ", new[] { history.Note, history.PublicNote }
+            .Where(value => !string.IsNullOrWhiteSpace(value)));
+
+        string sourceAction = NormalizeHistoryCode(history.SourceAction);
+
+        // Payment actions intentionally keep the workflow status unchanged.
+        // Therefore they must be detected before the normal status-transition mapping.
+        if (sourceAction == "PAYMENTCOMPLETED" ||
+            (ContainsHistoryText(searchableText, "ödeme") &&
+             ContainsAnyHistoryText(searchableText, "tamamlandı", "onaylandı", "işlemi yapıldı")))
+        {
+            return R(SubmissionDetailResourceKeys.HistoryPaymentCompletedTitle, "Ödeme işlemi yapıldı");
+        }
+
+        if (sourceAction == "PAYMENTREVERTED" ||
+            (ContainsHistoryText(searchableText, "ödeme") &&
+             ContainsAnyHistoryText(searchableText, "geri alındı", "yeniden bekleniyor")))
+        {
+            return R(SubmissionDetailResourceKeys.HistoryPaymentRevertedTitle, "Ödeme işlemi geri alındı");
+        }
+
+        if (ContainsAnyHistoryText(searchableText, "hakem atandı", "reviewer assigned"))
+            return R(SubmissionDetailResourceKeys.HistoryReviewerAssignedTitle, "Hakem atandı");
+
+        if (ContainsAnyHistoryText(
+                searchableText,
+                "hakem değerlendirmesi tamamlandı",
+                "editör değerlendirmesi tamamlandı",
+                "reviewer evaluation completed",
+                "editor evaluation completed"))
+        {
+            return R(SubmissionDetailResourceKeys.HistoryReviewCompletedTitle, "Hakem değerlendirmesi tamamlandı");
+        }
+
+        string? statusResourceKey = toCode switch
+        {
+            "DRAFT" => SubmissionDetailResourceKeys.HistoryDraftTitle,
+            "SUBMITTED" => SubmissionDetailResourceKeys.HistorySubmittedTitle,
+            "REVIEWER_ASSIGNMENT" => SubmissionDetailResourceKeys.HistoryReviewAssignmentTitle,
+            "UNDER_REVIEW" => SubmissionDetailResourceKeys.HistoryReviewStartedTitle,
+            "EDITOR_EVALUATION" or "EDITORIAL_REVIEW" or "DECISION_PENDING" => SubmissionDetailResourceKeys.HistoryEditorialDecisionTitle,
+            "ACCEPTED" => SubmissionDetailResourceKeys.HistoryAcceptedTitle,
+            "PAYMENT_PENDING" or "PAYMENT" or "PAYMENT_DOCUMENT" => SubmissionDetailResourceKeys.HistoryPaymentTitle,
+            "COMPLETED" => SubmissionDetailResourceKeys.HistoryCompletedTitle,
+            "REJECTED" => SubmissionDetailResourceKeys.HistoryRejectedTitle,
+            "WITHDRAWN" => SubmissionDetailResourceKeys.HistoryWithdrawnTitle,
+            _ => null
+        };
+
+        if (!string.IsNullOrWhiteSpace(statusResourceKey))
+            return R(statusResourceKey, ResolveHistoryFallbackTitle(history));
+
+        bool isRealStatusTransition = !string.IsNullOrWhiteSpace(fromCode)
+            && !string.IsNullOrWhiteSpace(toCode)
+            && !string.Equals(fromCode, toCode, StringComparison.OrdinalIgnoreCase);
+
+        if (isRealStatusTransition && !string.IsNullOrWhiteSpace(history.DisplayTitle))
+            return history.DisplayTitle!;
+
+        return R(SubmissionDetailResourceKeys.HistoryGenericTitle, "Güncelleme yapıldı");
+    }
+
+    private string ResolveHistoryFallbackTitle(SubmissionDetailHistoryDto history)
+    {
+        if (!string.IsNullOrWhiteSpace(history.DisplayTitle))
+            return history.DisplayTitle!;
+
+        return string.IsNullOrWhiteSpace(history.ToStatusName) || history.ToStatusName == "-"
+            ? "Güncelleme yapıldı"
+            : history.ToStatusName;
+    }
+
+    private static string NormalizeHistoryCode(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : value.Trim().Replace('-', '_').Replace(' ', '_').ToUpperInvariant();
+    }
+
+    private static bool ContainsHistoryText(string source, string value)
+    {
+        return !string.IsNullOrWhiteSpace(source)
+            && source.Contains(value, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool ContainsAnyHistoryText(string source, params string[] values)
+    {
+        return values.Any(value => ContainsHistoryText(source, value));
+    }
+
+    private string ToStatusPillClass(string? badgeClass)
+    {
+        string value = badgeClass ?? string.Empty;
+
+        if (value.Contains("success", StringComparison.OrdinalIgnoreCase))
+            return "status-pill status-pill--success";
+
+        if (value.Contains("danger", StringComparison.OrdinalIgnoreCase))
+            return "status-pill status-pill--danger";
+
+        if (value.Contains("warning", StringComparison.OrdinalIgnoreCase))
+            return "status-pill status-pill--warning";
+
+        if (value.Contains("info", StringComparison.OrdinalIgnoreCase))
+            return "status-pill status-pill--info";
+
+        return "status-pill status-pill--primary";
+    }
+
+    private string BuildFileDownloadUrl(SubmissionDetailFileDto file)
+    {
+        string culture = Context.Request.RouteValues["culture"]?.ToString() ?? CultureInfo.CurrentUICulture.Name;
+
+        if (file.DownloadByAcceptanceLetter)
+            return Url.Action("DownloadAcceptanceLetter", "Submissions", new { culture, letterId = file.Id }) ?? "javascript:void(0)";
+
+        return Url.Action("DownloadFile", "Submissions", new { culture, fileId = file.Id }) ?? "javascript:void(0)";
+    }
+
+    private string DisplaySubmissionFileName(SubmissionDetailFileDto file)
+    {
+        return string.IsNullOrWhiteSpace(file.OriginalFileName)
+            ? file.FileKindText
+            : file.OriginalFileName;
+    }
+
+    private string DisplayFileKind(SubmissionDetailFileDto file)
+    {
+        return file.FileKind switch
+        {
+            SubmissionFileKind.FullText => R(SubmissionDetailResourceKeys.FileKindFullText, "Tam Metin"),
+            SubmissionFileKind.Presentation => R(SubmissionDetailResourceKeys.FileKindPresentation, "Sunum Videosu"),
+            SubmissionFileKind.AcceptanceLetter => R(SubmissionDetailResourceKeys.FileKindAcceptanceLetter, "Kabul Belgesi"),
+            SubmissionFileKind.ParticipationCertificate => R(SubmissionDetailResourceKeys.FileKindParticipationCertificate, "Katılım Belgesi"),
+            SubmissionFileKind.Revision => R(SubmissionDetailResourceKeys.FileKindRevision, "Revizyon"),
+            SubmissionFileKind.ExhibitionImage => R(SubmissionDetailResourceKeys.FileKindExhibitionImage, "Sergi Görseli"),
+            _ => string.IsNullOrWhiteSpace(file.FileKindText) ? R(SubmissionDetailResourceKeys.FileKindOther, "Dosya") : file.FileKindText
+        };
+    }
+
+    private string ResolveFileIcon(SubmissionDetailFileDto file)
+    {
+        return file.FileKind switch
+        {
+            SubmissionFileKind.Presentation => "ri-video-line",
+            SubmissionFileKind.ExhibitionImage => "ri-image-line",
+            SubmissionFileKind.ParticipationCertificate => "ri-award-line",
+            _ => "ri-file-pdf-2-line"
+        };
+    }
+}

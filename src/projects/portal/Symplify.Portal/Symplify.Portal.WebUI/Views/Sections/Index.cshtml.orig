@@ -1,0 +1,53 @@
+@model SectionsIndexViewModel
+@{
+    string currentCulture = ViewData["CurrentCulture"] as string ?? "tr-TR";
+    string cultureQuery = "?culture=" + Uri.EscapeDataString(currentCulture);
+}
+
+<div class="page-title">
+    <div class="container">
+        <h1>Genel Bilgiler</h1>
+        <nav class="breadcrumbs">
+            <ol>
+                <li><a href="/@(cultureQuery)">Anasayfa</a></li>
+                <li class="current">Genel Bilgiler</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container" data-aos="fade-up">
+        @if (Model.Data.Sections.Count == 0)
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 text-center">
+                    <i class="bi bi-journal-text display-6"></i>
+                    <h2 class="h4 mt-3">Yayınlanmış bilgi alanı bulunamadı</h2>
+                    <p class="mb-0">Bu kongre için henüz public section kaydı yok.</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="row gy-4">
+                @foreach (var contentSection in Model.Data.Sections)
+                {
+                    <div class="col-lg-4 col-md-6">
+                        <article class="card h-100 border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <i class="bi bi-journal-text display-6"></i>
+                                <h2 class="h5 mt-3">@contentSection.Title</h2>
+                                @if (!string.IsNullOrWhiteSpace(contentSection.Content))
+                                {
+                                    <div class="small text-muted">@Html.Raw(contentSection.Content.Length > 220 ? contentSection.Content.Substring(0, 220) + "..." : contentSection.Content)</div>
+                                }
+                                <a href="/sections/@(contentSection.BindingKey)@(cultureQuery)" class="read-more">Detay <i class="bi bi-arrow-right"></i></a>
+                            </div>
+                        </article>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</section>

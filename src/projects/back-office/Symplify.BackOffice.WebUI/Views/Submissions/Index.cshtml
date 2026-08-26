@@ -1,0 +1,343 @@
+@using System.Globalization
+@using Symplify.BackOffice.Application.Features.Submissions.Constants
+@using Symplify.BackOffice.Application.Features.Submissions.Queries.GetList
+@using Symplify.BackOffice.WebUI.Localization
+@model Core.Application.Responses.GetListResponse<GetListSubmissionListItemDto>
+@inject IBackOfficeViewLocalizer L
+
+@{
+    string T(string key, string fallback)
+    {
+        var value = L.GetStringValue(key);
+        return string.IsNullOrWhiteSpace(value) || string.Equals(value, key, StringComparison.OrdinalIgnoreCase)
+            ? fallback
+            : value;
+    }
+
+    ViewData["Title"] = T(SubmissionAuthorResourceKeys.PageTitle, "Bildirilerim");
+    ViewData["ClientResourcePrefixes"] = new[] { "BackOffice.Submissions.Author.", "BackOffice.Submissions.FinalFiles.", "Common." };
+    ViewData["SuppressSidebar"] = true;
+    ViewData["UseAuthorTemplate"] = true;
+
+    string culture = Context.Request.RouteValues["culture"]?.ToString() ?? CultureInfo.CurrentUICulture.Name;
+    string homeUrl = Url.Action("Index", "Home", new { culture }) ?? $"/{culture}/Home/Index";
+    string fullTextUrlTemplate = Url.Action("UploadFullTextFile", "Submissions", new { culture, id = Guid.Empty })?.Replace(Guid.Empty.ToString(), "__id__") ?? $"/{culture}/submissions/details/__id__/full-text";
+    string presentationUrlTemplate = Url.Action("UploadPresentationVideoFile", "Submissions", new { culture, id = Guid.Empty })?.Replace(Guid.Empty.ToString(), "__id__") ?? $"/{culture}/submissions/details/__id__/presentation-video";
+}
+
+<div class="author-container">
+    @if (TempData["SuccessMessage"] is not null)
+    {
+        <div data-symplify-toast data-toast-icon="success" data-toast-title="@TempData["SuccessMessage"]"></div>
+    }
+
+    @if (TempData["ErrorMessage"] is not null)
+    {
+        <div data-symplify-toast data-toast-icon="error" data-toast-title="@TempData["ErrorMessage"]"></div>
+    }
+
+    <div class="author-page-head">
+        <div>
+            <span class="author-kicker"><i class="ri-file-list-3-line"></i> @T("BackOffice.Submissions.Author.Kicker", "Bildiri Takibi")</span>
+            <h1 class="author-title h4">@T(SubmissionAuthorResourceKeys.PageTitle, "Bildirilerim")</h1>
+            <p class="author-subtitle">@T(SubmissionAuthorResourceKeys.PageSubtitle, "Tüm bildiri ve sergi bildirilerini, güncel durumlarını ve belge işlemlerini buradan takip edebilirsin.")</p>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <a href="@homeUrl" class="btn btn-outline-primary-600 radius-10 px-16 py-10">
+                <i class="ri-arrow-left-line me-1"></i>
+                @T("BackOffice.Submissions.Author.Action.BackHome", "Ana Sayfa")
+            </a>
+            <a href="@homeUrl#newSubmission" class="btn btn-primary-600 radius-10 px-16 py-10">
+                <i class="ri-add-circle-line me-1"></i>
+                @T(SubmissionAuthorResourceKeys.NewSubmission, "Yeni Bildiri")
+            </a>
+        </div>
+    </div>
+
+    <section class="card border-0 radius-12 mb-24">
+        <div class="card-header bg-base border-bottom py-16 px-24 d-flex align-items-center justify-content-between gap-3 flex-wrap">
+            <div>
+                <h5 class="fw-semibold mb-1">@T(SubmissionAuthorResourceKeys.ListTitle, "Bildiri Listesi")</h5>
+            </div>
+            <span class="status-pill status-pill--primary"><i class="ri-file-list-line"></i> @string.Format(CultureInfo.CurrentCulture, T("BackOffice.Submissions.Author.List.CountFormat", "{0} bildiri"), Model.Count)</span>
+        </div>
+        <div class="card-body p-24">
+            @if (Model.Items.Count == 0)
+            {
+                <div class="empty-state py-48">
+                    <span class="empty-state__icon"><i class="ri-file-search-line text-3xl"></i></span>
+                    <h6>@T(SubmissionAuthorResourceKeys.EmptyTitle, "Henüz bildiri bulunmuyor")</h6>
+                    <p class="text-sm mb-16">@T("BackOffice.Submissions.Author.Empty.Description", "Aktif kongre için henüz bildiri veya sergi başvurunuz bulunmuyor.")</p>
+                    <a href="@homeUrl#newSubmission" class="btn btn-primary-600 radius-8 px-18 py-10">@T(SubmissionAuthorResourceKeys.EmptyCreateButton, "Bildiri Oluştur")</a>
+                </div>
+            }
+            else
+            {
+                <div class="submission-card-list">
+                    @foreach (var item in Model.Items)
+                    {
+                        DateTime? displayDate = item.SubmittedAt ?? item.UpdatedDate ?? item.CreatedDate;
+                        string submissionNumber = string.IsNullOrWhiteSpace(item.SubmissionNumber)
+                            ? item.Id.ToString("N")[..8].ToUpperInvariant()
+                            : item.SubmissionNumber;
+                        string title = ResolveDisplayTitle(item);
+                        string iconClass = ResolveSubmissionIcon(item.SubmissionTypeName);
+                        bool canUploadFinalFiles = IsPaymentCompleted(item.PaymentStatusCode, item.PaymentStatusName, item.TransactionStatusCode);
+                        string detailsUrl = Url.Action("Details", "Submissions", new { culture, id = item.Id }) ?? $"/{culture}/submissions/details/{item.Id:D}";
+
+                        <article class="submission-track-card">
+                            <div class="submission-track-card__icon">
+                                <i class="@iconClass"></i>
+                            </div>
+                            <div class="submission-track-card__content">
+                                <div class="submission-track-card__top">
+                                    <div>
+                                        <span class="submission-track-card__no">@T("BackOffice.Submissions.Author.Card.SubmissionNo", "Bildiri No"): @submissionNumber</span>
+                                        <h6 class="submission-track-card__title">@title</h6>
+                                    </div>
+                                </div>
+                                <div class="submission-track-card__meta">
+                                    <span><i class="ri-bookmark-3-line"></i> @item.SubmissionTypeName</span>
+                                    <span><i class="ri-calendar-line"></i> @FormatDate(displayDate)</span>
+                                    <span><i class="ri-building-4-line"></i> @item.CongressName</span>
+                                </div>
+                                <div class="submission-track-card__meta mt-2">
+                                    <span><i class="ri-user-star-line"></i> @T("BackOffice.Submissions.Author.Card.CorrespondingAuthor", "Sorumlu Yazar"): @(string.IsNullOrWhiteSpace(item.CorrespondingAuthorName) ? "-" : item.CorrespondingAuthorName)</span>
+                                    @if (!string.IsNullOrWhiteSpace(item.OtherAuthorsText))
+                                    {
+                                        <span><i class="ri-team-line"></i> @T("BackOffice.Submissions.Author.Card.Authors", "Yazarlar"): @item.OtherAuthorsText</span>
+                                    }
+                                </div>
+                                @if (canUploadFinalFiles)
+                                {
+                                    <div class="d-flex gap-2 flex-wrap mt-3">
+                                        <button type="button"
+                                                class="btn btn-sm btn-primary-600 radius-8"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#fullTextUploadModal"
+                                                data-upload-action-url="@fullTextUrlTemplate.Replace("__id__", item.Id.ToString("D"))">
+                                            <i class="ri-upload-cloud-2-line me-1"></i>
+                                            @T("BackOffice.Submissions.FinalFiles.UploadFullText", "Tam Metin Yükle")
+                                        </button>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-primary-600 radius-8"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#presentationVideoUploadModal"
+                                                data-upload-action-url="@presentationUrlTemplate.Replace("__id__", item.Id.ToString("D"))">
+                                            <i class="ri-video-upload-line me-1"></i>
+                                            @T("BackOffice.Submissions.FinalFiles.UploadVideo", "Sunum Videosu Yükle")
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                            <div class="submission-track-card__side">
+                                <div class="submission-track-card__badges">
+                                    @if (!string.IsNullOrWhiteSpace(item.PaymentStatusName) && item.PaymentStatusName != "-")
+                                    {
+                                        <span class="@ToStatusPillClass(item.PaymentStatusBadgeClass)">@item.PaymentStatusName</span>
+                                    }
+                                    <span class="@ToStatusPillClass(item.TransactionStatusBadgeClass)">@item.TransactionStatusName</span>
+                                </div>
+                                <div class="submission-track-card__action">
+                                    <a href="@detailsUrl" class="btn btn-sm btn-outline-primary-600 radius-8"><i class="ri-eye-line me-1"></i> @T(SubmissionAuthorResourceKeys.View, "Görüntüle")</a>
+                                </div>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
+<div class="modal fade" id="fullTextUploadModal" tabindex="-1" aria-labelledby="fullTextUploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content radius-16">
+            <form method="post" enctype="multipart/form-data" data-upload-form>
+                @Html.AntiForgeryToken()
+                <div class="modal-header border-bottom">
+                    <div>
+                        <h6 class="modal-title mb-1" id="fullTextUploadModalLabel">@T("BackOffice.Submissions.FinalFiles.FullTextModalTitle", "Tam Metin Dosyası Yükle")</h6>
+                        <p class="text-neutral-500 text-xs mb-0">@T("BackOffice.Submissions.FinalFiles.FullTextModalDescription", "Kabul edilen bildiriniz için tam metin dosyanızı yükleyin.")</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T("Common.Close", "Kapat")"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="upload-zone d-block cursor-pointer" for="fullTextFile">
+                        <span class="upload-zone__icon"><i class="ri-file-word-2-line text-2xl"></i></span>
+                        <h6 class="mb-2">@T("BackOffice.Submissions.FinalFiles.FullTextTitle", "Tam Metin Dosyası")</h6>
+                        <p class="text-neutral-500 text-sm mb-16">@T("BackOffice.Submissions.FinalFiles.FullTextHelp", "Yalnızca DOCX formatında dosya seçebilirsiniz.")</p>
+                        <span class="btn btn-sm btn-primary-600 radius-8">@T("BackOffice.Submissions.FinalFiles.SelectFile", "Dosya Seç")</span>
+                        <div id="fullTextFileName" class="upload-file-name">@T("BackOffice.Submissions.FinalFiles.NoFileSelected", "Henüz dosya seçilmedi.")</div>
+                    </label>
+                    <input id="fullTextFile" name="fullTextFile" type="file" class="d-none" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" data-file-input="#fullTextFileName" required />
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-outline-neutral-500 radius-8" data-bs-dismiss="modal">@T("Common.Cancel", "Vazgeç")</button>
+                    <button type="submit" class="btn btn-primary-600 radius-8"><i class="ri-save-3-line me-1"></i> @T("BackOffice.Submissions.FinalFiles.SaveFullText", "Tam Metni Kaydet")</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="presentationVideoUploadModal" tabindex="-1" aria-labelledby="presentationVideoUploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content radius-16">
+            <form method="post" enctype="multipart/form-data" data-upload-form>
+                @Html.AntiForgeryToken()
+                <div class="modal-header border-bottom">
+                    <div>
+                        <h6 class="modal-title mb-1" id="presentationVideoUploadModalLabel">@T("BackOffice.Submissions.FinalFiles.VideoModalTitle", "Bildiri Sunum Videosu Yükle")</h6>
+                        <p class="text-neutral-500 text-xs mb-0">@T("BackOffice.Submissions.FinalFiles.VideoModalDescription", "Sunum videonuzu bildirinizle ilişkilendirin.")</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T("Common.Close", "Kapat")"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="upload-zone d-block cursor-pointer" for="presentationVideoFile">
+                        <span class="upload-zone__icon"><i class="ri-video-upload-line text-2xl"></i></span>
+                        <h6 class="mb-2">@T("BackOffice.Submissions.FinalFiles.VideoTitle", "Bildiri Sunum Videosu")</h6>
+                        <p class="text-neutral-500 text-sm mb-16">@T("BackOffice.Submissions.FinalFiles.VideoHelp", "MP4, MOV veya WEBM formatında video seçebilirsiniz.")</p>
+                        <span class="btn btn-sm btn-primary-600 radius-8">@T("BackOffice.Submissions.FinalFiles.SelectVideo", "Video Seç")</span>
+                        <div id="presentationVideoFileName" class="upload-file-name">@T("BackOffice.Submissions.FinalFiles.NoVideoSelected", "Henüz video seçilmedi.")</div>
+                    </label>
+                    <input id="presentationVideoFile" name="presentationFile" type="file" class="d-none" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm" data-file-input="#presentationVideoFileName" required />
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-outline-neutral-500 radius-8" data-bs-dismiss="modal">@T("Common.Cancel", "Vazgeç")</button>
+                    <button type="submit" class="btn btn-primary-600 radius-8"><i class="ri-save-3-line me-1"></i> @T("BackOffice.Submissions.FinalFiles.SaveVideo", "Videoyu Kaydet")</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_LocalizationScripts")
+    <script src="~/js/features/submissions/submissions-actions.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            document.querySelectorAll('[data-upload-action-url]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    var targetSelector = button.getAttribute('data-bs-target');
+                    var actionUrl = button.getAttribute('data-upload-action-url');
+                    if (!targetSelector || !actionUrl) {
+                        return;
+                    }
+
+                    var modal = document.querySelector(targetSelector);
+                    var form = modal ? modal.querySelector('[data-upload-form]') : null;
+                    if (form) {
+                        form.setAttribute('action', actionUrl);
+                    }
+                });
+            });
+
+            document.querySelectorAll('[data-file-input]').forEach(function (input) {
+                input.addEventListener('change', function () {
+                    var target = document.querySelector(input.getAttribute('data-file-input'));
+                    if (!target) {
+                        return;
+                    }
+
+                    target.textContent = input.files && input.files.length > 0
+                        ? input.files[0].name
+                        : target.textContent;
+                });
+            });
+        })();
+    </script>
+}
+
+@functions {
+    private string ResolveDisplayTitle(GetListSubmissionListItemDto item)
+    {
+        string culture = Context.Request.RouteValues["culture"]?.ToString() ?? CultureInfo.CurrentUICulture.Name;
+        bool english = culture.StartsWith("en", StringComparison.OrdinalIgnoreCase);
+
+        if (english && !string.IsNullOrWhiteSpace(item.TitleEn))
+            return item.TitleEn!;
+
+        return string.IsNullOrWhiteSpace(item.Title) ? "-" : item.Title;
+    }
+
+    private string FormatDate(DateTime? value)
+    {
+        if (!value.HasValue || value.Value.Year < 1900)
+            return "-";
+
+        return value.Value.ToString("dd.MM.yyyy", CultureInfo.CurrentCulture);
+    }
+
+    private string ResolveSubmissionIcon(string? submissionTypeName)
+    {
+        string value = NormalizeCode(submissionTypeName);
+
+        if (value.Contains("SERGI") || value.Contains("EXHIBITION"))
+            return "ri-gallery-line";
+
+        if (value.Contains("POSTER"))
+            return "ri-sticky-note-line";
+
+        if (value.Contains("SOZLU") || value.Contains("ORAL"))
+            return "ri-file-text-line";
+
+        return "ri-file-text-line";
+    }
+
+    private string ToStatusPillClass(string? badgeClass)
+    {
+        string value = badgeClass ?? string.Empty;
+
+        if (value.Contains("success", StringComparison.OrdinalIgnoreCase))
+            return "status-pill status-pill--success";
+
+        if (value.Contains("danger", StringComparison.OrdinalIgnoreCase))
+            return "status-pill status-pill--danger";
+
+        if (value.Contains("warning", StringComparison.OrdinalIgnoreCase))
+            return "status-pill status-pill--warning";
+
+        if (value.Contains("info", StringComparison.OrdinalIgnoreCase))
+            return "status-pill status-pill--info";
+
+        return "status-pill status-pill--primary";
+    }
+
+    private bool IsPaymentCompleted(string? paymentStatusCode, string? paymentStatusName, string? transactionStatusCode)
+    {
+        string payment = NormalizeCode(string.Join(' ', paymentStatusCode, paymentStatusName));
+        string transaction = NormalizeCode(transactionStatusCode);
+
+        return payment.Contains("PAYMENTCOMPLETED") ||
+               payment.Contains("PAYMENTPAID") ||
+               payment.Contains("PAID") ||
+               payment.Contains("ODEMEYAPILDI") ||
+               payment.Contains("ODEMEISLEMIYAPILDI") ||
+               payment.Contains("ODEMEALINDI") ||
+               transaction == "COMPLETED";
+    }
+
+    private string NormalizeCode(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        string normalized = value.Trim()
+            .Replace("İ", "I", StringComparison.Ordinal)
+            .Replace("ı", "i", StringComparison.Ordinal)
+            .Replace("Ö", "O", StringComparison.Ordinal)
+            .Replace("ö", "o", StringComparison.Ordinal)
+            .Replace("Ü", "U", StringComparison.Ordinal)
+            .Replace("ü", "u", StringComparison.Ordinal)
+            .Replace("Ş", "S", StringComparison.Ordinal)
+            .Replace("ş", "s", StringComparison.Ordinal)
+            .Replace("Ğ", "G", StringComparison.Ordinal)
+            .Replace("ğ", "g", StringComparison.Ordinal)
+            .Replace("Ç", "C", StringComparison.Ordinal)
+            .Replace("ç", "c", StringComparison.Ordinal)
+            .ToUpperInvariant();
+
+        return new string(normalized.Where(char.IsLetterOrDigit).ToArray());
+    }
+}

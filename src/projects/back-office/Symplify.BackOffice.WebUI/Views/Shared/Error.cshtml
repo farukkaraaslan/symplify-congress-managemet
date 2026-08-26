@@ -1,0 +1,35 @@
+@model Symplify.BackOffice.WebUI.Models.ErrorViewModel
+@{
+    ViewData["Title"] = "İşlem tamamlanamadı";
+    string culture = ViewContext.RouteData.Values["culture"]?.ToString() ?? "tr-TR";
+    string homeUrl = Url.Action("Index", "Home", new { culture }) ?? $"/{culture}/Home/Index";
+}
+
+<div class="dashboard-main-body">
+    <div class="card border shadow-none radius-12">
+        <div class="card-body text-center py-48">
+            <div class="mb-20">
+                <i class="ri-error-warning-line text-warning-600 display-4"></i>
+            </div>
+            <h4 class="mb-12">İşlem tamamlanamadı</h4>
+            <p class="text-neutral-600 mb-24">
+                Beklenmeyen bir hata oluştu. Teknik ayrıntılar güvenli biçimde kayda alındı.
+                Lütfen işlemi tekrar deneyin.
+            </p>
+
+            @if (Model.ShowRequestId)
+            {
+                <div class="alert alert-light border d-inline-block text-start mb-24">
+                    <strong>Hata takip kodu:</strong> <code>@Model.RequestId</code>
+                </div>
+            }
+
+            <div>
+                <a href="@homeUrl" class="btn btn-primary-600 radius-8 px-24">
+                    <i class="ri-home-4-line me-1"></i>
+                    Ana Sayfaya Dön
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
