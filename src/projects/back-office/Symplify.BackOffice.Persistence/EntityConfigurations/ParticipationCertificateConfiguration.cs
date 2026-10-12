@@ -26,6 +26,7 @@ public sealed class ParticipationCertificateConfiguration : IEntityTypeConfigura
         builder.Property(entity => entity.ETag).HasMaxLength(250);
         builder.Property(entity => entity.EmailStatus).HasMaxLength(50);
         builder.Property(entity => entity.EmailError).HasMaxLength(1000);
+        builder.Property(entity => entity.VerificationCode).HasMaxLength(120);
         builder.Property(entity => entity.PublicAccessTokenHash).HasMaxLength(128);
         builder.Property(entity => entity.RevocationReason).HasMaxLength(1000);
         builder.Property(entity => entity.GeneratedAt).IsRequired();
@@ -60,6 +61,10 @@ public sealed class ParticipationCertificateConfiguration : IEntityTypeConfigura
         builder.HasIndex(entity => entity.PublicId)
             .IsUnique()
             .HasFilter("\"PublicId\" IS NOT NULL");
+
+        builder.HasIndex(entity => entity.VerificationCode)
+            .IsUnique()
+            .HasFilter("\"VerificationCode\" IS NOT NULL");
 
         builder.HasIndex(entity => new { entity.CongressId, entity.PublishedAt, entity.RevokedAt });
 

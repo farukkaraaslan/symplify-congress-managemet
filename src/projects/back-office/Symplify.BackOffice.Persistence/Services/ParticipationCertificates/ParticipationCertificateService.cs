@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using Core.Application.Storage;
@@ -281,6 +282,37 @@ public sealed partial class ParticipationCertificateService : IParticipationCert
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<ParticipationCertificateTemplateFileDto?> GetTemplateFileAsync(
+        Guid congressId,
+        string? culture,
+        CancellationToken cancellationToken = default)
+    {
+        if (congressId == Guid.Empty)
+            return null;
+
+        string resolvedCulture = ParticipationCertificateCultures.Normalize(culture);
+        ParticipationCertificateTemplate? template = await _context.ParticipationCertificateTemplates
+            .AsNoTracking()
+            .Where(item =>
+                item.CongressId == congressId &&
+                item.IsActive &&
+                item.DeletedDate == null &&
+                item.Culture == resolvedCulture)
+            .OrderByDescending(item => item.UploadedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return template is null ? null : new ParticipationCertificateTemplateFileDto
+        {
+            Id = template.Id,
+            CongressId = template.CongressId,
+            Culture = template.Culture,
+            FileName = template.FileName,
+            ContentType = template.ContentType,
+            BucketName = template.BucketName,
+            ObjectName = template.ObjectName
+        };
+    }
+
     public async Task<ParticipationCertificateTemplateDto> UploadTemplateAsync(
         ParticipationCertificateTemplateUploadInput input,
         CancellationToken cancellationToken = default)
@@ -366,7 +398,12 @@ public sealed partial class ParticipationCertificateService : IParticipationCert
             item.IsDefault &&
             !previousTemplates.Contains(item));
 
-        bool makeDefault = input.IsDefault || replacedTemplateWasDefault || !hasAnotherDefault;
+        bool hasActiveTurkishTemplate = congressTemplates.Any(item =>
+            item.IsActive &&
+            !previousTemplates.Contains(item) &&
+            string.Equals(item.Culture, ParticipationCertificateCultures.Turkish, StringComparison.OrdinalIgnoreCase));
+        bool isTurkishTemplate = string.Equals(templateCulture, ParticipationCertificateCultures.Turkish, StringComparison.OrdinalIgnoreCase);
+        bool makeDefault = isTurkishTemplate || (!hasActiveTurkishTemplate && (input.IsDefault || replacedTemplateWasDefault || !hasAnotherDefault));
         foreach (ParticipationCertificateTemplate item in previousTemplates)
         {
             item.IsActive = false;
@@ -461,8 +498,11 @@ public sealed partial class ParticipationCertificateService : IParticipationCert
                 item.DeletedDate == null)
             .ToListAsync(cancellationToken);
 
-        ParticipationCertificateTemplate selected = templates.FirstOrDefault(item =>
-            string.Equals(item.Culture, resolvedCulture, StringComparison.OrdinalIgnoreCase))
+        ParticipationCertificateTemplate? turkishTemplate = templates.FirstOrDefault(item =>
+            string.Equals(item.Culture, ParticipationCertificateCultures.Turkish, StringComparison.OrdinalIgnoreCase));
+
+        ParticipationCertificateTemplate selected = turkishTemplate
+            ?? templates.FirstOrDefault(item => string.Equals(item.Culture, resolvedCulture, StringComparison.OrdinalIgnoreCase))
             ?? throw new InvalidOperationException(
                 $"{ParticipationCertificateCultures.GetDisplayName(resolvedCulture)} template PDF dosyası bulunamadı.");
 
@@ -475,6 +515,47 @@ public sealed partial class ParticipationCertificateService : IParticipationCert
             template.UpdatedDate = now;
             template.UpdatedBy = actor;
         }
+
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task RemoveTemplateAsync(
+        Guid congressId,
+        string? culture,
+        Guid? performedByUserId,
+        CancellationToken cancellationToken = default)
+    {
+        if (congressId == Guid.Empty)
+            throw new InvalidOperationException("Kongre bilgisi geçersiz.");
+
+        string resolvedCulture = ParticipationCertificateCultures.Normalize(culture);
+        if (!ParticipationCertificateCultures.IsSupported(resolvedCulture))
+            throw new InvalidOperationException("Katılım sertifikası dili yalnızca Türkçe veya İngilizce olabilir.");
+
+        ParticipationCertificateTemplate? template = await _context.ParticipationCertificateTemplates
+            .Where(item =>
+                item.CongressId == congressId &&
+                item.IsActive &&
+                item.DeletedDate == null &&
+                item.Culture == resolvedCulture)
+            .OrderByDescending(item => item.UploadedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (template is null)
+            throw new InvalidOperationException($"{ParticipationCertificateCultures.GetDisplayName(resolvedCulture)} aktif template bulunamadı.");
+
+        DateTime now = DateTime.UtcNow;
+        string actor = performedByUserId?.ToString("D") ?? "ParticipationCertificateTemplateRemoved";
+
+        // Fiziksel PDF'i storage'dan silmiyoruz. Geçmiş sertifikalar TemplateId ile bu kayda
+        // referans verebildiği için audit/geçmiş bütünlüğünü koruyoruz. Aktif kullanım dışına
+        // çıkarıp soft-delete ediyoruz.
+        template.IsActive = false;
+        template.IsDefault = false;
+        template.DeletedDate = now;
+        template.DeletedBy = actor;
+        template.UpdatedDate = now;
+        template.UpdatedBy = actor;
 
         await _context.SaveChangesAsync(cancellationToken);
     }
@@ -540,7 +621,12 @@ public sealed partial class ParticipationCertificateService : IParticipationCert
         template.UpdatedDate = now;
         template.UpdatedBy = actor;
 
-        if (isDefault)
+        bool hasTurkishTemplate = templates.Any(item =>
+            string.Equals(item.Culture, ParticipationCertificateCultures.Turkish, StringComparison.OrdinalIgnoreCase));
+        bool shouldBeDefault = string.Equals(resolvedCulture, ParticipationCertificateCultures.Turkish, StringComparison.OrdinalIgnoreCase)
+            || (isDefault && !hasTurkishTemplate);
+
+        if (shouldBeDefault)
         {
             foreach (ParticipationCertificateTemplate item in templates)
             {
@@ -1208,6 +1294,11 @@ public sealed partial class ParticipationCertificateService : IParticipationCert
                 item.OrganizationId,
                 item.Name,
                 item.Code,
+                item.StartDate,
+                item.EndDate,
+                item.VenueName,
+                item.CityId,
+                item.CountryId,
                 Translations = item.Translations
                     .Where(translation => translation.DeletedDate == null)
                     .Select(translation => new
@@ -1230,7 +1321,37 @@ public sealed partial class ParticipationCertificateService : IParticipationCert
         if (string.IsNullOrWhiteSpace(title))
             title = congress.Translations.FirstOrDefault()?.Title;
 
-        return new CongressInfo(congress.Id, congress.OrganizationId, FirstNonEmpty(title, congress.Name, congress.Code, "Kongre"), normalizedCulture);
+        string cityName = string.Empty;
+        if (congress.CityId.HasValue)
+        {
+            cityName = await _context.CityTranslations.AsNoTracking()
+                .Where(item => item.CityId == congress.CityId.Value && item.DeletedDate == null && (!languageId.HasValue || item.LanguageId == languageId.Value))
+                .Select(item => item.Name)
+                .FirstOrDefaultAsync(cancellationToken) ?? string.Empty;
+        }
+
+        string countryName = string.Empty;
+        if (congress.CountryId.HasValue)
+        {
+            countryName = await _context.CountryTranslations.AsNoTracking()
+                .Where(item => item.CountryId == congress.CountryId.Value && item.DeletedDate == null && (!languageId.HasValue || item.LanguageId == languageId.Value))
+                .Select(item => item.Name)
+                .FirstOrDefaultAsync(cancellationToken) ?? string.Empty;
+        }
+
+        string location = string.Join(" / ", new[] { cityName, countryName }.Where(item => !string.IsNullOrWhiteSpace(item)));
+        if (string.IsNullOrWhiteSpace(location))
+            location = congress.VenueName ?? string.Empty;
+
+        return new CongressInfo(
+            congress.Id,
+            congress.OrganizationId,
+            congress.Code ?? string.Empty,
+            FirstNonEmpty(title, congress.Name, congress.Code, "Kongre"),
+            normalizedCulture,
+            congress.StartDate,
+            congress.EndDate,
+            location);
     }
 
     private async Task EnsureCongressExistsAsync(Guid congressId, CancellationToken cancellationToken)
@@ -1504,15 +1625,51 @@ public sealed partial class ParticipationCertificateService : IParticipationCert
         return normalized;
     }
 
-    private static string BuildCertificateText(string bodyTextTemplate, string? submissionTypeName)
+    private static string BuildCertificateText(
+        string bodyTextTemplate,
+        string? participantName,
+        string? institution,
+        string? submissionNumber,
+        string? submissionTitle,
+        string? submissionTypeName,
+        CongressInfo congress)
     {
         string submissionType = FirstNonEmpty(submissionTypeName, "Presentation");
+        string dateText = FormatCongressDateRange(congress.StartDate, congress.EndDate, congress.Culture);
 
         return bodyTextTemplate
+            .Replace("{{PARTICIPANT_NAME}}", participantName ?? string.Empty, StringComparison.OrdinalIgnoreCase)
+            .Replace("{{AUTHOR_NAME}}", participantName ?? string.Empty, StringComparison.OrdinalIgnoreCase)
+            .Replace("{{INSTITUTION}}", institution ?? string.Empty, StringComparison.OrdinalIgnoreCase)
+            .Replace("{{SUBMISSION_NUMBER}}", submissionNumber ?? string.Empty, StringComparison.OrdinalIgnoreCase)
+            .Replace("{{SUBMISSION_TITLE}}", submissionTitle ?? string.Empty, StringComparison.OrdinalIgnoreCase)
             .Replace("{{SUBMISSION_TYPE}}", submissionType, StringComparison.OrdinalIgnoreCase)
             .Replace("{{PRESENTATION_TYPE}}", submissionType, StringComparison.OrdinalIgnoreCase)
             .Replace("{{BILDIRI_TURU}}", submissionType, StringComparison.OrdinalIgnoreCase)
+            .Replace("{{CONGRESS_NAME}}", congress.Title, StringComparison.OrdinalIgnoreCase)
+            .Replace("{{CONGRESS_DATE}}", dateText, StringComparison.OrdinalIgnoreCase)
+            .Replace("{{CONGRESS_LOCATION}}", congress.Location, StringComparison.OrdinalIgnoreCase)
             .Trim();
+    }
+
+    private static string FormatCongressDateRange(DateTime? startDate, DateTime? endDate, string culture)
+    {
+        if (!startDate.HasValue && !endDate.HasValue) return string.Empty;
+        CultureInfo cultureInfo;
+        try { cultureInfo = CultureInfo.GetCultureInfo(string.IsNullOrWhiteSpace(culture) ? "tr-TR" : culture); }
+        catch { cultureInfo = CultureInfo.GetCultureInfo("tr-TR"); }
+
+        if (startDate.HasValue && endDate.HasValue)
+        {
+            if (startDate.Value.Date == endDate.Value.Date)
+                return startDate.Value.ToString("d MMMM yyyy", cultureInfo);
+            if (startDate.Value.Year == endDate.Value.Year && startDate.Value.Month == endDate.Value.Month)
+                return $"{startDate.Value.Day}–{endDate.Value.Day} {endDate.Value.ToString("MMMM yyyy", cultureInfo)}";
+            return $"{startDate.Value.ToString("d MMMM yyyy", cultureInfo)} – {endDate.Value.ToString("d MMMM yyyy", cultureInfo)}";
+        }
+
+        DateTime value = startDate ?? endDate!.Value;
+        return value.ToString("d MMMM yyyy", cultureInfo);
     }
 
     private static string ResolveSubmissionTypeName(
@@ -1673,10 +1830,29 @@ public sealed partial class ParticipationCertificateService : IParticipationCert
             .ToLowerInvariant();
     }
 
+    private static string BuildParticipationCertificateVerificationCode(
+        string? congressCode,
+        string? submissionNumber)
+    {
+        string congressPart = NormalizeVerificationCodePart(congressCode, "CONGRESS");
+        string submissionPart = NormalizeVerificationCodePart(submissionNumber, "SUBMISSION");
+        string randomToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(6));
+        return $"PC-{congressPart}-{submissionPart}-{randomToken}";
+    }
+
+    private static string NormalizeVerificationCodePart(string? value, string fallback)
+    {
+        string normalized = NormalizeFileNamePart(value).ToUpperInvariant();
+        if (string.IsNullOrWhiteSpace(normalized) || normalized == "SUBMISSION")
+            normalized = fallback;
+
+        return normalized.Length <= 24 ? normalized : normalized[..24];
+    }
+
     private static string FirstNonEmpty(params string?[] values)
         => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?.Trim() ?? string.Empty;
 
-    private sealed record CongressInfo(Guid Id, Guid OrganizationId, string Title, string Culture);
+    private sealed record CongressInfo(Guid Id, Guid OrganizationId, string Code, string Title, string Culture, DateTime? StartDate, DateTime? EndDate, string Location);
 
     private sealed record LanguageSelection(Guid? LanguageId, Guid? DefaultLanguageId);
 

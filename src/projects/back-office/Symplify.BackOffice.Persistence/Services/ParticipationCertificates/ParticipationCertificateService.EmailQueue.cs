@@ -277,7 +277,7 @@ public sealed partial class ParticipationCertificateService
                     senderMap[congress.OrganizationId] = sender;
                 }
 
-                Guid publicId = Guid.NewGuid();
+                Guid publicId = certificate.PublicId ?? Guid.NewGuid();
                 string rawToken = CreatePublicAccessToken();
                 string tokenHash = HashPublicAccessToken(rawToken);
                 string publicUrl = BuildPublicCertificateUrl(publicId, rawToken);

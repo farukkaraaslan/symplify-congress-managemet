@@ -74,6 +74,14 @@ public sealed class GetListSubmissionListItemDto
 
     public string? OtherAuthorsText { get; set; }
 
+    /// <summary>
+    /// Internal composite text used by the BackOffice submission list global search.
+    /// Contains submission, congress, status, owner and all active author information.
+    /// </summary>
+    public bool IsAuthorVideoUploadEnabled { get; set; } = true;
+
+    public string? SearchText { get; set; }
+
     public int AuthorCount { get; set; }
 
     public bool CanEdit { get; set; }

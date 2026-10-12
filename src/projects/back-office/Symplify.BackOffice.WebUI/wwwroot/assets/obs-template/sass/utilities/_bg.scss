@@ -1,0 +1,703 @@
+@use "../abstracts/mixins";
+@use "../abstracts/variables";
+
+// =========================
+// Helpers
+// =========================
+@mixin bg-class($name, $value) {
+  .bg-#{$name} {
+    background-color: #{$value} !important;
+  }
+}
+
+@mixin bg-hover-class($name, $value) {
+  .bg-hover-#{$name} {
+    @include mixins.transition(all 0.3s);
+
+    &:hover {
+      background-color: #{$value} !important;
+    }
+  }
+}
+
+@mixin gradient-class($name, $value) {
+  .#{$name} {
+    background: #{$value};
+  }
+}
+
+@mixin generate-color-utilities($map) {
+  @each $color, $shades in $map {
+    @each $shade, $value in $shades {
+      @include bg-class("#{$color}-#{$shade}", var(--#{$color}-#{$shade}));
+      @include bg-hover-class("#{$color}-#{$shade}", var(--#{$color}-#{$shade}));
+    }
+  }
+}
+
+@mixin generate-flat-bg-utilities($map) {
+  @each $property, $value in $map {
+    @include bg-class($property, var(--#{$property}));
+    @include bg-hover-class($property, var(--#{$property}));
+  }
+}
+
+// =========================
+// Background Utilities
+// =========================
+@include generate-color-utilities(variables.$colors);
+@include generate-color-utilities(variables.$semantic-colors);
+@include generate-flat-bg-utilities(variables.$extra-colors);
+
+.bg-base {
+  background-color: var(--surface-base) !important;
+}
+
+.bg-base-50 {
+  background-color: color-mix(in srgb, var(--surface-base) 50%, transparent) !important;
+}
+
+.hover-bg-transparent {
+  background-color: transparent !important;
+}
+
+.hover-bg-white:hover {
+  background-color: var(--surface-base) !important;
+}
+
+@each $property, $value in variables.$bg-light-colors {
+  .bg-#{$property} {
+    background-color: var(--#{$property}) !important;
+  }
+}
+
+// =========================
+// Gradient Utilities
+// =========================
+$bg-gradients: (
+  "bg-gradient-start-1": linear-gradient(to right, var(--surface-brand-subtle), var(--surface-base)),
+  "bg-gradient-start-2": linear-gradient(to right, color-mix(in srgb, var(--primary-100) 45%, var(--surface-base) 55%), var(--surface-base)),
+  "bg-gradient-start-3": linear-gradient(to right, color-mix(in srgb, var(--primary-200) 35%, var(--surface-base) 65%), var(--surface-base)),
+  "bg-gradient-start-4": linear-gradient(to right, var(--surface-success-subtle), var(--surface-base)),
+  "bg-gradient-start-5": linear-gradient(to right, var(--surface-danger-subtle), var(--surface-base)),
+
+  "bg-gradient-dark-start-1": linear-gradient(
+    261deg,
+    color-mix(in srgb, var(--surface-danger-subtle) 60%, transparent),
+    color-mix(in srgb, var(--danger-100) 60%, var(--surface-base) 40%)
+  ),
+  "bg-gradient-dark-start-2": linear-gradient(
+    262deg,
+    color-mix(in srgb, var(--primary-100) 30%, transparent),
+    color-mix(in srgb, var(--primary-200) 55%, var(--surface-base) 45%)
+  ),
+  "bg-gradient-dark-start-3": linear-gradient(
+    262deg,
+    color-mix(in srgb, var(--surface-brand-subtle) 80%, var(--surface-base) 20%),
+    color-mix(in srgb, var(--primary-200) 50%, var(--surface-base) 50%)
+  ),
+
+  "bg-gradient-end-1": linear-gradient(to right, var(--surface-base), color-mix(in srgb, var(--primary-100) 28%, var(--surface-base) 72%)),
+  "bg-gradient-end-2": linear-gradient(to right, var(--surface-base), color-mix(in srgb, var(--success-100) 28%, var(--surface-base) 72%)),
+  "bg-gradient-end-3": linear-gradient(to right, var(--surface-base), color-mix(in srgb, var(--warning-100) 28%, var(--surface-base) 72%)),
+  "bg-gradient-end-4": linear-gradient(to right, var(--surface-base), color-mix(in srgb, var(--primary-100) 22%, var(--surface-base) 78%)),
+  "bg-gradient-end-5": linear-gradient(to right, var(--surface-base), color-mix(in srgb, var(--danger-100) 22%, var(--surface-base) 78%)),
+  "bg-gradient-end-6": linear-gradient(to right, var(--surface-base), var(--surface-brand-subtle)),
+
+  "bg-gradient-purple": linear-gradient(
+    300deg,
+    color-mix(in srgb, var(--danger-100) 25%, var(--surface-base) 75%),
+    color-mix(in srgb, var(--primary-200) 40%, var(--surface-base) 60%)
+  ),
+  "bg-gradient-primary": linear-gradient(
+    299deg,
+    color-mix(in srgb, var(--primary-100) 45%, var(--surface-base) 55%),
+    color-mix(in srgb, var(--primary-200) 55%, var(--surface-base) 45%)
+  ),
+  "bg-gradient-success": linear-gradient(
+    299deg,
+    color-mix(in srgb, var(--success-50) 55%, var(--surface-base) 45%),
+    color-mix(in srgb, var(--success-200) 55%, var(--surface-base) 45%)
+  ),
+  "bg-gradient-danger": linear-gradient(
+    299deg,
+    color-mix(in srgb, var(--danger-50) 55%, var(--surface-base) 45%),
+    color-mix(in srgb, var(--danger-200) 55%, var(--surface-base) 45%)
+  ),
+
+  "bg-primary-gradient": linear-gradient(299deg, var(--primary-100), var(--primary-200)),
+  "bg-success-gradient": linear-gradient(270deg, var(--success-300), var(--success-main)),
+  "bg-info-gradient": linear-gradient(270deg, var(--info-300), var(--info-main)),
+  "bg-warning-gradient": linear-gradient(270deg, var(--warning-300), var(--warning-main)),
+  "bg-danger-gradient": linear-gradient(270deg, var(--danger-300), var(--danger-main)),
+  "bg-primary-success-gradient": linear-gradient(90deg, var(--primary-200), color-mix(in srgb, var(--success-100) 55%, var(--surface-base) 45%)),
+
+  "bg-dark-primary-gradient": linear-gradient(270deg, var(--primary-300), var(--primary-700)),
+  "bg-dark-lilac-gradient": linear-gradient(270deg, var(--primary-300), var(--primary-800)),
+  "bg-dark-success-gradient": linear-gradient(270deg, var(--success-300), var(--success-700)),
+  "bg-dark-info-gradient": linear-gradient(270deg, var(--info-300), var(--info-700)),
+  "bg-dark-warning-gradient": linear-gradient(270deg, var(--warning-300), var(--warning-700)),
+  "bg-dark-danger-gradient": linear-gradient(270deg, var(--danger-300), var(--danger-700)),
+  "bg-dark-dark-gradient": linear-gradient(90deg, var(--surface-raised), var(--surface-inverse)),
+
+  "bg-danger-gradient-light": linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--danger-100) 20%, var(--surface-base) 80%),
+    color-mix(in srgb, var(--surface-base) 88%, var(--danger-50) 12%)
+  ),
+  "bg-white-gradient-light": linear-gradient(
+    317deg,
+    color-mix(in srgb, var(--surface-base) 18%, transparent),
+    color-mix(in srgb, var(--surface-base) 62%, transparent)
+  ),
+  "bg-light-pink": linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--danger-100) 18%, var(--surface-base) 82%),
+    color-mix(in srgb, var(--surface-base) 90%, var(--danger-50) 10%)
+  ),
+
+  "bg-gradient-blue-warning": linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--info-100) 40%, var(--surface-base) 60%),
+    color-mix(in srgb, var(--warning-100) 45%, var(--surface-base) 55%)
+  ),
+  "bg-tb-warning": linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--warning-main) 25%, transparent),
+    color-mix(in srgb, var(--danger-main) 25%, transparent)
+  ),
+  "bg-tb-lilac": linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--danger-300) 25%, transparent),
+    color-mix(in srgb, var(--primary-700) 25%, transparent)
+  ),
+  "bg-tb-primary": linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--brand) 25%, transparent),
+    color-mix(in srgb, var(--info-main) 25%, transparent)
+  ),
+  "bg-tb-success": linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--success-300) 25%, transparent),
+    color-mix(in srgb, var(--success-700) 25%, transparent)
+  )
+);
+
+@each $name, $gradient in $bg-gradients {
+  @include gradient-class($name, $gradient);
+}
+
+.aspect-ratio-1 {
+  aspect-ratio: 1;
+}
+
+// =========================
+// Deep Gradients
+// =========================
+$gradient-deep-map: (
+  1: linear-gradient(
+    270deg,
+    color-mix(in srgb, var(--primary-50) 55%, var(--surface-base) 45%),
+    color-mix(in srgb, var(--primary-100) 45%, var(--surface-base) 55%)
+  ),
+  2: linear-gradient(
+    270deg,
+    color-mix(in srgb, var(--primary-50) 35%, var(--surface-base) 65%),
+    color-mix(in srgb, var(--primary-100) 55%, var(--surface-base) 45%)
+  ),
+  3: linear-gradient(
+    270deg,
+    color-mix(in srgb, var(--success-50) 55%, var(--surface-base) 45%),
+    color-mix(in srgb, var(--success-100) 45%, var(--surface-base) 55%)
+  ),
+  4: linear-gradient(
+    270deg,
+    color-mix(in srgb, var(--warning-50) 55%, var(--surface-base) 45%),
+    color-mix(in srgb, var(--warning-100) 45%, var(--surface-base) 55%)
+  )
+);
+
+$gradient-deep-two-map: (
+  1: linear-gradient(
+    270deg,
+    color-mix(in srgb, var(--info-100) 42%, var(--surface-base) 58%),
+    color-mix(in srgb, var(--surface-base) 85%, var(--info-50) 15%)
+  ),
+  2: linear-gradient(
+    270deg,
+    color-mix(in srgb, var(--warning-100) 42%, var(--surface-base) 58%),
+    color-mix(in srgb, var(--surface-base) 85%, var(--warning-50) 15%)
+  ),
+  3: linear-gradient(
+    270deg,
+    color-mix(in srgb, var(--primary-100) 42%, var(--surface-base) 58%),
+    color-mix(in srgb, var(--surface-base) 85%, var(--primary-50) 15%)
+  ),
+  4: linear-gradient(
+    270deg,
+    color-mix(in srgb, var(--success-100) 42%, var(--surface-base) 58%),
+    color-mix(in srgb, var(--surface-base) 85%, var(--success-50) 15%)
+  )
+);
+
+@each $i, $gradient in $gradient-deep-map {
+  .gradient-deep-#{$i} {
+    background: $gradient;
+  }
+}
+
+@each $i, $gradient in $gradient-deep-two-map {
+  .gradient-deep-two-#{$i} {
+    background: $gradient;
+  }
+}
+
+// =========================
+// Light Status Backgrounds
+// =========================
+$light-status-colors: (
+  "blue-light": color-mix(in srgb, var(--primary-300) 45%, var(--surface-base) 55%),
+  "green-light": color-mix(in srgb, var(--success-300) 45%, var(--surface-base) 55%),
+  "red-light": color-mix(in srgb, var(--danger-300) 45%, var(--surface-base) 55%),
+  "warning-light": color-mix(in srgb, var(--warning-300) 45%, var(--surface-base) 55%),
+  "blue-light-two": color-mix(in srgb, var(--primary-100) 28%, var(--surface-base) 72%),
+  "green-light-two": color-mix(in srgb, var(--success-100) 28%, var(--surface-base) 72%),
+  "red-light-two": color-mix(in srgb, var(--danger-100) 28%, var(--surface-base) 72%),
+  "warning-light-two": color-mix(in srgb, var(--warning-100) 28%, var(--surface-base) 72%)
+);
+
+@each $name, $value in $light-status-colors {
+  .bg-#{$name} {
+    background-color: $value !important;
+  }
+}
+
+// =========================
+// Stroke Classes
+// =========================
+.stroke-blue {
+  stroke: var(--primary-600) !important;
+}
+
+.stroke-red {
+  stroke: var(--danger-main) !important;
+}
+
+.stroke-warning {
+  stroke: var(--warning-main) !important;
+}
+
+.stroke-green {
+  stroke: var(--success-main) !important;
+}
+
+// =========================
+// Custom Gradient Blocks
+// =========================
+.bg-gradient-custom-1 {
+  background: linear-gradient(246deg, var(--primary-400) 5.05%, var(--primary-700) 96.12%);
+}
+
+.bg-gradient-custom-2 {
+  background: linear-gradient(245deg, var(--info-300) 4.86%, var(--info-700) 96.35%);
+}
+
+.bg-gradient-custom-3 {
+  background: linear-gradient(245deg, var(--brand) 3.97%, var(--info-main) 96.86%);
+}
+
+.bg-gradient-custom-4 {
+  background: linear-gradient(250deg, var(--warning-300) 3.29%, var(--warning-main) 96.24%);
+}
+
+.gradient-bg-chart {
+  &::before {
+    position: absolute;
+    content: "";
+    width: 100%;
+    height: 106px;
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--primary-700) 15%, transparent) 0%,
+      color-mix(in srgb, var(--brand) 15%, transparent) 36.35%,
+      color-mix(in srgb, var(--primary-500) 15%, transparent) 70.54%,
+      color-mix(in srgb, var(--warning-main) 15%, transparent) 100%
+    );
+    filter: blur(25px);
+    inset-block-end: 0;
+    z-index: -1;
+  }
+}
+
+// =========================
+// Gradient Light Backgrounds
+// =========================
+.gradient-bg-light-one {
+  background: linear-gradient(
+    0deg,
+    color-mix(in srgb, var(--primary-100) 30%, var(--surface-base) 70%) 0%,
+    var(--surface-base) 100%
+  );
+}
+
+.gradient-bg-light-two {
+  background: linear-gradient(0deg, var(--surface-brand-subtle) 0%, var(--surface-base) 100%);
+}
+
+.gradient-bg-light-three {
+  background: linear-gradient(
+    0deg,
+    color-mix(in srgb, var(--primary-100) 24%, var(--surface-base) 76%) 0%,
+    var(--surface-base) 100%
+  );
+}
+
+.gradient-bg-light-four {
+  background: linear-gradient(
+    357deg,
+    color-mix(in srgb, var(--warning-100) 28%, var(--surface-base) 72%) 2.78%,
+    var(--surface-base) 97.3%
+  );
+}
+
+.gradient-bg-light-five {
+  background: linear-gradient(
+    0deg,
+    color-mix(in srgb, var(--warning-50) 55%, var(--surface-base) 45%) 0%,
+    var(--surface-base) 100%
+  );
+}
+
+.gradient-bg-light-six {
+  background: linear-gradient(
+    0deg,
+    color-mix(in srgb, var(--success-50) 55%, var(--surface-base) 45%) 0%,
+    var(--surface-base) 100%
+  );
+}
+
+// =========================
+// Card Backgrounds
+// =========================
+.sass-card-gradient-bg-1 {
+  background: linear-gradient(
+    299deg,
+    transparent 53.55%,
+    color-mix(in srgb, var(--brand) 8%, transparent) 93.27%
+  );
+}
+
+.sass-card-gradient-bg-2 {
+  background: linear-gradient(
+    299deg,
+    transparent 56.67%,
+    color-mix(in srgb, var(--warning-main) 15%, transparent) 92.87%
+  );
+}
+
+.sass-card-gradient-bg-3 {
+  background: linear-gradient(
+    299deg,
+    transparent 56.67%,
+    color-mix(in srgb, var(--primary-600) 16%, transparent) 92.87%
+  );
+}
+
+.sass-card-gradient-bg-4 {
+  background: linear-gradient(
+    299deg,
+    transparent 56.67%,
+    color-mix(in srgb, var(--success-main) 14%, transparent) 92.87%
+  );
+}
+
+.sales-card-gradient-bg-1 {
+  background: linear-gradient(
+    190deg,
+    var(--surface-base) 8.24%,
+    color-mix(in srgb, var(--primary-100) 28%, var(--surface-base) 72%) 89.87%
+  );
+}
+
+.sales-card-gradient-bg-2 {
+  background: linear-gradient(
+    190deg,
+    var(--surface-base) 8.24%,
+    color-mix(in srgb, var(--warning-100) 28%, var(--surface-base) 72%) 89.87%
+  );
+}
+
+.sales-card-gradient-bg-3 {
+  background: linear-gradient(
+    190deg,
+    var(--surface-base) 8.24%,
+    color-mix(in srgb, var(--primary-100) 24%, var(--surface-base) 76%) 89.87%
+  );
+}
+
+.sales-card-gradient-bg-4 {
+  background: linear-gradient(
+    190deg,
+    var(--surface-base) 8.24%,
+    color-mix(in srgb, var(--success-100) 28%, var(--surface-base) 72%) 89.87%
+  );
+}
+
+// =========================
+// Dark Theme Overrides
+// =========================
+html[data-theme="dark"] {
+  .bg-base-50 {
+    background-color: color-mix(in srgb, var(--surface-base) 10%, transparent) !important;
+  }
+
+  .bg-gradient-start-1 {
+    background: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--surface-brand-subtle) 75%, transparent),
+      color-mix(in srgb, var(--surface-base) 10%, transparent)
+    );
+  }
+
+  .bg-gradient-start-2 {
+    background: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--primary-100) 15%, transparent),
+      color-mix(in srgb, var(--surface-base) 10%, transparent)
+    );
+  }
+
+  .bg-gradient-start-3 {
+    background: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--primary-200) 15%, transparent),
+      color-mix(in srgb, var(--surface-base) 10%, transparent)
+    );
+  }
+
+  .bg-gradient-start-4 {
+    background: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--surface-success-subtle) 75%, transparent),
+      color-mix(in srgb, var(--surface-base) 10%, transparent)
+    );
+  }
+
+  .bg-gradient-start-5 {
+    background: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--surface-danger-subtle) 75%, transparent),
+      color-mix(in srgb, var(--surface-base) 10%, transparent)
+    );
+  }
+
+  .bg-gradient-dark-start-1 {
+    background: linear-gradient(
+      261deg,
+      color-mix(in srgb, var(--surface-danger-subtle) 60%, transparent) 2.07%,
+      color-mix(in srgb, var(--danger-100) 15%, transparent) 97.73%
+    );
+  }
+
+  .bg-gradient-dark-start-2 {
+    background: linear-gradient(
+      262deg,
+      color-mix(in srgb, var(--primary-100) 10%, transparent) 2.45%,
+      color-mix(in srgb, var(--primary-200) 15%, transparent) 97.35%
+    );
+  }
+
+  .bg-gradient-dark-start-3 {
+    background: linear-gradient(
+      262deg,
+      color-mix(in srgb, var(--surface-brand-subtle) 85%, transparent) 4.01%,
+      color-mix(in srgb, var(--primary-200) 15%, transparent) 99.29%
+    );
+  }
+
+  .bg-gradient-end-1 {
+    background: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--surface-base) 7.5%, transparent),
+      color-mix(in srgb, var(--primary-100) 12.5%, transparent)
+    );
+  }
+
+  .bg-gradient-end-2 {
+    background: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--surface-base) 7.5%, transparent),
+      color-mix(in srgb, var(--success-100) 12.5%, transparent)
+    );
+  }
+
+  .bg-gradient-end-3 {
+    background: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--surface-base) 7.5%, transparent),
+      color-mix(in srgb, var(--warning-100) 12.5%, transparent)
+    );
+  }
+
+  .bg-gradient-end-4 {
+    background: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--surface-base) 7.5%, transparent),
+      color-mix(in srgb, var(--primary-100) 12.5%, transparent)
+    );
+  }
+
+  .bg-gradient-end-5 {
+    background: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--surface-base) 7.5%, transparent),
+      color-mix(in srgb, var(--danger-100) 12.5%, transparent)
+    );
+  }
+
+  .bg-gradient-end-6 {
+    background: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--surface-base) 7.5%, transparent),
+      color-mix(in srgb, var(--surface-brand-subtle) 12.5%, transparent)
+    );
+  }
+
+  .bg-gradient-purple {
+    background: linear-gradient(
+      300deg,
+      color-mix(in srgb, var(--danger-100) 10%, transparent) 1.27%,
+      color-mix(in srgb, var(--primary-200) 15%, transparent) 98.89%
+    );
+  }
+
+  .bg-gradient-primary {
+    background: linear-gradient(
+      299deg,
+      color-mix(in srgb, var(--primary-100) 10%, transparent) 1.03%,
+      color-mix(in srgb, var(--primary-200) 15%, transparent) 97.72%
+    );
+  }
+
+  .bg-gradient-success {
+    background: linear-gradient(
+      299deg,
+      color-mix(in srgb, var(--success-50) 10%, transparent) 1.76%,
+      color-mix(in srgb, var(--success-200) 15%, transparent) 98.11%
+    );
+  }
+
+  .bg-gradient-danger {
+    background: linear-gradient(
+      299deg,
+      color-mix(in srgb, var(--danger-50) 10%, transparent) 0.96%,
+      color-mix(in srgb, var(--danger-200) 15%, transparent) 98.97%
+    );
+  }
+
+  .bg-danger-gradient-light {
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--danger-100) 5%, transparent) 0.12%,
+      color-mix(in srgb, var(--surface-base) 10%, transparent) 99.89%
+    ) !important;
+  }
+
+  .bg-white-gradient-light {
+    background: linear-gradient(
+      317deg,
+      color-mix(in srgb, var(--surface-base) 5%, transparent) 8.56%,
+      color-mix(in srgb, var(--surface-base) 10%, transparent) 91.49%
+    ) !important;
+  }
+
+  .bg-light-pink {
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--danger-100) 10%, transparent) 0.12%,
+      color-mix(in srgb, var(--surface-base) 5%, transparent) 99.89%
+    );
+  }
+
+  @for $i from 1 through 4 {
+    .gradient-deep-#{$i} {
+      background: var(--neutral-50);
+    }
+
+    .gradient-deep-two-#{$i} {
+      background: var(--neutral-100);
+      border-color: var(--border-color) !important;
+    }
+  }
+
+  .dark-bg-neutral-200 {
+    background-color: var(--neutral-200) !important;
+  }
+
+  .bg-blue-light {
+    background-color: color-mix(in srgb, var(--primary-700) 40%, transparent) !important;
+  }
+
+  .bg-green-light {
+    background-color: color-mix(in srgb, var(--success-700) 40%, transparent) !important;
+  }
+
+  .bg-red-light {
+    background-color: color-mix(in srgb, var(--danger-700) 40%, transparent) !important;
+  }
+
+  .bg-warning-light {
+    background-color: color-mix(in srgb, var(--warning-700) 40%, transparent) !important;
+  }
+
+  .bg-blue-light-two {
+    background-color: color-mix(in srgb, var(--primary-700) 15%, transparent) !important;
+  }
+
+  .bg-green-light-two {
+    background-color: color-mix(in srgb, var(--success-700) 15%, transparent) !important;
+  }
+
+  .bg-red-light-two {
+    background-color: color-mix(in srgb, var(--danger-700) 15%, transparent) !important;
+  }
+
+  .bg-warning-light-two {
+    background-color: color-mix(in srgb, var(--warning-700) 15%, transparent) !important;
+  }
+
+  .gradient-bg-light-one,
+  .gradient-bg-light-two,
+  .gradient-bg-light-three,
+  .gradient-bg-light-four,
+  .gradient-bg-light-five,
+  .gradient-bg-light-six {
+    background: linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--surface-brand-subtle) 65%, transparent) 0%,
+      color-mix(in srgb, var(--surface-base) 10%, transparent) 100%
+    );
+  }
+
+  .sales-card-gradient-bg-1,
+  .sales-card-gradient-bg-2,
+  .sales-card-gradient-bg-3,
+  .sales-card-gradient-bg-4 {
+    background: var(--surface-raised);
+  }
+}
+
+// =========================
+// Misc
+// =========================
+.bg-purple-30 {
+  background-color: color-mix(in srgb, var(--primary-200) 55%, var(--surface-base) 45%) !important;
+}
+
+.bg-brand-color {
+  background-color: var(--brand) !important;
+}
+
+.text-brand-color {
+  color: var(--brand) !important;
+}

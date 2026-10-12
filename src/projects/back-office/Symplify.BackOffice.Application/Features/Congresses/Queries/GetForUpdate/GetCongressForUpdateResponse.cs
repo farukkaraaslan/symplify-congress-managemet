@@ -14,6 +14,7 @@ public class GetCongressForUpdateResponse
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
     public CongressStatus Status { get; set; }
+    public bool IsAuthorVideoUploadEnabled { get; set; }
     public string? ContactName { get; set; }
     public string? ContactTitle { get; set; }
     public string? ContactEmail { get; set; }

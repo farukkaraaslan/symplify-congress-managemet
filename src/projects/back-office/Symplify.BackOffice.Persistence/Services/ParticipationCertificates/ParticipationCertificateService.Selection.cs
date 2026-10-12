@@ -139,6 +139,99 @@ public sealed partial class ParticipationCertificateService
         };
     }
 
+    public async Task<ParticipationCertificateVerificationDto?> GetVerificationAsync(
+        string verificationCode,
+        CancellationToken cancellationToken = default)
+    {
+        string normalizedCode = (verificationCode ?? string.Empty).Trim().ToUpperInvariant();
+        if (string.IsNullOrWhiteSpace(normalizedCode) || normalizedCode.Length > 120)
+            return null;
+
+        var certificate = await _context.ParticipationCertificates
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(item => item.VerificationCode == normalizedCode)
+            .Select(item => new
+            {
+                item.PublicId,
+                item.VerificationCode,
+                item.Culture,
+                item.SubmissionNumber,
+                item.SubmissionTitleSnapshot,
+                item.AuthorFullNameSnapshot,
+                item.GeneratedAt,
+                item.RevokedAt,
+                item.DeletedDate,
+                CongressName = item.Congress.Name
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (certificate is null || !certificate.PublicId.HasValue || string.IsNullOrWhiteSpace(certificate.VerificationCode))
+            return null;
+
+        bool revoked = certificate.RevokedAt.HasValue || certificate.DeletedDate.HasValue;
+        return new ParticipationCertificateVerificationDto
+        {
+            PublicId = certificate.PublicId.Value,
+            VerificationCode = certificate.VerificationCode,
+            IsValid = !revoked,
+            IsRevoked = revoked,
+            Culture = certificate.Culture,
+            CongressName = certificate.CongressName ?? string.Empty,
+            SubmissionNumber = certificate.SubmissionNumber,
+            SubmissionTitle = certificate.SubmissionTitleSnapshot,
+            ParticipantName = certificate.AuthorFullNameSnapshot,
+            GeneratedAt = certificate.GeneratedAt,
+            Message = revoked ? "Bu belge iptal edilmiştir." : "Bu belge Symplify sistemi tarafından doğrulanmıştır."
+        };
+    }
+
+    public async Task<ParticipationCertificateVerificationDto?> GetVerificationAsync(
+        Guid publicId,
+        CancellationToken cancellationToken = default)
+    {
+        if (publicId == Guid.Empty)
+            return null;
+
+        var certificate = await _context.ParticipationCertificates
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(item => item.PublicId == publicId)
+            .Select(item => new
+            {
+                item.PublicId,
+                item.VerificationCode,
+                item.Culture,
+                item.SubmissionNumber,
+                item.SubmissionTitleSnapshot,
+                item.AuthorFullNameSnapshot,
+                item.GeneratedAt,
+                item.RevokedAt,
+                item.DeletedDate,
+                CongressName = item.Congress.Name
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (certificate is null || !certificate.PublicId.HasValue)
+            return null;
+
+        bool revoked = certificate.RevokedAt.HasValue || certificate.DeletedDate.HasValue;
+        return new ParticipationCertificateVerificationDto
+        {
+            PublicId = certificate.PublicId.Value,
+            VerificationCode = certificate.VerificationCode ?? string.Empty,
+            IsValid = !revoked,
+            IsRevoked = revoked,
+            Culture = certificate.Culture,
+            CongressName = certificate.CongressName ?? string.Empty,
+            SubmissionNumber = certificate.SubmissionNumber,
+            SubmissionTitle = certificate.SubmissionTitleSnapshot,
+            ParticipantName = certificate.AuthorFullNameSnapshot,
+            GeneratedAt = certificate.GeneratedAt,
+            Message = revoked ? "Bu belge iptal edilmiştir." : "Bu belge Symplify sistemi tarafından doğrulanmıştır."
+        };
+    }
+
     public async Task<ParticipationCertificatePublicAccessResult> ResolvePublicAccessAsync(
         Guid publicId,
         string token,

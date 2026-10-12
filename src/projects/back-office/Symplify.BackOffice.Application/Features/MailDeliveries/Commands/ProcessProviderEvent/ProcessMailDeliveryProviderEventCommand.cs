@@ -99,8 +99,13 @@ public sealed class ProcessMailDeliveryProviderEventCommand : IRequest<bool>
 
             await _eventRepository.AddAsync(entity);
 
-            // SNS can occasionally deliver events out of order. Keep all history, but only let a newer
-            // event replace the list-summary state.
+            // Open/Click are engagement events, not delivery-state events. Persist them in the immutable
+            // provider timeline, but do not let them overwrite SMTP delivery diagnostics or DeliveryStatus.
+            if (providerEvent.EventType is MailDeliveryEventType.Open or MailDeliveryEventType.Click)
+                return true;
+
+            // SNS can occasionally deliver delivery-state events out of order. Keep all history, but only
+            // let a newer delivery event replace the list-summary state.
             if (message.LastDeliveryEventAt.HasValue && occurredAt < message.LastDeliveryEventAt.Value)
                 return true;
 

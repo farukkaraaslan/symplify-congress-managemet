@@ -1,0 +1,420 @@
+@use "../abstracts/function";
+@use "../abstracts/variables";
+
+// ==================================================
+// Theme-aware Buttons
+// - Bootstrap .btn default rengini override eder
+// - Dark mode'da buton yazı / ikon rengi görünür kalır
+// - FullCalendar bootstrap5 toolbar butonlarıyla uyumludur
+// - Theme switcher değiştiğinde primary / brand otomatik güncellenir
+// ==================================================
+
+// --------------------------------------------------
+// Config
+// --------------------------------------------------
+$btn-colors: (
+  "success": --success,
+  "danger": --danger,
+  "warning": --warning,
+  "info": --info,
+);
+
+$btn-transition:
+  background-color 0.2s ease,
+  border-color 0.2s ease,
+  color 0.2s ease,
+  box-shadow 0.2s ease,
+  transform 0.12s ease,
+  opacity 0.2s ease;
+
+// --------------------------------------------------
+// Mixins
+// --------------------------------------------------
+@mixin btn-base {
+  // Bootstrap variable bridge
+  --bs-btn-font-weight: 500;
+  --bs-btn-line-height: 1.2;
+  --bs-btn-padding-y: #{function.rem(9px)};
+  --bs-btn-padding-x: #{function.rem(12px)};
+  --bs-btn-border-width: 1px;
+  --bs-btn-border-radius: var(--control-radius-sm, #{function.rem(10px)});
+
+  // Theme-aware defaults
+  --bs-btn-color: var(--text-primary, #111827);
+  --bs-btn-bg: transparent;
+  --bs-btn-border-color: transparent;
+  --bs-btn-hover-color: var(--text-primary, #111827);
+  --bs-btn-hover-bg: rgba(var(--brand-rgb, 72, 127, 255), 0.08);
+  --bs-btn-hover-border-color: rgba(var(--brand-rgb, 72, 127, 255), 0.18);
+  --bs-btn-focus-shadow-rgb: var(--brand-rgb, 72, 127, 255);
+  --bs-btn-active-color: var(--text-primary, #111827);
+  --bs-btn-active-bg: rgba(var(--brand-rgb, 72, 127, 255), 0.12);
+  --bs-btn-active-border-color: rgba(var(--brand-rgb, 72, 127, 255), 0.22);
+  --bs-btn-disabled-color: var(--text-disabled, rgba(17, 24, 39, 0.42));
+  --bs-btn-disabled-bg: transparent;
+  --bs-btn-disabled-border-color: transparent;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: function.rem(8px);
+  padding: var(--bs-btn-padding-y) var(--bs-btn-padding-x);
+  font-size: function.rem(16px);
+  font-weight: var(--bs-btn-font-weight);
+  line-height: var(--bs-btn-line-height);
+  text-align: center;
+  text-decoration: none;
+  vertical-align: middle;
+  user-select: none;
+  appearance: none;
+
+  color: var(--bs-btn-color);
+  background-color: var(--bs-btn-bg);
+  border: var(--bs-btn-border-width) solid var(--bs-btn-border-color);
+  border-radius: var(--bs-btn-border-radius);
+
+  transition: $btn-transition;
+
+  &:hover {
+    color: var(--bs-btn-hover-color);
+    background-color: var(--bs-btn-hover-bg);
+    border-color: var(--bs-btn-hover-border-color);
+    text-decoration: none;
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &:focus:not(:focus-visible) {
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring, 0 0 0 4px rgba(var(--brand-rgb, 72, 127, 255), 0.12));
+  }
+
+  &:active,
+  &.active,
+  &.show {
+    color: var(--bs-btn-active-color);
+    background-color: var(--bs-btn-active-bg);
+    border-color: var(--bs-btn-active-border-color);
+    transform: translateY(1px);
+  }
+
+  &:disabled,
+  &.disabled {
+    opacity: 0.72;
+    color: var(--bs-btn-disabled-color);
+    background-color: var(--bs-btn-disabled-bg);
+    border-color: var(--bs-btn-disabled-border-color);
+    pointer-events: none;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .icon,
+  i,
+  svg {
+    flex-shrink: 0;
+  }
+
+  svg,
+  svg path,
+  svg stroke {
+    color: currentColor;
+  }
+}
+
+@mixin btn-lg {
+  --bs-btn-padding-y: #{function.rem(15px)};
+  --bs-btn-padding-x: #{function.rem(14px)};
+  --bs-btn-font-weight: 600;
+}
+
+@mixin btn-sm {
+  --bs-btn-padding-y: #{function.rem(8px)};
+  --bs-btn-padding-x: #{function.rem(14px)};
+  font-size: function.rem(14px);
+}
+
+@mixin solid-btn($token, $text-color: var(--text-on-brand, #fff)) {
+  --bs-btn-color: #{$text-color};
+  --bs-btn-bg: var(#{$token}-main);
+  --bs-btn-border-color: var(#{$token}-main);
+  --bs-btn-hover-color: #{$text-color};
+  --bs-btn-hover-bg: var(#{$token}-hover);
+  --bs-btn-hover-border-color: var(#{$token}-hover);
+  --bs-btn-active-color: #{$text-color};
+  --bs-btn-active-bg: var(#{$token}-pressed);
+  --bs-btn-active-border-color: var(#{$token}-pressed);
+  --bs-btn-disabled-color: rgba(255, 255, 255, 0.78);
+  --bs-btn-disabled-bg: color-mix(in srgb, var(#{$token}-main) 72%, transparent);
+  --bs-btn-disabled-border-color: color-mix(in srgb, var(#{$token}-main) 72%, transparent);
+}
+
+@mixin outline-btn($token, $text-color: var(--text-on-brand, #fff)) {
+  --bs-btn-color: var(#{$token}-main);
+  --bs-btn-bg: transparent;
+  --bs-btn-border-color: var(#{$token}-main);
+  --bs-btn-hover-color: #{$text-color};
+  --bs-btn-hover-bg: var(#{$token}-hover);
+  --bs-btn-hover-border-color: var(#{$token}-hover);
+  --bs-btn-active-color: #{$text-color};
+  --bs-btn-active-bg: var(#{$token}-pressed);
+  --bs-btn-active-border-color: var(#{$token}-pressed);
+  --bs-btn-disabled-color: color-mix(in srgb, var(#{$token}-main) 55%, transparent);
+  --bs-btn-disabled-bg: transparent;
+  --bs-btn-disabled-border-color: color-mix(in srgb, var(#{$token}-main) 35%, transparent);
+}
+
+@mixin solid-shade-btn($color, $shade, $text-color: var(--text-on-brand, #fff)) {
+  --bs-btn-color: #{$text-color};
+  --bs-btn-bg: var(--#{$color}-#{$shade});
+  --bs-btn-border-color: var(--#{$color}-#{$shade});
+  --bs-btn-hover-color: #{$text-color};
+  --bs-btn-hover-bg: var(--#{$color}-700);
+  --bs-btn-hover-border-color: var(--#{$color}-700);
+  --bs-btn-active-color: #{$text-color};
+  --bs-btn-active-bg: var(--#{$color}-800);
+  --bs-btn-active-border-color: var(--#{$color}-800);
+  --bs-btn-disabled-color: rgba(255, 255, 255, 0.78);
+  --bs-btn-disabled-bg: color-mix(in srgb, var(--#{$color}-#{$shade}) 72%, transparent);
+  --bs-btn-disabled-border-color: color-mix(in srgb, var(--#{$color}-#{$shade}) 72%, transparent);
+}
+
+@mixin outline-shade-btn($color, $shade, $text-color: var(--text-on-brand, #fff)) {
+  --bs-btn-color: var(--#{$color}-#{$shade});
+  --bs-btn-bg: transparent;
+  --bs-btn-border-color: var(--#{$color}-#{$shade});
+  --bs-btn-hover-color: #{$text-color};
+  --bs-btn-hover-bg: var(--#{$color}-#{$shade});
+  --bs-btn-hover-border-color: var(--#{$color}-#{$shade});
+  --bs-btn-active-color: #{$text-color};
+  --bs-btn-active-bg: var(--#{$color}-800);
+  --bs-btn-active-border-color: var(--#{$color}-800);
+  --bs-btn-disabled-color: color-mix(in srgb, var(--#{$color}-#{$shade}) 55%, transparent);
+  --bs-btn-disabled-bg: transparent;
+  --bs-btn-disabled-border-color: color-mix(in srgb, var(--#{$color}-#{$shade}) 35%, transparent);
+}
+
+// --------------------------------------------------
+// Base button
+// Bootstrap default .btn rengini burada kırıyoruz.
+// --------------------------------------------------
+.btn {
+  @include btn-base;
+
+  &.btn-lg {
+    @include btn-lg;
+  }
+
+  &.btn-sm {
+    @include btn-sm;
+  }
+}
+
+// --------------------------------------------------
+// Brand / primary buttons
+// FullCalendar bootstrap5 toolbar bunları kullanır.
+// --------------------------------------------------
+.btn.btn-primary,
+.fc .fc-button.btn-primary {
+  @include solid-shade-btn("primary", "600");
+}
+
+.btn.btn-outline-primary,
+.fc .fc-button.btn-outline-primary {
+  @include outline-shade-btn("primary", "600");
+}
+
+// Soft / ghost helpers
+.btn.btn-secondary,
+.fc .fc-button.btn-secondary {
+  --bs-btn-color: var(--text-primary, #111827);
+  --bs-btn-bg: var(--surface-brand-subtle, rgba(var(--brand-rgb, 72, 127, 255), 0.08));
+  --bs-btn-border-color: rgba(var(--brand-rgb, 72, 127, 255), 0.12);
+  --bs-btn-hover-color: var(--text-primary, #111827);
+  --bs-btn-hover-bg: var(--surface-brand-soft, rgba(var(--brand-rgb, 72, 127, 255), 0.14));
+  --bs-btn-hover-border-color: rgba(var(--brand-rgb, 72, 127, 255), 0.22);
+  --bs-btn-active-color: var(--text-primary, #111827);
+  --bs-btn-active-bg: rgba(var(--brand-rgb, 72, 127, 255), 0.18);
+  --bs-btn-active-border-color: rgba(var(--brand-rgb, 72, 127, 255), 0.28);
+  --bs-btn-disabled-color: var(--text-disabled, rgba(17, 24, 39, 0.42));
+  --bs-btn-disabled-bg: rgba(var(--brand-rgb, 72, 127, 255), 0.05);
+  --bs-btn-disabled-border-color: rgba(var(--brand-rgb, 72, 127, 255), 0.08);
+}
+
+.btn.btn-light,
+.fc .fc-button.btn-light {
+  --bs-btn-color: var(--text-primary, #111827);
+  --bs-btn-bg: var(--surface-base, #ffffff);
+  --bs-btn-border-color: var(--border-subtle, rgba(209, 213, 219, 0.80));
+  --bs-btn-hover-color: var(--text-primary, #111827);
+  --bs-btn-hover-bg: var(--surface-raised, #f8fafc);
+  --bs-btn-hover-border-color: var(--border-strong, rgba(209, 213, 219, 0.90));
+  --bs-btn-active-color: var(--text-primary, #111827);
+  --bs-btn-active-bg: var(--surface-subtle, #f3f4f6);
+  --bs-btn-active-border-color: var(--border-strong, rgba(209, 213, 219, 0.90));
+  --bs-btn-disabled-color: var(--text-disabled, rgba(17, 24, 39, 0.42));
+  --bs-btn-disabled-bg: var(--surface-muted, #f9fafb);
+  --bs-btn-disabled-border-color: var(--border-soft, rgba(209, 213, 219, 0.56));
+}
+
+.btn.btn-dark,
+.fc .fc-button.btn-dark {
+  --bs-btn-color: #ffffff;
+  --bs-btn-bg: var(--dark-2, #273142);
+  --bs-btn-border-color: var(--dark-2, #273142);
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: var(--dark-3, #323d4e);
+  --bs-btn-hover-border-color: var(--dark-3, #323d4e);
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: var(--dark-1, #1b2431);
+  --bs-btn-active-border-color: var(--dark-1, #1b2431);
+  --bs-btn-disabled-color: rgba(255, 255, 255, 0.72);
+  --bs-btn-disabled-bg: color-mix(in srgb, var(--dark-2, #273142) 72%, transparent);
+  --bs-btn-disabled-border-color: color-mix(in srgb, var(--dark-2, #273142) 72%, transparent);
+}
+
+// --------------------------------------------------
+// Semantic buttons
+// --------------------------------------------------
+@each $name, $token in $btn-colors {
+  .btn.btn-#{$name} {
+    @include solid-btn($token);
+  }
+
+  .btn.btn-outline-#{$name} {
+    @include outline-btn($token);
+  }
+}
+
+// --------------------------------------------------
+// Color shade buttons
+// Example: .btn-red-500 / .btn-outline-red-500
+// --------------------------------------------------
+@each $color, $shades in variables.$colors {
+  @each $shade, $value in $shades {
+    .btn.btn-#{$color}-#{$shade} {
+      @include solid-shade-btn($color, $shade);
+    }
+
+    .btn.btn-outline-#{$color}-#{$shade} {
+      @include outline-shade-btn($color, $shade);
+    }
+  }
+}
+
+// --------------------------------------------------
+// Icon-only buttons
+// --------------------------------------------------
+.btn.btn-icon {
+  width: var(--control-height-sm, #{function.rem(40px)});
+  height: var(--control-height-sm, #{function.rem(40px)});
+  padding: 0;
+}
+
+.btn.btn-icon.btn-lg {
+  width: var(--control-height-lg, #{function.rem(56px)});
+  height: var(--control-height-lg, #{function.rem(56px)});
+}
+
+.btn.btn-icon.btn-sm {
+  width: var(--control-height-sm, #{function.rem(40px)});
+  height: var(--control-height-sm, #{function.rem(40px)});
+}
+
+// --------------------------------------------------
+// FullCalendar navigation hard-fix
+// Sebep: bootstrap .btn default color: #212529 dark mode'da görünmüyordu.
+// --------------------------------------------------
+.fc .fc-button,
+.fc .fc-button.btn {
+  color: var(--bs-btn-color, var(--text-primary)) !important;
+  background-color: var(--bs-btn-bg, transparent) !important;
+  border-color: var(--bs-btn-border-color, transparent) !important;
+}
+
+.fc .fc-prev-button,
+.fc .fc-next-button {
+  --bs-btn-color: var(--text-primary, #111827);
+  --bs-btn-bg: var(--surface-raised, rgba(255, 255, 255, 0.9));
+  --bs-btn-border-color: var(--border-subtle, rgba(209, 213, 219, 0.80));
+  --bs-btn-hover-color: var(--text-primary, #111827);
+  --bs-btn-hover-bg: rgba(var(--brand-rgb, 72, 127, 255), 0.10);
+  --bs-btn-hover-border-color: rgba(var(--brand-rgb, 72, 127, 255), 0.30);
+  --bs-btn-active-color: var(--text-primary, #111827);
+  --bs-btn-active-bg: rgba(var(--brand-rgb, 72, 127, 255), 0.14);
+  --bs-btn-active-border-color: rgba(var(--brand-rgb, 72, 127, 255), 0.36);
+  --bs-btn-disabled-color: var(--text-disabled, rgba(17, 24, 39, 0.42));
+  --bs-btn-disabled-bg: rgba(148, 163, 184, 0.08);
+  --bs-btn-disabled-border-color: rgba(148, 163, 184, 0.14);
+
+  min-width: var(--control-height-sm, #{function.rem(40px)});
+  height: var(--control-height-sm, #{function.rem(40px)});
+  border-radius: 50%;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  .fc-icon,
+  .fc-icon::before {
+    color: currentColor !important;
+    opacity: 1 !important;
+  }
+
+  &:disabled,
+  &.disabled {
+    opacity: 1;
+    filter: saturate(0.7) grayscale(0.12);
+  }
+}
+
+html[data-theme="dark"] .btn,
+[data-theme="dark"] .btn,
+html[data-bs-theme="dark"] .btn,
+[data-bs-theme="dark"] .btn,
+.dark .btn {
+  --bs-btn-color: var(--text-primary, #ffffff);
+  --bs-btn-hover-color: var(--text-primary, #ffffff);
+  --bs-btn-active-color: var(--text-primary, #ffffff);
+  --bs-btn-disabled-color: var(--text-disabled, rgba(255, 255, 255, 0.34));
+}
+
+html[data-theme="dark"] .fc .fc-prev-button,
+html[data-theme="dark"] .fc .fc-next-button,
+[data-theme="dark"] .fc .fc-prev-button,
+[data-theme="dark"] .fc .fc-next-button,
+html[data-bs-theme="dark"] .fc .fc-prev-button,
+html[data-bs-theme="dark"] .fc .fc-next-button,
+[data-bs-theme="dark"] .fc .fc-prev-button,
+[data-bs-theme="dark"] .fc .fc-next-button,
+.dark .fc .fc-prev-button,
+.dark .fc .fc-next-button {
+  --bs-btn-color: rgba(255, 255, 255, 0.92);
+  --bs-btn-bg: rgba(255, 255, 255, 0.04);
+  --bs-btn-border-color: rgba(255, 255, 255, 0.12);
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: rgba(var(--brand-rgb, 72, 127, 255), 0.16);
+  --bs-btn-hover-border-color: rgba(var(--brand-rgb, 72, 127, 255), 0.34);
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: rgba(var(--brand-rgb, 72, 127, 255), 0.20);
+  --bs-btn-active-border-color: rgba(var(--brand-rgb, 72, 127, 255), 0.40);
+  --bs-btn-disabled-color: rgba(255, 255, 255, 0.28);
+  --bs-btn-disabled-bg: rgba(255, 255, 255, 0.03);
+  --bs-btn-disabled-border-color: rgba(255, 255, 255, 0.08);
+}
+/* ================= SYMPLIFY Enterprise V6 button refinement ================= */
+.btn {
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  gap: 6px;
+}
+.btn.btn-sm { min-height: 34px; padding: 6px 11px; font-size: 13px; }
+.btn.btn-lg { min-height: 44px; padding: 10px 16px; font-size: 15px; }

@@ -22,6 +22,8 @@ public sealed class UpdateCongressViewModel
 
     public CongressStatus Status { get; set; } = CongressStatus.Draft;
 
+    public bool IsAuthorVideoUploadEnabled { get; set; } = true;
+
     public string? ContactName { get; set; }
 
     public string? ContactTitle { get; set; }

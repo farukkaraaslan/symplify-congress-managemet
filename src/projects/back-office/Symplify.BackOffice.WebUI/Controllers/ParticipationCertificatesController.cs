@@ -16,6 +16,7 @@ public sealed class ParticipationCertificatesController : Controller
 {
     private const int MaxZipFileCount = 2000;
     private const int MaxSelectionCount = 50000;
+    private const int MaxBulkRevokeCount = 500;
 
     private readonly IParticipationCertificateService _service;
     private readonly IObjectStorageService _objectStorageService;
@@ -195,6 +196,76 @@ public sealed class ParticipationCertificatesController : Controller
         });
     }
 
+    [HttpGet("template/download")]
+    public async Task<IActionResult> DownloadTemplate(
+        Guid congressId,
+        string? templateCulture,
+        CancellationToken cancellationToken)
+    {
+        ParticipationCertificateTemplateFileDto? file = await _service.GetTemplateFileAsync(
+            congressId,
+            templateCulture,
+            cancellationToken);
+
+        if (file is null || string.IsNullOrWhiteSpace(file.BucketName) || string.IsNullOrWhiteSpace(file.ObjectName))
+            return NotFound();
+
+        Stream stream = await _objectStorageService.OpenReadAsync(file.BucketName, file.ObjectName, cancellationToken);
+        string fileName = string.IsNullOrWhiteSpace(file.FileName)
+            ? $"participation-certificate-template-{ParticipationCertificateCultures.GetShortCode(file.Culture)}.pdf"
+            : file.FileName;
+        return File(stream, string.IsNullOrWhiteSpace(file.ContentType) ? "application/pdf" : file.ContentType, fileName);
+    }
+
+    [HttpPost("template/remove")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RemoveTemplate(
+        [FromForm] Guid congressId,
+        [FromForm] string? templateCulture,
+        CancellationToken cancellationToken)
+    {
+        string culture = GetRouteCulture();
+        string resolvedTemplateCulture = ParticipationCertificateCultures.Normalize(templateCulture);
+
+        try
+        {
+            await _service.RemoveTemplateAsync(
+                congressId,
+                resolvedTemplateCulture,
+                GetCurrentUserId(),
+                cancellationToken);
+
+            TempData["SuccessMessage"] =
+                $"{ParticipationCertificateCultures.GetDisplayName(resolvedTemplateCulture)} template kaldırıldı. Mevcut üretilmiş belgeler etkilenmez.";
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (InvalidOperationException exception)
+        {
+            TempData["ErrorMessage"] = exception.Message;
+        }
+        catch (Exception exception)
+        {
+            string traceId = HttpContext.TraceIdentifier;
+            _logger.LogError(
+                exception,
+                "Participation certificate template remove failed. CongressId: {CongressId}, Culture: {Culture}, TraceId: {TraceId}",
+                congressId,
+                resolvedTemplateCulture,
+                traceId);
+            TempData["ErrorMessage"] = $"Template kaldırılamadı. Hata kodu: {traceId}";
+        }
+
+        return RedirectToAction(nameof(Index), new
+        {
+            culture,
+            congressId,
+            certificateCulture = resolvedTemplateCulture
+        });
+    }
+
     [HttpPost("template/default")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SetDefaultTemplate(
@@ -305,26 +376,48 @@ public sealed class ParticipationCertificatesController : Controller
     {
         try
         {
-            ParticipationCertificateGenerationJobDto job = await _service.QueueGenerationAsync(
-                new ParticipationCertificateGenerationQueueInput
-                {
-                    CongressId = request.CongressId,
-                    CertificateCulture = request.CertificateCulture,
-                    SubmissionStatusCode = NormalizeEmpty(request.SubmissionStatusCode),
-                    PaymentStatusCode = NormalizeEmpty(request.PaymentStatusCode),
-                    CandidateSearch = NormalizeEmpty(request.CandidateSearch),
-                    SelectAllFiltered = request.SelectAllFiltered,
-                    SelectedCandidateKeys = NormalizeCandidateKeys(request.SelectedCandidateKeys),
-                    ExcludedCandidateKeys = NormalizeCandidateKeys(request.ExcludedCandidateKeys),
-                    RequestedByUserId = GetCurrentUserId()
-                },
-                cancellationToken);
+            List<string> cultures = new();
+            if (!string.IsNullOrWhiteSpace(request.CertificateCulture))
+            {
+                cultures.Add(ParticipationCertificateCultures.Normalize(request.CertificateCulture));
+            }
+            else
+            {
+                if (await _service.GetTemplateFileAsync(request.CongressId, ParticipationCertificateCultures.Turkish, cancellationToken) is not null)
+                    cultures.Add(ParticipationCertificateCultures.Turkish);
+                if (await _service.GetTemplateFileAsync(request.CongressId, ParticipationCertificateCultures.English, cancellationToken) is not null)
+                    cultures.Add(ParticipationCertificateCultures.English);
+            }
 
+            if (cultures.Count == 0)
+                throw new InvalidOperationException("Bu kongre için aktif Türkçe veya İngilizce katılım belgesi template'i bulunamadı.");
+
+            List<ParticipationCertificateGenerationJobDto> jobs = new();
+            foreach (string targetCulture in cultures.Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                ParticipationCertificateGenerationJobDto job = await _service.QueueGenerationAsync(
+                    new ParticipationCertificateGenerationQueueInput
+                    {
+                        CongressId = request.CongressId,
+                        CertificateCulture = targetCulture,
+                        SubmissionStatusCode = NormalizeEmpty(request.SubmissionStatusCode),
+                        PaymentStatusCode = NormalizeEmpty(request.PaymentStatusCode),
+                        CandidateSearch = NormalizeEmpty(request.CandidateSearch),
+                        SelectAllFiltered = request.SelectAllFiltered,
+                        SelectedCandidateKeys = NormalizeCandidateKeys(request.SelectedCandidateKeys),
+                        ExcludedCandidateKeys = NormalizeCandidateKeys(request.ExcludedCandidateKeys),
+                        RequestedByUserId = GetCurrentUserId()
+                    },
+                    cancellationToken);
+                jobs.Add(job);
+            }
+
+            string languages = string.Join(" + ", jobs.Select(item => ParticipationCertificateCultures.GetDisplayName(item.Culture)));
             return Json(new
             {
                 success = true,
-                message = $"{ParticipationCertificateCultures.GetDisplayName(job.Culture)} belge üretim işi kuyruğa alındı.",
-                job
+                message = $"{languages} belge üretim işleri kuyruğa alındı.",
+                jobs
             });
         }
         catch (InvalidOperationException exception)
@@ -334,11 +427,7 @@ public sealed class ParticipationCertificatesController : Controller
         catch (Exception exception)
         {
             string traceId = HttpContext.TraceIdentifier;
-            _logger.LogError(
-                exception,
-                "Participation certificate generation queue failed. CongressId: {CongressId}, TraceId: {TraceId}",
-                request.CongressId,
-                traceId);
+            _logger.LogError(exception, "Participation certificate generation queue failed. CongressId: {CongressId}, TraceId: {TraceId}", request.CongressId, traceId);
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new { success = false, message = $"Belge üretim işi başlatılamadı. Hata kodu: {traceId}" });
         }
@@ -454,6 +543,84 @@ public sealed class ParticipationCertificatesController : Controller
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new { success = false, message = $"Belge kaldırılamadı. Hata kodu: {traceId}" });
         }
+    }
+
+    [HttpPost("revoke-selected")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> BulkRevoke(
+        [FromBody] ParticipationCertificateBulkRevokeRequest request,
+        CancellationToken cancellationToken)
+    {
+        List<Guid> certificateIds = request.CertificateIds
+            .Where(id => id != Guid.Empty)
+            .Distinct()
+            .ToList();
+
+        if (certificateIds.Count == 0)
+            return BadRequest(new { success = false, message = "Kaldırmak için en az bir belge seçin." });
+
+        if (certificateIds.Count > MaxBulkRevokeCount)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = $"Tek seferde en fazla {MaxBulkRevokeCount} belge kaldırılabilir."
+            });
+        }
+
+        int revokedCount = 0;
+        int alreadyRevokedCount = 0;
+        int failedCount = 0;
+
+        foreach (Guid certificateId in certificateIds)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            try
+            {
+                ParticipationCertificateRevokeResult result = await _service.RevokeAsync(
+                    certificateId,
+                    request.Reason,
+                    GetCurrentUserId(),
+                    cancellationToken);
+
+                if (result.AlreadyRevoked)
+                    alreadyRevokedCount++;
+                else
+                    revokedCount++;
+            }
+            catch (InvalidOperationException exception)
+            {
+                failedCount++;
+                _logger.LogWarning(
+                    exception,
+                    "Participation certificate bulk revoke item failed. CertificateId: {CertificateId}",
+                    certificateId);
+            }
+            catch (Exception exception)
+            {
+                failedCount++;
+                _logger.LogError(
+                    exception,
+                    "Participation certificate bulk revoke item failed unexpectedly. CertificateId: {CertificateId}",
+                    certificateId);
+            }
+        }
+
+        string message = $"{revokedCount} belge kaldırıldı.";
+        if (alreadyRevokedCount > 0)
+            message += $" {alreadyRevokedCount} belge zaten kaldırılmıştı.";
+        if (failedCount > 0)
+            message += $" {failedCount} belge kaldırılamadı.";
+
+        return Json(new
+        {
+            success = failedCount == 0,
+            message,
+            revokedCount,
+            alreadyRevokedCount,
+            failedCount
+        });
     }
 
     [HttpGet("download/{certificateId:guid}")]

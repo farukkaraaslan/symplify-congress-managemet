@@ -1,0 +1,238 @@
+@use "../abstracts/function";
+
+/* ==========================================================================
+   Tempus Dominus 6 - WowDash / Talim Theme
+   ========================================================================== */
+
+.tempus-dominus-input {
+  .form-control {
+    min-height: var(--control-height-md);
+    background-color: var(--control-bg);
+    color: var(--text-primary);
+    border-color: var(--control-border);
+
+    &:hover { border-color: var(--control-border-hover); }
+
+    &:focus,
+    &:focus-visible {
+      border-color: var(--control-border-focus);
+      box-shadow: var(--focus-ring);
+      background-color: var(--control-bg-hover);
+    }
+  }
+
+  .tempus-dominus-toggle {
+    min-width: function.rem(48px);
+    padding: 0 function.rem(14px);
+    border-color: var(--control-border);
+    background: var(--surface-subtle);
+    color: var(--text-secondary);
+    cursor: pointer;
+
+    i {
+      font-size: function.rem(20px);
+      line-height: 1;
+    }
+
+    &:hover {
+      border-color: var(--control-border-hover);
+      background: var(--surface-brand-subtle);
+      color: var(--primary-600);
+    }
+
+    &:focus,
+    &:focus-visible {
+      z-index: 4;
+      outline: none;
+      border-color: var(--control-border-focus);
+      box-shadow: var(--focus-ring);
+    }
+  }
+
+  &:focus-within .tempus-dominus-toggle {
+    border-color: var(--control-border-focus);
+  }
+}
+
+.tempus-dominus-widget {
+  z-index: 1090 !important;
+  padding: function.rem(10px) !important;
+  border: 1px solid var(--dropdown-border) !important;
+  border-radius: var(--rounded-16) !important;
+  background: var(--dropdown-bg) !important;
+  color: var(--text-primary) !important;
+  box-shadow: var(--dropdown-shadow) !important;
+  font-family: inherit !important;
+  font-size: var(--font-sm) !important;
+
+  * { box-sizing: border-box; }
+
+  button,
+  [data-action] {
+    font-family: inherit;
+  }
+
+  .calendar-header,
+  .toolbar {
+    color: var(--text-primary) !important;
+  }
+
+  .calendar-header {
+    margin-bottom: function.rem(6px);
+
+    .previous,
+    .next,
+    .picker-switch {
+      min-height: function.rem(36px);
+      border-radius: var(--rounded-8);
+      color: var(--text-primary) !important;
+      transition: background-color .15s ease, color .15s ease;
+
+      &:hover {
+        background: var(--surface-brand-subtle) !important;
+        color: var(--primary-600) !important;
+      }
+    }
+
+    .picker-switch {
+      font-weight: var(--font-weight-semibold);
+    }
+  }
+
+  .date-container-days,
+  .date-container-months,
+  .date-container-years,
+  .date-container-decades,
+  .time-container-clock,
+  .time-container-hour,
+  .time-container-minute,
+  .time-container-second {
+    color: var(--text-primary) !important;
+  }
+
+  .dow,
+  .day-of-the-week {
+    color: var(--text-secondary) !important;
+    font-size: var(--font-xs) !important;
+    font-weight: var(--font-weight-semibold) !important;
+  }
+
+  .day,
+  .month,
+  .year,
+  .decade,
+  .hour,
+  .minute,
+  .second,
+  .toggle-meridiem {
+    border-radius: var(--rounded-8) !important;
+    color: var(--text-primary) !important;
+    transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
+
+    &:hover:not(.disabled):not(.active) {
+      background: var(--surface-brand-subtle) !important;
+      color: var(--primary-600) !important;
+    }
+
+    &.active {
+      background: var(--primary-600) !important;
+      color: #fff !important;
+      box-shadow: 0 4px 10px rgba(37, 99, 235, .16);
+    }
+
+    &.disabled {
+      color: var(--control-disabled-text) !important;
+      opacity: .55;
+      cursor: not-allowed;
+    }
+  }
+
+  .day.old,
+  .day.new {
+    color: var(--text-muted) !important;
+    opacity: .65;
+  }
+
+  .day.today:not(.active) {
+    color: var(--primary-600) !important;
+    font-weight: var(--font-weight-bold);
+    background: var(--surface-brand-subtle) !important;
+  }
+
+  .time-container {
+    color: var(--text-primary) !important;
+
+    .separator {
+      color: var(--text-secondary) !important;
+      font-weight: var(--font-weight-semibold);
+    }
+  }
+
+  .toolbar {
+    margin-top: function.rem(8px);
+    padding-top: function.rem(8px);
+    border-top: 1px solid var(--border-subtle);
+
+    div,
+    span,
+    button {
+      border-radius: var(--rounded-8) !important;
+      color: var(--text-secondary) !important;
+
+      &:hover {
+        background: var(--surface-brand-subtle) !important;
+        color: var(--primary-600) !important;
+      }
+    }
+  }
+
+  i[class^="ri-"],
+  i[class*=" ri-"] {
+    font-size: function.rem(18px);
+    line-height: 1;
+  }
+
+  &.timepicker-sbs {
+    gap: function.rem(12px);
+  }
+
+  &.inline {
+    position: static !important;
+    width: 100% !important;
+    max-width: function.rem(420px);
+    margin: 0 !important;
+  }
+}
+
+.tempus-dominus-inline-wrap {
+  display: flex;
+  justify-content: center;
+  min-height: function.rem(330px);
+  padding: function.rem(16px);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--rounded-12);
+  background: var(--surface-subtle);
+}
+
+html[data-theme="dark"] {
+  .tempus-dominus-widget {
+    border-color: var(--dropdown-border) !important;
+    background: var(--dropdown-bg) !important;
+    color: var(--text-primary) !important;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .tempus-dominus-widget {
+    max-width: calc(100vw - 24px) !important;
+  }
+
+  .tempus-dominus-widget.timepicker-sbs {
+    width: calc(100vw - 24px) !important;
+  }
+
+  .tempus-dominus-inline-wrap {
+    padding: function.rem(8px);
+    overflow-x: auto;
+  }
+}

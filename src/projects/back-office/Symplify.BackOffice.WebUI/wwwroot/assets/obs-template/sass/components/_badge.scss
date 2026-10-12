@@ -1,0 +1,292 @@
+@use "sass:map";
+@use "../abstracts/function";
+@use "../abstracts/variables";
+
+// --------------------------------------------------
+// Badge
+// --------------------------------------------------
+$badge-transition:
+  background-color 0.2s ease,
+  border-color 0.2s ease,
+  color 0.2s ease,
+  box-shadow 0.2s ease,
+  opacity 0.2s ease,
+  transform 0.12s ease;
+
+// --------------------------------------------------
+// Mixins
+// --------------------------------------------------
+@mixin badge-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--size-6);
+  min-height: function.rem(24px);
+  padding: function.rem(4px) function.rem(10px);
+  border: 1px solid transparent;
+  border-radius: var(--rounded-full);
+  background-color: var(--surface-subtle);
+  color: var(--text-primary);
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  vertical-align: middle;
+  user-select: none;
+  transition: $badge-transition;
+
+  i,
+  .icon,
+  iconify-icon,
+  svg {
+    flex-shrink: 0;
+    font-size: 1em;
+    color: inherit;
+  }
+}
+
+@mixin badge-solid($bg, $text: var(--text-on-brand), $border: $bg) {
+  background-color: $bg;
+  color: $text;
+  border-color: $border;
+}
+
+@mixin badge-soft($bg, $text, $border) {
+  background-color: $bg;
+  color: $text;
+  border-color: $border;
+}
+
+@mixin badge-outline($color) {
+  background-color: transparent;
+  color: $color;
+  border-color: $color;
+}
+
+@mixin badge-dot-base {
+  position: relative;
+  padding-inline-start: function.rem(18px);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: function.rem(8px);
+    top: 50%;
+    width: function.rem(6px);
+    height: function.rem(6px);
+    border-radius: 50%;
+    background-color: currentColor;
+    transform: translateY(-50%);
+  }
+}
+
+// --------------------------------------------------
+// Base
+// --------------------------------------------------
+.badge {
+  @include badge-base;
+}
+
+a.badge,
+button.badge {
+  text-decoration: none;
+
+  &:hover,
+  &:focus,
+  &:focus-visible {
+    text-decoration: none;
+  }
+}
+
+.badge-sm {
+  min-height: function.rem(20px);
+  padding: function.rem(3px) function.rem(8px);
+  font-size: var(--font-xxs, 0.6875rem);
+}
+
+.badge-lg {
+  min-height: function.rem(28px);
+  padding: function.rem(6px) function.rem(12px);
+  font-size: var(--font-xs);
+}
+
+.badge-square {
+  border-radius: var(--rounded-8);
+}
+
+.badge-soft {
+  background-color: var(--surface-subtle);
+  color: var(--text-primary);
+  border-color: var(--border-soft);
+}
+
+.badge-outline {
+  background-color: transparent;
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.badge-dot {
+  @include badge-dot-base;
+}
+
+// --------------------------------------------------
+// Interactive helpers
+// --------------------------------------------------
+.badge.is-clickable,
+a.badge,
+button.badge {
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.92;
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 function.rem(3px) var(--focus-ring-color);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &:disabled,
+  &.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+// --------------------------------------------------
+// Semantic badges
+// success / info / warning / danger
+// --------------------------------------------------
+@each $name, $shades in variables.$semantic-colors {
+  .badge-#{$name} {
+    @include badge-soft(
+      var(--#{$name}-surface),
+      var(--#{$name}-main),
+      var(--#{$name}-border)
+    );
+  }
+
+  .badge-solid-#{$name} {
+    @include badge-solid(
+      var(--#{$name}-main),
+      var(--text-on-brand),
+      var(--#{$name}-main)
+    );
+  }
+
+  .badge-outline-#{$name} {
+    @include badge-outline(var(--#{$name}-main));
+  }
+
+  a.badge-outline-#{$name}:hover,
+  button.badge-outline-#{$name}:hover,
+  .badge-outline-#{$name}.is-clickable:hover {
+    background-color: var(--#{$name}-main);
+    color: var(--text-on-brand);
+    border-color: var(--#{$name}-main);
+  }
+
+  .badge-dot-#{$name} {
+    @include badge-dot-base;
+    @include badge-soft(
+      var(--#{$name}-surface),
+      var(--#{$name}-main),
+      var(--#{$name}-border)
+    );
+  }
+}
+
+// --------------------------------------------------
+// Palette badges
+// .badge-primary-500
+// .badge-outline-primary-500
+// .badge-subtle-primary
+// --------------------------------------------------
+@each $color, $shades in variables.$colors {
+  @each $shade, $value in $shades {
+    .badge-#{$color}-#{$shade} {
+      @include badge-solid(
+        var(--#{$color}-#{$shade}),
+        var(--text-on-brand),
+        var(--#{$color}-#{$shade})
+      );
+    }
+
+    .badge-outline-#{$color}-#{$shade} {
+      @include badge-outline(var(--#{$color}-#{$shade}));
+    }
+
+    a.badge-outline-#{$color}-#{$shade}:hover,
+    button.badge-outline-#{$color}-#{$shade}:hover,
+    .badge-outline-#{$color}-#{$shade}.is-clickable:hover {
+      background-color: var(--#{$color}-#{$shade});
+      color: var(--text-on-brand);
+      border-color: var(--#{$color}-#{$shade});
+    }
+  }
+
+  @if map.has-key($shades, "50") and map.has-key($shades, "700") {
+    .badge-subtle-#{$color} {
+      @include badge-soft(
+        var(--#{$color}-50),
+        var(--#{$color}-700),
+        transparent
+      );
+    }
+
+    .badge-dot-#{$color} {
+      @include badge-dot-base;
+      @include badge-soft(
+        var(--#{$color}-50),
+        var(--#{$color}-700),
+        transparent
+      );
+    }
+  } @else if map.has-key($shades, "100") and map.has-key($shades, "600") {
+    .badge-subtle-#{$color} {
+      @include badge-soft(
+        var(--#{$color}-100),
+        var(--#{$color}-600),
+        transparent
+      );
+    }
+
+    .badge-dot-#{$color} {
+      @include badge-dot-base;
+      @include badge-soft(
+        var(--#{$color}-100),
+        var(--#{$color}-600),
+        transparent
+      );
+    }
+  }
+}
+
+// --------------------------------------------------
+// Dark theme touch-up
+// --------------------------------------------------
+html[data-theme="dark"] {
+  .badge-outline {
+    color: var(--text-secondary);
+    border-color: var(--border-strong);
+  }
+
+  .badge-soft {
+    background-color: var(--surface-subtle);
+    color: var(--text-primary);
+    border-color: var(--border-soft);
+  }
+}

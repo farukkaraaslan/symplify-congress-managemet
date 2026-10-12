@@ -26,6 +26,65 @@ public sealed class PublicParticipationCertificatesController : Controller
         _logger = logger;
     }
 
+    [HttpGet("verify/{verificationCode}")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> Verify(string verificationCode, CancellationToken cancellationToken)
+    {
+        return await RenderVerificationAsync(
+            await _service.GetVerificationAsync(verificationCode, cancellationToken));
+    }
+
+    // Geriye dönük uyumluluk: daha önce üretilen GUID QR bağlantıları çalışmaya devam eder.
+    [HttpGet("verify/{publicId:guid}")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> VerifyLegacy(Guid publicId, CancellationToken cancellationToken)
+    {
+        return await RenderVerificationAsync(
+            await _service.GetVerificationAsync(publicId, cancellationToken));
+    }
+
+    private IActionResult RenderVerification(ParticipationCertificateVerificationDto? verification)
+    {
+        Response.Headers.CacheControl = "no-store, no-cache, must-revalidate";
+        Response.Headers["X-Robots-Tag"] = "noindex, nofollow, noarchive, nosnippet";
+        Response.Headers["Referrer-Policy"] = "no-referrer";
+        Response.Headers["X-Content-Type-Options"] = "nosniff";
+
+        if (verification is null)
+        {
+            Response.StatusCode = StatusCodes.Status404NotFound;
+            return View("Verify", new PublicParticipationCertificateViewModel
+            {
+                StatusCode = StatusCodes.Status404NotFound,
+                Title = "Belge Bulunamadı",
+                Message = "Bu doğrulama koduna ait katılım belgesi bulunamadı.",
+                IsVerification = true,
+                IsValid = false
+            });
+        }
+
+        Response.StatusCode = verification.IsValid ? StatusCodes.Status200OK : StatusCodes.Status410Gone;
+        return View("Verify", new PublicParticipationCertificateViewModel
+        {
+            StatusCode = Response.StatusCode,
+            Title = verification.IsValid ? "Belge Doğrulandı" : "Belge Geçerli Değil",
+            Message = verification.Message ?? string.Empty,
+            IsVerification = true,
+            IsValid = verification.IsValid,
+            PublicId = verification.PublicId,
+            VerificationCode = verification.VerificationCode,
+            CongressName = verification.CongressName,
+            SubmissionNumber = verification.SubmissionNumber,
+            SubmissionTitle = verification.SubmissionTitle,
+            ParticipantName = verification.ParticipantName,
+            Culture = verification.Culture,
+            GeneratedAt = verification.GeneratedAt
+        });
+    }
+
+    private Task<IActionResult> RenderVerificationAsync(ParticipationCertificateVerificationDto? verification)
+        => Task.FromResult(RenderVerification(verification));
+
     [HttpGet("{publicId:guid}/{token}")]
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public async Task<IActionResult> Open(

@@ -35,8 +35,21 @@
         MailDeliveryEventType.Reject => "REJECT",
         MailDeliveryEventType.Complaint => "COMPLAINT",
         MailDeliveryEventType.RenderingFailure => "RENDERING FAILURE",
+        MailDeliveryEventType.Open => "OPEN",
+        MailDeliveryEventType.Click => "CLICK",
         _ => "UNKNOWN"
     };
+
+    bool hasDeliveryError =
+        Model.DeliveryStatus is MailDeliveryStatus.Bounced
+            or MailDeliveryStatus.Rejected
+            or MailDeliveryStatus.Complaint
+            or MailDeliveryStatus.RenderingFailed
+        || !string.IsNullOrWhiteSpace(Model.LastError)
+        || !string.IsNullOrWhiteSpace(Model.DeliveryDiagnosticCode)
+        || !string.IsNullOrWhiteSpace(Model.BounceType);
+
+    bool hasDeliveryWarning = Model.DeliveryStatus == MailDeliveryStatus.Delayed;
 }
 
 <div class="modal-header">
@@ -74,21 +87,53 @@
                     <dt class="col-sm-4">@T("BackOffice.MailDeliveries.Detail.CreatedAt", "Kuyruğa Alınma", "Queued At")</dt><dd class="col-sm-8">@Model.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss")</dd>
                     <dt class="col-sm-4">@T("BackOffice.MailDeliveries.Detail.SentAt", "Gönderilme", "Sent At")</dt><dd class="col-sm-8">@(Model.SentAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss") ?? "-")</dd>
                     <dt class="col-sm-4">@T("BackOffice.MailDeliveries.Detail.DeliveredAt", "Teslim", "Delivered At")</dt><dd class="col-sm-8">@(Model.DeliveredAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss") ?? "-")</dd>
+                    <dt class="col-sm-4">@T("BackOffice.MailDeliveries.Detail.Open", "Açılma", "Open")</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.SesOpenCount > 0)
+                        {
+                            <span class="badge bg-info-focus text-info-main">@Model.SesOpenCount</span>
+                            <span class="ms-1 text-secondary-light">@(Model.SesLastOpenedAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss"))</span>
+                        }
+                        else
+                        {
+                            <span>-</span>
+                        }
+                    </dd>
+                    <dt class="col-sm-4">@T("BackOffice.MailDeliveries.Detail.Click", "Tıklama", "Click")</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.SesClickCount > 0)
+                        {
+                            <span class="badge bg-primary-50 text-primary-600">@Model.SesClickCount</span>
+                            <span class="ms-1 text-secondary-light">@(Model.SesLastClickedAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss"))</span>
+                        }
+                        else
+                        {
+                            <span>-</span>
+                        }
+                    </dd>
                     <dt class="col-sm-4">@T("BackOffice.MailDeliveries.Detail.Attempts", "Deneme", "Attempts")</dt><dd class="col-sm-8">@Model.AttemptCount</dd>
                 </dl>
             </div>
         </div>
     </div>
 
-    @if (!string.IsNullOrWhiteSpace(Model.LastError) || !string.IsNullOrWhiteSpace(Model.DeliveryDiagnosticCode) || !string.IsNullOrWhiteSpace(Model.DeliverySmtpResponse) || !string.IsNullOrWhiteSpace(Model.BounceType))
+    @if (hasDeliveryError)
     {
         <div class="alert alert-danger radius-8 mt-20 mb-0">
-            <h6 class="text-danger-main mb-12">@T("BackOffice.MailDeliveries.Detail.Error", "Hata / Sağlayıcı Cevabı", "Error / Provider Response")</h6>
+            <h6 class="text-danger-main mb-12">@T("BackOffice.MailDeliveries.Detail.Error", "Teslimat Hatası", "Delivery Error")</h6>
             @if (!string.IsNullOrWhiteSpace(Model.BounceType)) { <div><strong>Bounce:</strong> @Model.BounceType / @(Model.BounceSubType ?? "-")</div> }
             @if (!string.IsNullOrWhiteSpace(Model.DeliveryStatusCode)) { <div><strong>Status:</strong> @Model.DeliveryStatusCode</div> }
             @if (!string.IsNullOrWhiteSpace(Model.DeliveryDiagnosticCode)) { <div class="text-break"><strong>Diagnostic:</strong> @Model.DeliveryDiagnosticCode</div> }
             @if (!string.IsNullOrWhiteSpace(Model.DeliverySmtpResponse)) { <div class="text-break"><strong>SMTP:</strong> @Model.DeliverySmtpResponse</div> }
             @if (!string.IsNullOrWhiteSpace(Model.LastError)) { <div class="text-break"><strong>Application:</strong> @Model.LastError</div> }
+        </div>
+    }
+    else if (hasDeliveryWarning)
+    {
+        <div class="alert alert-warning radius-8 mt-20 mb-0">
+            <h6 class="mb-12">@T("BackOffice.MailDeliveries.Detail.Warning", "Teslimat Gecikmesi", "Delivery Delay")</h6>
+            @if (!string.IsNullOrWhiteSpace(Model.DeliverySmtpResponse)) { <div class="text-break"><strong>SMTP:</strong> @Model.DeliverySmtpResponse</div> }
+            @if (!string.IsNullOrWhiteSpace(Model.DeliveryDiagnosticCode)) { <div class="text-break"><strong>Diagnostic:</strong> @Model.DeliveryDiagnosticCode</div> }
         </div>
     }
 

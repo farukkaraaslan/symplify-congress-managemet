@@ -38,8 +38,8 @@ window.Symplify.Submissions.Table = (function ($) {
             pageLength: 10,
             autoWidth: false,
             responsive: false,
-            scrollX: isManagement,
-            scrollCollapse: isManagement,
+            scrollX: false,
+            scrollCollapse: false,
             order: isManagement ? [[9, 'desc']] : [],
             language: getDataTableLanguage(),
             ajax: {
@@ -159,7 +159,7 @@ window.Symplify.Submissions.Table = (function ($) {
                 orderable: false,
                 searchable: false,
                 className: 'text-nowrap align-middle',
-                width: '92px',
+                width: '72px',
                 render: function (data, type, row) {
                     return renderManagementAction(row, $table);
                 }
@@ -170,7 +170,7 @@ window.Symplify.Submissions.Table = (function ($) {
                 orderable: false,
                 searchable: false,
                 className: 'text-nowrap fw-medium align-middle',
-                width: '58px'
+                width: '38px'
             },
             {
                 data: null,
@@ -178,7 +178,7 @@ window.Symplify.Submissions.Table = (function ($) {
                 orderable: true,
                 searchable: true,
                 className: 'text-nowrap align-middle',
-                width: '105px',
+                width: '82px',
                 render: renderSubmissionNumber
             },
             {
@@ -187,7 +187,7 @@ window.Symplify.Submissions.Table = (function ($) {
                 orderable: true,
                 searchable: true,
                 className: 'align-top',
-                width: '230px',
+                width: '210px',
                 render: renderSubmissionTitle
             },
             {
@@ -196,7 +196,7 @@ window.Symplify.Submissions.Table = (function ($) {
                 orderable: true,
                 searchable: true,
                 className: 'align-top',
-                width: '190px',
+                width: '130px',
                 render: renderManagementCongress
             },
             {
@@ -205,7 +205,7 @@ window.Symplify.Submissions.Table = (function ($) {
                 orderable: true,
                 searchable: true,
                 className: 'align-top',
-                width: '145px',
+                width: '105px',
                 render: renderTypeTopic
             },
             {
@@ -214,7 +214,7 @@ window.Symplify.Submissions.Table = (function ($) {
                 orderable: true,
                 searchable: true,
                 className: 'align-top',
-                width: '190px',
+                width: '130px',
                 render: function (data, type, row) {
                     return renderManagementOwnerBlock(row, $table);
                 }
@@ -225,7 +225,7 @@ window.Symplify.Submissions.Table = (function ($) {
                 orderable: true,
                 searchable: false,
                 className: 'text-nowrap align-middle',
-                width: '118px',
+                width: '84px',
                 render: renderPaymentBadge
             },
             {
@@ -234,7 +234,7 @@ window.Symplify.Submissions.Table = (function ($) {
                 orderable: true,
                 searchable: false,
                 className: 'text-nowrap align-middle',
-                width: '150px',
+                width: '95px',
                 render: renderStatusBadge
             },
             {
@@ -243,7 +243,7 @@ window.Symplify.Submissions.Table = (function ($) {
                 orderable: true,
                 searchable: false,
                 className: 'text-nowrap align-middle',
-                width: '138px',
+                width: '90px',
                 render: renderDate
             }
         ];
@@ -258,7 +258,7 @@ window.Symplify.Submissions.Table = (function ($) {
             '<div>' +
                 '<span class="fw-semibold text-primary-light d-block">' + escapeHtml(title) + '</span>' +
                 '<div class="d-flex align-items-center gap-2 mt-1 flex-wrap">' +
-                    '<span class="badge bg-primary-50 text-primary-600 rounded-pill">' + escapeHtml(typeName) + '</span>' +
+                    '<span class="badge bg-primary-50 text-primary-600 submission-management-badge">' + escapeHtml(typeName) + '</span>' +
                     (number ? '<small class="text-neutral-500">' + escapeHtml(number) + '</small>' : '') +
                 '</div>' +
             '</div>';
@@ -266,12 +266,12 @@ window.Symplify.Submissions.Table = (function ($) {
 
     function renderSubmissionNumber(data, type, row) {
         const number = row.submissionNumber || row.id || '-';
-        return '<span class="badge bg-primary-50 text-primary-600 rounded-pill px-10 py-6">' + escapeHtml(number) + '</span>';
+        return '<span class="badge bg-primary-50 text-primary-600 submission-management-badge px-10 py-6">' + escapeHtml(number) + '</span>';
     }
 
     function renderSubmissionTitle(data, type, row) {
         const fullTitle = row.title || '-';
-        const title = truncateText(fullTitle, 95);
+        const title = truncateText(fullTitle, 115);
 
         return '<span class="text-xs fw-semibold text-primary-light d-block lh-sm" title="' + escapeHtml(fullTitle) + '">' + escapeHtml(title) + '</span>';
     }
@@ -285,7 +285,7 @@ window.Symplify.Submissions.Table = (function ($) {
         return '' +
             '<div>' +
                 '<div class="d-flex align-items-center gap-2 flex-wrap mb-1">' +
-                    '<span class="badge bg-primary-50 text-primary-600 rounded-pill px-10 py-6">' + escapeHtml(number) + '</span>' +
+                    '<span class="badge bg-primary-50 text-primary-600 submission-management-badge px-10 py-6">' + escapeHtml(number) + '</span>' +
                 '</div>' +
                 '<span class="fw-semibold text-primary-light d-block lh-sm">' + escapeHtml(title) + '</span>' +
                 (orcid ? '<small class="text-neutral-500 d-block mt-1">' + escapeHtml(orcidLabel) + ': ' + escapeHtml(orcid) + '</small>' : '') +
@@ -304,8 +304,8 @@ window.Symplify.Submissions.Table = (function ($) {
 
         return '' +
             '<div class="d-flex flex-column align-items-start gap-1">' +
-                '<span class="badge bg-primary-50 text-primary-600 rounded-pill px-10 py-6 d-inline-block">' + escapeHtml(typeName) + '</span>' +
-                '<span class="badge bg-info-focus text-info-main rounded-pill px-10 py-6 d-inline-block">' + escapeHtml(topicName) + '</span>' +
+                '<span class="badge bg-primary-50 text-primary-600 submission-management-badge px-10 py-6 d-inline-block">' + escapeHtml(typeName) + '</span>' +
+                '<span class="badge bg-info-focus text-info-main submission-management-badge px-10 py-6 d-inline-block">' + escapeHtml(topicName) + '</span>' +
             '</div>';
     }
 
@@ -363,7 +363,7 @@ window.Symplify.Submissions.Table = (function ($) {
                     : '') +
                 '<div class="d-flex align-items-center gap-1 flex-wrap mt-1">' +
                     (normalizedCount > 0
-                        ? '<span class="badge ' + badgeClass + ' rounded-pill px-10 py-6 text-xs" title="' + escapeHtml(badgeTitle) + '">' +
+                        ? '<span class="badge ' + badgeClass + ' submission-management-badge px-10 py-6 text-xs" title="' + escapeHtml(badgeTitle) + '">' +
                             '<i class="ri-file-copy-2-line me-1"></i>' + escapeHtml(countText) +
                           '</span>'
                         : '') +
@@ -456,12 +456,12 @@ window.Symplify.Submissions.Table = (function ($) {
     }
 
     function renderPaymentBadge(data, type, row) {
-        return '<span class="badge ' + escapeHtml(row.paymentStatusBadgeClass || 'bg-neutral-200 text-neutral-700') + ' rounded-pill px-10 py-6 text-xs">' + escapeHtml(row.paymentStatusName || '-') + '</span>';
+        return '<span class="badge ' + escapeHtml(row.paymentStatusBadgeClass || 'bg-neutral-200 text-neutral-700') + ' submission-management-badge px-10 py-6 text-xs">' + escapeHtml(row.paymentStatusName || '-') + '</span>';
     }
 
     function renderStatusBadge(data, type, row) {
         const badgeClass = resolveTransactionBadgeClass(row);
-        return '<span class="badge ' + escapeHtml(badgeClass) + ' rounded-pill px-10 py-6 text-xs">' + escapeHtml(row.transactionStatusName || '-') + '</span>';
+        return '<span class="badge ' + escapeHtml(badgeClass) + ' submission-management-badge px-10 py-6 text-xs">' + escapeHtml(row.transactionStatusName || '-') + '</span>';
     }
 
     function renderDate(data, type, row) {
@@ -636,7 +636,7 @@ window.Symplify.Submissions.Table = (function ($) {
             maxWidth: '100%'
         });
         $wrapper.find('.dataTables_scrollBody').css({
-            overflowX: 'auto',
+            overflowX: 'visible',
             overflowY: 'hidden',
             width: '100%',
             maxWidth: '100%'

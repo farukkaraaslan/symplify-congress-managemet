@@ -83,6 +83,7 @@
                         string title = ResolveDisplayTitle(item);
                         string iconClass = ResolveSubmissionIcon(item.SubmissionTypeName);
                         bool canUploadFinalFiles = IsPaymentCompleted(item.PaymentStatusCode, item.PaymentStatusName, item.TransactionStatusCode);
+                        bool canUploadPresentationVideo = canUploadFinalFiles && item.IsAuthorVideoUploadEnabled;
                         string detailsUrl = Url.Action("Details", "Submissions", new { culture, id = item.Id }) ?? $"/{culture}/submissions/details/{item.Id:D}";
 
                         <article class="submission-track-card">
@@ -119,14 +120,17 @@
                                             <i class="ri-upload-cloud-2-line me-1"></i>
                                             @T("BackOffice.Submissions.FinalFiles.UploadFullText", "Tam Metin Yükle")
                                         </button>
-                                        <button type="button"
-                                                class="btn btn-sm btn-outline-primary-600 radius-8"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#presentationVideoUploadModal"
-                                                data-upload-action-url="@presentationUrlTemplate.Replace("__id__", item.Id.ToString("D"))">
-                                            <i class="ri-video-upload-line me-1"></i>
-                                            @T("BackOffice.Submissions.FinalFiles.UploadVideo", "Sunum Videosu Yükle")
-                                        </button>
+                                        @if (canUploadPresentationVideo)
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-primary-600 radius-8"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#presentationVideoUploadModal"
+                                                    data-upload-action-url="@presentationUrlTemplate.Replace("__id__", item.Id.ToString("D"))">
+                                                <i class="ri-video-upload-line me-1"></i>
+                                                @T("BackOffice.Submissions.FinalFiles.UploadVideo", "Sunum Videosu Yükle")
+                                            </button>
+                                        }
                                     </div>
                                 }
                             </div>

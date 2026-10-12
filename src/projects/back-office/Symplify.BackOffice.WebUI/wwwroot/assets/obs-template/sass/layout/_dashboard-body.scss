@@ -1,0 +1,76 @@
+@use "../abstracts/function";
+@use "../abstracts/mixins";
+
+.dashboard-main {
+  --layout-sidebar-offset: 0px;
+  --layout-header-height: #{function.rem(72px)};
+  --layout-body-gap-y: #{function.rem(20px)};
+  --layout-body-gap-x: #{function.rem(16px)};
+
+  margin-inline-start: var(--layout-sidebar-offset);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  transition: margin-inline-start 0.3s ease;
+  scroll-padding-top: calc(var(--layout-header-height) + var(--layout-body-gap-y));
+
+  @include mixins.media(xl) {
+    --layout-sidebar-offset: #{function.rem(220px)};
+  }
+
+  @include mixins.media(xxl) {
+    --layout-sidebar-offset: #{function.rem(275px)};
+    --layout-body-gap-y: #{function.rem(24px)};
+    --layout-body-gap-x: #{function.rem(24px)};
+  }
+
+  @include mixins.media(3xl) {
+    --layout-sidebar-offset: #{function.rem(312px)};
+  }
+
+  &-body {
+    flex: 1 1 auto;
+    padding-inline: var(--layout-body-gap-x);
+    padding-top: var(--layout-body-gap-y);
+    padding-bottom: function.rem(28px);
+
+    @include mixins.media(xxl) {
+      padding-bottom: function.rem(32px);
+    }
+
+    > :first-child {
+      margin-top: 0 !important;
+    }
+  }
+
+  &.active {
+    @media (min-width: 1199px) {
+      margin-inline-start: function.rem(86px);
+    }
+  }
+}
+/* ================= SYMPLIFY Enterprise V6 workspace ================= */
+.dashboard-main {
+  --layout-header-height: 64px;
+  --layout-body-gap-y: 20px;
+  --layout-body-gap-x: 24px;
+  background: var(--surface-page);
+}
+.dashboard-main-body {
+  width: 100%;
+  max-width: none;
+  margin-inline: auto;
+  padding-top: 20px;
+  padding-bottom: 32px;
+}
+@media (min-width: 1200px) {
+  .dashboard-main { margin-inline-start: 264px; }
+  .dashboard-main.active { margin-inline-start: 80px; }
+}
+@media (max-width: 767.98px) {
+  .dashboard-main { --layout-body-gap-x: 14px; }
+  .dashboard-main-body {
+    padding-top: 14px;
+    padding-bottom: 24px;
+  }
+}

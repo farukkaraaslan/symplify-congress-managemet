@@ -23,6 +23,14 @@ public sealed class GetListSubmissionQuery : IRequest<GetListResponse<GetListSub
 
     public Guid? CreatedByUserId { get; set; }
 
+    /// <summary>
+    /// Optional author e-mail used for self-service submission access.
+    /// When both CreatedByUserId and AuthorEmail are provided, a submission
+    /// is included when the current user either created it OR appears in its
+    /// active author list with the same e-mail address.
+    /// </summary>
+    public string? AuthorEmail { get; set; }
+
     public Guid? RequestedByUserId { get; set; }
 
     public bool CanManageAllSubmissions { get; set; }
@@ -59,7 +67,7 @@ public sealed class GetListSubmissionQuery : IRequest<GetListResponse<GetListSub
 
     public bool BypassCache => true;
 
-    public string CacheKey => $"GetListSubmissions({PageRequest.Page},{PageRequest.PageSize},{CreatedByUserId},{RequestedByUserId},{CanManageAllSubmissions},{CongressId},{ArchiveMode},{SubmissionTypeId},{TopicId},{TransactionStatusId},{PaymentStatusId},{OwnerMultiplicity},{LanguageId},{Culture},{SearchText},{SortColumn},{SortDirection})";
+    public string CacheKey => $"GetListSubmissions({PageRequest.Page},{PageRequest.PageSize},{CreatedByUserId},{AuthorEmail?.Trim().ToLowerInvariant()},{RequestedByUserId},{CanManageAllSubmissions},{CongressId},{ArchiveMode},{SubmissionTypeId},{TopicId},{TransactionStatusId},{PaymentStatusId},{OwnerMultiplicity},{LanguageId},{Culture},{SearchText},{SortColumn},{SortDirection})";
 
     public string CacheGroupKey => "GetSubmissions";
 
@@ -153,8 +161,24 @@ public sealed class GetListSubmissionQuery : IRequest<GetListResponse<GetListSub
                 .GroupBy(submission => (submission.CongressId, submission.CreatedByUserId!.Value))
                 .ToDictionary(group => group.Key, group => group.Count());
 
-            if (request.CreatedByUserId.HasValue && request.CreatedByUserId.Value != Guid.Empty)
-                roots = roots.Where(submission => submission.CreatedByUserId == request.CreatedByUserId.Value).ToList();
+            Guid? requestedOwnerUserId = request.CreatedByUserId.HasValue && request.CreatedByUserId.Value != Guid.Empty
+                ? request.CreatedByUserId.Value
+                : null;
+
+            string? requestedAuthorEmail = NormalizeEmail(request.AuthorEmail);
+
+            if (requestedOwnerUserId.HasValue || requestedAuthorEmail is not null)
+            {
+                roots = roots
+                    .Where(submission =>
+                        (requestedOwnerUserId.HasValue &&
+                         submission.CreatedByUserId == requestedOwnerUserId.Value) ||
+                        (requestedAuthorEmail is not null &&
+                         submission.Authors.Any(author =>
+                             !IsDeleted(author) &&
+                             EmailsEqual(author.Email, requestedAuthorEmail))))
+                    .ToList();
+            }
 
             if (request.CongressId.HasValue && request.CongressId.Value != Guid.Empty)
                 roots = roots.Where(submission => submission.CongressId == request.CongressId.Value).ToList();
@@ -217,17 +241,8 @@ public sealed class GetListSubmissionQuery : IRequest<GetListResponse<GetListSub
             if (!string.IsNullOrWhiteSpace(request.SearchText))
             {
                 string search = request.SearchText.Trim();
-                projected = projected.Where(item =>
-                        Contains(item.SubmissionNumber, search) ||
-                        Contains(item.Title, search) ||
-                        Contains(item.TitleEn, search) ||
-                        Contains(item.TopicName, search) ||
-                        Contains(item.SubmissionTypeName, search) ||
-                        Contains(item.CongressName, search) ||
-                        Contains(item.CongressCode, search) ||
-                        Contains(item.SubmissionOwnerName, search) ||
-                        Contains(item.SubmissionOwnerEmail, search) ||
-                        Contains(item.CorrespondingAuthorName, search))
+                projected = projected
+                    .Where(item => Contains(item.SearchText, search))
                     .ToList();
             }
 
@@ -420,6 +435,7 @@ public sealed class GetListSubmissionQuery : IRequest<GetListResponse<GetListSub
             List<Author> activeAuthors = submission.Authors.Where(author => !IsDeleted(author)).ToList();
             Author? correspondingAuthor = activeAuthors.FirstOrDefault(author => author.IsCorrespondingAuthor) ?? activeAuthors.FirstOrDefault();
             List<Author> otherAuthors = activeAuthors.Where(author => correspondingAuthor is null || author.Id != correspondingAuthor.Id).ToList();
+            string authorSearchText = BuildAuthorSearchText(activeAuthors, requestedLanguageId, defaultLanguageId);
 
             string? submissionOwnerName = submission.CreatedByUser is null
                 ? null
@@ -437,7 +453,9 @@ public sealed class GetListSubmissionQuery : IRequest<GetListResponse<GetListSub
                 Id = submission.Id,
                 CongressId = submission.CongressId,
                 CongressCode = congress?.Code,
-                CongressName = congressName,
+                
+                IsAuthorVideoUploadEnabled = congress?.IsAuthorVideoUploadEnabled ?? true,
+CongressName = congressName,
                 SubmissionTypeId = submission.SubmissionTypeId,
                 TopicId = submission.TopicId,
                 CreatedByUserId = submission.CreatedByUserId,
@@ -472,6 +490,21 @@ public sealed class GetListSubmissionQuery : IRequest<GetListResponse<GetListSub
                 TransactionStatusBadgeClass = ResolveTransactionBadgeClass(transactionStatus, submission.IsSubmitted),
                 CorrespondingAuthorName = correspondingAuthor is null ? null : GetAuthorDisplayName(correspondingAuthor, requestedLanguageId, defaultLanguageId),
                 OtherAuthorsText = BuildOtherAuthorsText(otherAuthors, requestedLanguageId, defaultLanguageId),
+                SearchText = BuildSubmissionSearchText(
+                    submission,
+                    congress,
+                    congressName,
+                    submissionType,
+                    submissionTypeName,
+                    topic,
+                    topicName,
+                    paymentStatus,
+                    paymentStatusName,
+                    transactionStatus,
+                    transactionStatusName,
+                    submissionOwnerName,
+                    submission.CreatedByUser?.Email,
+                    authorSearchText),
                 AuthorCount = activeAuthors.Count,
                 CanEdit = canEdit,
                 CanDelete = canEdit
@@ -624,6 +657,78 @@ public sealed class GetListSubmissionQuery : IRequest<GetListResponse<GetListSub
             };
         }
 
+
+        private static string BuildAuthorSearchText(
+            IEnumerable<Author> authors,
+            Guid requestedLanguageId,
+            Guid defaultLanguageId)
+        {
+            return string.Join(
+                " ",
+                authors
+                    .Where(author => !IsDeleted(author))
+                    .SelectMany(author => new[]
+                    {
+                        author.FirstName,
+                        author.LastName,
+                        GetAuthorFullName(author),
+                        GetAuthorDisplayName(author, requestedLanguageId, defaultLanguageId),
+                        ResolveAuthorTitleShortName(author, requestedLanguageId, defaultLanguageId),
+                        author.Email,
+                        author.Institution,
+                        author.Orcid
+                    })
+                    .Where(value => !string.IsNullOrWhiteSpace(value))
+                    .Select(value => value!.Trim()));
+        }
+
+        private static string BuildSubmissionSearchText(
+            Submission submission,
+            Congress? congress,
+            string congressName,
+            SubmissionType? submissionType,
+            string submissionTypeName,
+            Topic? topic,
+            string topicName,
+            PaymentStatus? paymentStatus,
+            string paymentStatusName,
+            TransactionStatus? transactionStatus,
+            string transactionStatusName,
+            string? submissionOwnerName,
+            string? submissionOwnerEmail,
+            string authorSearchText)
+        {
+            return string.Join(
+                " ",
+                new[]
+                {
+                    submission.SubmissionNumber,
+                    submission.Title,
+                    submission.TitleEn,
+                    submission.Abstract,
+                    submission.AbstractEn,
+                    submission.Keywords,
+                    submission.KeywordsEn,
+                    submission.Orcid,
+                    congress?.Code,
+                    congress?.Name,
+                    congressName,
+                    submissionType?.Code,
+                    submissionTypeName,
+                    topic?.Code,
+                    topicName,
+                    paymentStatus?.Code,
+                    paymentStatusName,
+                    transactionStatus?.Code,
+                    transactionStatusName,
+                    submissionOwnerName,
+                    submissionOwnerEmail,
+                    authorSearchText
+                }
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Select(value => value!.Trim()));
+        }
+
         private static string? BuildOtherAuthorsText(List<Author> authors, Guid requestedLanguageId, Guid defaultLanguageId)
         {
             if (authors.Count == 0)
@@ -638,6 +743,21 @@ public sealed class GetListSubmissionQuery : IRequest<GetListResponse<GetListSub
         private static bool Contains(string? value, string search)
         {
             return !string.IsNullOrWhiteSpace(value) && value.Contains(search, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string? NormalizeEmail(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return null;
+
+            return value.Trim().ToLowerInvariant();
+        }
+
+        private static bool EmailsEqual(string? left, string normalizedRight)
+        {
+            string? normalizedLeft = NormalizeEmail(left);
+            return normalizedLeft is not null &&
+                   string.Equals(normalizedLeft, normalizedRight, StringComparison.Ordinal);
         }
 
         private static bool IsDeleted(object entity)

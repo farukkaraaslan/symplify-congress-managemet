@@ -162,6 +162,28 @@ window.Symplify.MailDeliveries.Index = (function ($) {
                     className: 'align-middle',
                     width: '260px',
                     render: renderDelivery
+                },
+                {
+                    data: null,
+                    name: 'sesOpenCount',
+                    orderable: false,
+                    searchable: false,
+                    className: 'text-nowrap align-middle',
+                    width: '135px',
+                    render: function (_, __, row) {
+                        return renderEngagement(row.sesOpenCount, row.sesLastOpenedAt, 'ri-mail-open-line', 'bg-info-focus text-info-main');
+                    }
+                },
+                {
+                    data: null,
+                    name: 'sesClickCount',
+                    orderable: false,
+                    searchable: false,
+                    className: 'text-nowrap align-middle',
+                    width: '135px',
+                    render: function (_, __, row) {
+                        return renderEngagement(row.sesClickCount, row.sesLastClickedAt, 'ri-cursor-line', 'bg-primary-50 text-primary-600');
+                    }
                 }
             ],
             language: getDataTableLanguage(),
@@ -416,6 +438,21 @@ window.Symplify.MailDeliveries.Index = (function ($) {
                 ? '<div class="text-danger-600 text-sm mt-1 text-truncate d-block" style="width:240px;max-width:240px" title="' +
                   escapeHtml(errorText) + '">' + escapeHtml(errorText) + '</div>'
                 : '');
+    }
+
+    function renderEngagement(countValue, lastAt, iconClass, badgeClass) {
+        const count = Number(countValue || 0);
+        if (!count) {
+            return '<span class="text-secondary-light">-</span>';
+        }
+
+        const dateText = lastAt ? renderDate(lastAt) : '-';
+        return '' +
+            '<span class="badge ' + badgeClass + '">' +
+            '<i class="' + iconClass + ' me-1"></i>' +
+            escapeHtml(String(count)) +
+            '</span>' +
+            '<div class="text-secondary-light text-xs mt-1">' + dateText + '</div>';
     }
 
     async function openDetail(event) {

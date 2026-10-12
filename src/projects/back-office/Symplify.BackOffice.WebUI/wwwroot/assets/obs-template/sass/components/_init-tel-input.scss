@@ -1,0 +1,348 @@
+@use "../abstracts/function";
+
+/* ============================================================================
+   TALIM / intl-tel-input 29.x
+   Kurumsal template entegrasyonu
+
+   ONEMLI:
+   - Input'un sol padding degerine !important ile mudahale ETME.
+   - intl-tel-input, secilen ulke kodunun genisligine gore padding-left'i
+     runtime'da hesaplar (+1, +90, +994 vb.).
+   ========================================================================== */
+
+.iti {
+  --iti-strict-reject-flash-color: rgba(var(--brand-rgb), 0.12);
+
+  position: relative;
+  display: block;
+  width: 100%;
+
+  /* --------------------------------------------------------------------------
+     INPUT
+     -------------------------------------------------------------------------- */
+
+  .iti__tel-input,
+  input[type="tel"],
+  input[type="tel"].form-control {
+    width: 100% !important;
+    min-height: function.rem(42px) !important;
+    height: function.rem(42px) !important;
+
+    /*
+     * padding-left BURADA BILEREK YOK.
+     * Plugin kendi inline padding-left degerini hesaplayacak.
+     */
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    padding-right: var(--control-padding-x-md) !important;
+
+    border: var(--bs-border-width) solid var(--control-border) !important;
+    border-radius: function.rem(8px) !important;
+    background-color: var(--control-bg) !important;
+    color: var(--text-primary) !important;
+
+    outline: none !important;
+    box-shadow: none !important;
+
+    font-family: inherit !important;
+    font-size: function.rem(13px) !important;
+    font-weight: 500 !important;
+    line-height: function.rem(40px) !important;
+    letter-spacing: 0 !important;
+
+    font-variant-numeric: tabular-nums lining-nums !important;
+    font-feature-settings: "tnum" 1, "lnum" 1 !important;
+  }
+
+  .iti__tel-input::placeholder,
+  input[type="tel"]::placeholder,
+  input[type="tel"].form-control::placeholder {
+    color: var(--text-muted) !important;
+    opacity: 1 !important;
+    font-family: inherit !important;
+    font-size: function.rem(13px) !important;
+    font-weight: 400 !important;
+  }
+
+  .iti__tel-input:focus,
+  input[type="tel"]:focus,
+  input[type="tel"].form-control:focus {
+    border-color: var(--control-border-focus) !important;
+    box-shadow: var(--focus-ring) !important;
+  }
+
+  /* --------------------------------------------------------------------------
+     COUNTRY / DIAL CODE PREFIX
+
+     Bayrak + ok + +90 artik tek bir prefix/addon gibi gorunur.
+     Ayirici +90'dan SONRA gelir.
+     -------------------------------------------------------------------------- */
+
+  .iti__country-container {
+    position: absolute;
+    top: 1px;
+    bottom: 1px;
+    left: 1px;
+    z-index: 3;
+
+    display: flex;
+    align-items: stretch;
+
+    padding: 0 !important;
+  }
+
+  .iti__selected-country {
+    display: flex !important;
+    align-items: center !important;
+    height: 100%;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    border: 0 !important;
+    border-radius: function.rem(7px) 0 0 function.rem(7px) !important;
+    background-color: var(--surface-subtle) !important;
+
+    /* Tek ayirici: ulke kodunun saginda */
+    box-shadow: inset -1px 0 0 var(--control-border) !important;
+    overflow: hidden;
+  }
+
+  .iti__selected-country:hover,
+  .iti__selected-country:focus-visible {
+    background-color: var(--surface-brand-subtle) !important;
+  }
+
+  .iti__selected-country:focus-visible {
+    outline: none !important;
+  }
+
+  /* Bayrak + dropdown oku */
+  .iti__selected-country-primary {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: function.rem(6px) !important;
+    height: 100%;
+
+    margin: 0 !important;
+    padding: 0 function.rem(9px) 0 function.rem(10px) !important;
+
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+
+    overflow: visible !important;
+    white-space: nowrap;
+  }
+
+  .iti__flag,
+  .iti__flag-container {
+    flex-shrink: 0;
+  }
+
+  .iti__arrow {
+    flex-shrink: 0;
+    margin-left: function.rem(1px) !important;
+  }
+
+  /* +90 / +994 prefix */
+  .iti__selected-dial-code {
+    display: inline-flex !important;
+    align-items: center !important;
+    align-self: stretch;
+
+    margin: 0 !important;
+    padding: 0 function.rem(11px) 0 function.rem(2px) !important;
+
+    color: var(--text-secondary) !important;
+    white-space: nowrap !important;
+
+    font-family: inherit !important;
+    font-size: function.rem(13px) !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+
+    font-variant-numeric: tabular-nums lining-nums !important;
+    font-feature-settings: "tnum" 1, "lnum" 1 !important;
+  }
+
+  /* Input focus olunca prefix de ayni kontrolun parcasi gibi gorunsun */
+  &:focus-within {
+    .iti__selected-country {
+      box-shadow: inset -1px 0 0 var(--control-border-focus) !important;
+    }
+  }
+
+  /* --------------------------------------------------------------------------
+     DROPDOWN
+     -------------------------------------------------------------------------- */
+
+  .iti__dropdown-content {
+    z-index: 1070 !important;
+    width: min(function.rem(360px), calc(100vw - 32px)) !important;
+    max-width: min(function.rem(360px), calc(100vw - 32px)) !important;
+
+    margin-top: function.rem(6px) !important;
+
+    border: var(--bs-border-width) solid var(--dropdown-border) !important;
+    border-radius: function.rem(10px) !important;
+    background-color: var(--dropdown-bg) !important;
+
+    box-shadow: 0 function.rem(12px) function.rem(30px) rgba(15, 23, 42, 0.14) !important;
+    overflow: hidden !important;
+  }
+
+  .iti__search-input-wrapper {
+    position: relative;
+    padding: function.rem(8px) !important;
+
+    border-bottom: var(--bs-border-width) solid var(--dropdown-border) !important;
+    background-color: var(--dropdown-bg) !important;
+  }
+
+  .iti__search-input {
+    width: 100% !important;
+    min-height: function.rem(38px) !important;
+
+    margin: 0 !important;
+    padding: function.rem(7px) function.rem(10px) function.rem(7px) function.rem(36px) !important;
+
+    border: var(--bs-border-width) solid var(--control-border) !important;
+    border-radius: function.rem(7px) !important;
+    background-color: var(--control-bg) !important;
+    color: var(--text-primary) !important;
+
+    box-sizing: border-box !important;
+    outline: none !important;
+
+    font-size: function.rem(13px) !important;
+  }
+
+  .iti__search-input:focus {
+    border-color: var(--control-border-focus) !important;
+    box-shadow: var(--focus-ring) !important;
+  }
+
+  .iti__search-icon {
+    left: function.rem(20px) !important;
+    top: 50% !important;
+    transform: translateY(-50%);
+
+    display: flex;
+    pointer-events: none;
+  }
+
+  .iti__country-list {
+    max-height: function.rem(260px) !important;
+
+    margin: 0 !important;
+    padding: function.rem(5px) !important;
+
+    list-style: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+
+    background-color: var(--dropdown-bg) !important;
+
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--control-border) transparent;
+  }
+
+  .iti__country {
+    display: flex;
+    align-items: center;
+    gap: function.rem(8px) !important;
+    min-height: function.rem(36px);
+
+    margin: 0 !important;
+    padding: function.rem(7px) function.rem(9px) !important;
+
+    border-radius: function.rem(6px) !important;
+
+    color: var(--text-secondary) !important;
+    font-size: function.rem(13px) !important;
+  }
+
+  .iti__country + .iti__country {
+    margin-top: function.rem(2px) !important;
+  }
+
+  .iti__country:hover,
+  .iti__country.iti__highlight {
+    background-color: var(--surface-subtle) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .iti__country[aria-selected="true"] {
+    background-color: rgba(var(--brand-rgb), 0.08) !important;
+    color: var(--primary-600) !important;
+    font-weight: 600 !important;
+  }
+
+  .iti__country-name {
+    flex: 1 1 auto;
+    min-width: 0;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: inherit !important;
+  }
+
+  .iti__dial-code {
+    flex-shrink: 0;
+
+    color: var(--text-muted) !important;
+    font-size: function.rem(12px) !important;
+
+    font-variant-numeric: tabular-nums lining-nums !important;
+    font-feature-settings: "tnum" 1, "lnum" 1 !important;
+  }
+}
+
+/* ============================================================================
+   DARK MODE
+   ========================================================================== */
+
+html[data-theme="dark"] {
+  .iti {
+    .iti__tel-input,
+    input[type="tel"],
+    input[type="tel"].form-control {
+      border-color: var(--control-border) !important;
+      background-color: var(--control-bg) !important;
+      color: var(--text-primary) !important;
+    }
+
+    .iti__selected-country {
+      background-color: var(--surface-subtle) !important;
+      box-shadow: inset -1px 0 0 var(--control-border) !important;
+    }
+
+    &:focus-within {
+      .iti__selected-country {
+        box-shadow: inset -1px 0 0 var(--control-border-focus) !important;
+      }
+    }
+
+    .iti__dropdown-content,
+    .iti__search-input-wrapper,
+    .iti__country-list {
+      border-color: var(--dropdown-border) !important;
+      background-color: var(--dropdown-bg) !important;
+    }
+
+    .iti__dropdown-content {
+      box-shadow: 0 function.rem(16px) function.rem(36px) rgba(0, 0, 0, 0.34) !important;
+    }
+
+    .iti__search-input {
+      border-color: var(--control-border) !important;
+      background-color: var(--control-bg) !important;
+      color: var(--text-primary) !important;
+    }
+  }
+}

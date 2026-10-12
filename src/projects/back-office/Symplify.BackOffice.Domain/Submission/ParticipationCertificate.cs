@@ -56,6 +56,11 @@ public sealed class ParticipationCertificate : Entity<Guid>, IEntityTimestamps, 
     public Guid? PublicId { get; set; }
 
     /// <summary>
+    /// Human-readable verification code shown on the certificate and used by QR verification.
+    /// </summary>
+    public string? VerificationCode { get; set; }
+
+    /// <summary>
     /// SHA-256 hash of the public access token. The raw token is never persisted.
     /// </summary>
     public string? PublicAccessTokenHash { get; set; }

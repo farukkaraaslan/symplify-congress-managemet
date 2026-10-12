@@ -158,6 +158,13 @@ public sealed class MailDeliveriesController : Controller
                 deliveryStatusName = item.DeliveryStatus.ToString(),
                 deliveryStatusText = DeliveryText(item.DeliveryStatus),
 
+                sesOpenCount = item.SesOpenCount,
+                sesFirstOpenedAt = item.SesFirstOpenedAt,
+                sesLastOpenedAt = item.SesLastOpenedAt,
+                sesClickCount = item.SesClickCount,
+                sesFirstClickedAt = item.SesFirstClickedAt,
+                sesLastClickedAt = item.SesLastClickedAt,
+
                 provider = item.Provider,
                 lastError = item.LastError,
                 deliveryDiagnosticCode = item.DeliveryDiagnosticCode,

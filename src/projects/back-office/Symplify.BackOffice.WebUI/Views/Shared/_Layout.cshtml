@@ -8,8 +8,10 @@
     string mainClass = useAuthorTemplate ? "author-shell" : suppressSidebar ? "min-vh-100 bg-neutral-50" : "dashboard-main";
 }
 <!DOCTYPE html>
-<html lang="@htmlLang" data-theme="light">
+<html lang="@htmlLang" data-theme="light" data-ui-size="standard">
 <head>
+    @* OBS template: apply selected appearance before painting the page *@
+    <script src="~/assets/obs-template/js/theme-preload.js" asp-append-version="true"></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@title - Symplify</title>
@@ -18,12 +20,108 @@
     <link href="~/lib/remixicon/fonts/remixicon.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="~/lib/datatables.net-dt/css/dataTables.dataTables.min.css" asp-append-version="true" />
     <link href="~/lib/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    @* Original OBS stylesheet supplies the baseline; Symplify overrides follow it. *@
+    <link rel="stylesheet" href="~/assets/obs-template/css/style.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
 <link href="~/lib/select2/dist/css/select2.min.css" rel="stylesheet" />
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
     <div class="body-overlay"></div>
+    @if (!suppressSidebar && !useAuthorTemplate)
+    {
+        <div id="obsAppearancePanel" aria-hidden="true" class="theme-customization-sidebar w-100 bg-base h-100vh overflow-y-auto position-fixed end-0 top-0 shadow-lg">
+        <div class="d-flex align-items-center gap-3 py-16 px-24 justify-content-between border-bottom">
+        <div>
+        <h6 class="text-sm dark:text-white">Tema Ayarları</h6>
+        </div>
+        <button type="button" aria-label="Ayarları kapat" class="theme-customization-sidebar__close text-neutral-900 bg-transparent text-hover-primary-600 d-flex text-xl" data-slot="button">
+        <i class="ri-close-fill"></i>
+        </button>
+        </div>
+        <div class="d-flex flex-column gap-48 p-24 overflow-y-auto flex-grow-1">
+        <div class="theme-setting-item">
+        <h6 class="fw-medium text-primary-light text-md mb-3">Görünüm</h6>
+        <div class="d-grid grid-cols-3 gap-3 dark-light-mode">
+        <button class="theme-btn theme-setting-item__btn d-flex align-items-center justify-content-center h-64-px rounded-3 text-xl active" data-theme="light" type="button">
+        <i class="ri-sun-line"></i>
+        </button>
+        <button class="theme-btn theme-setting-item__btn d-flex align-items-center justify-content-center h-64-px rounded-3 text-xl" data-theme="dark" type="button">
+        <i class="ri-moon-line"></i>
+        </button>
+        <button class="theme-btn theme-setting-item__btn d-flex align-items-center justify-content-center h-64-px rounded-3 text-xl" data-theme="system" type="button">
+        <i class="ri-computer-line"></i>
+        </button>
+        </div>
+        </div>
+        <div class="theme-setting-item">
+        <h6 class="fw-medium text-primary-light text-md mb-3">Sayfa Yönü</h6>
+        <div class="d-grid grid-cols-2 gap-3">
+        <button class="theme-setting-item__btn ltr-mode-btn d-flex align-items-center justify-content-center gap-2 h-56-px rounded-3 text-xl" type="button">
+        <span><i class="ri-align-item-left-line"></i></span>
+        <span class="h6 text-sm font-medium mb-0">LTR</span>
+        </button>
+        <button class="theme-setting-item__btn rtl-mode-btn d-flex align-items-center justify-content-center gap-2 h-56-px rounded-3 text-xl" type="button">
+        <span class="h6 text-sm font-medium mb-0">RTL</span>
+        <span><i class="ri-align-item-right-line"></i></span>
+        </button>
+        </div>
+        </div>
+        <div class="theme-setting-item">
+        <h6 class="fw-medium text-primary-light text-md mb-3">Renk Teması</h6>
+        <div class="d-grid grid-cols-3 gap-3">
+        <button class="color-picker-btn d-flex flex-column justify-content-center align-items-center" data-color="blue" type="button">
+        <span class="color-picker-btn__box h-40-px w-100 rounded-3" style="background-color: #2563eb;"></span>
+        <span class="fw-medium mt-1" style="color: #2563eb;">Mavi</span>
+        </button>
+        <button class="color-picker-btn d-flex flex-column justify-content-center align-items-center" data-color="red" type="button">
+        <span class="color-picker-btn__box h-40-px w-100 rounded-3" style="background-color: #dc2626;"></span>
+        <span class="fw-medium mt-1" style="color: #dc2626;">Kırmızı</span>
+        </button>
+        <button class="color-picker-btn d-flex flex-column justify-content-center align-items-center" data-color="green" type="button">
+        <span class="color-picker-btn__box h-40-px w-100 rounded-3" style="background-color: #16a34a;"></span>
+        <span class="fw-medium mt-1" style="color: #16a34a;">Yeşil</span>
+        </button>
+        <button class="color-picker-btn d-flex flex-column justify-content-center align-items-center" data-color="yellow" type="button">
+        <span class="color-picker-btn__box h-40-px w-100 rounded-3" style="background-color: #ff9f29;"></span>
+        <span class="fw-medium mt-1" style="color: #ff9f29;">Sarı</span>
+        </button>
+        <button class="color-picker-btn d-flex flex-column justify-content-center align-items-center" data-color="cyan" type="button">
+        <span class="color-picker-btn__box h-40-px w-100 rounded-3" style="background-color: #00b8f2;"></span>
+        <span class="fw-medium mt-1" style="color: #00b8f2;">Camgöbeği</span>
+        </button>
+        <button class="color-picker-btn d-flex flex-column justify-content-center align-items-center" data-color="violet" type="button">
+        <span class="color-picker-btn__box h-40-px w-100 rounded-3" style="background-color: #7c3aed;"></span>
+        <span class="fw-medium mt-1" style="color: #7c3aed;">Mor</span>
+        </button>
+        </div>
+        </div>
+        <div class="theme-setting-item">
+        <h6 class="fw-medium text-primary-light text-md mb-3">Yazı Tipi</h6>
+        <div class="d-grid grid-cols-2 gap-3">
+        <button class="font-btn font-option--manrope theme-setting-item__btn d-flex align-items-center justify-content-center h-56-px rounded-3 active" data-font="manrope" type="button">Manrope</button>
+        <button class="font-btn font-option--inter theme-setting-item__btn d-flex align-items-center justify-content-center h-56-px rounded-3" data-font="inter" type="button">Inter</button>
+        <button class="font-btn font-option--plus-jakarta-sans theme-setting-item__btn d-flex align-items-center justify-content-center h-56-px rounded-3" data-font="plus-jakarta-sans" type="button">Plus Jakarta Sans</button>
+        <button class="font-btn font-option--dm-sans theme-setting-item__btn d-flex align-items-center justify-content-center h-56-px rounded-3" data-font="dm-sans" type="button">DM Sans</button>
+        <button class="font-btn font-option--segoe-ui theme-setting-item__btn d-flex align-items-center justify-content-center h-56-px rounded-3" data-font="segoe-ui" type="button">Segoe UI</button>
+        <button class="font-btn font-option--arial theme-setting-item__btn d-flex align-items-center justify-content-center h-56-px rounded-3" data-font="arial" type="button">Arial</button>
+        <button class="font-btn font-option--tahoma theme-setting-item__btn d-flex align-items-center justify-content-center h-56-px rounded-3" data-font="tahoma" type="button">Tahoma</button>
+        <button class="font-btn font-option--verdana theme-setting-item__btn d-flex align-items-center justify-content-center h-56-px rounded-3" data-font="verdana" type="button">Verdana</button>
+        </div>
+        </div>
+        <div class="theme-setting-item">
+        <h6 class="fw-medium text-primary-light text-md mb-3">Yazı / Arayüz Boyutu</h6>
+        <div class="ui-size-selector" role="group" aria-label="Yazı ve arayüz boyutu">
+        <button class="ui-size-btn" data-ui-size="compact" type="button" title="Çok küçük - 13.5 px"><span class="ui-size-btn__sample">Aa</span><span class="ui-size-btn__label">Ç.Küçük</span></button>
+        <button class="ui-size-btn" data-ui-size="small" type="button" title="Küçük - 14.25 px"><span class="ui-size-btn__sample">Aa</span><span class="ui-size-btn__label">Küçük</span></button>
+        <button class="ui-size-btn active" data-ui-size="standard" type="button" title="Standart - 15 px" aria-pressed="true"><span class="ui-size-btn__sample">Aa</span><span class="ui-size-btn__label">Standart</span></button>
+        <button class="ui-size-btn" data-ui-size="large" type="button" title="Büyük - 16 px"><span class="ui-size-btn__sample">Aa</span><span class="ui-size-btn__label">Büyük</span></button>
+        <button class="ui-size-btn" data-ui-size="xlarge" type="button" title="Çok büyük - 17 px"><span class="ui-size-btn__sample">Aa</span><span class="ui-size-btn__label">Ç.Büyük</span></button>
+        </div>
+        </div>
+        </div>
+        </div>
+    }
 
     @if (!suppressSidebar)
     {
@@ -51,6 +149,7 @@
     {
         <script src="~/js/author-template.js" asp-append-version="true"></script>
     }
+    <script src="~/js/shared/ui/symplify.obs-appearance.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

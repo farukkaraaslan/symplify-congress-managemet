@@ -351,6 +351,11 @@ namespace Symplify.BackOffice.Persistence.Migrations
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("IsAuthorVideoUploadEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
                     b.Property<string>("LogoDarkPath")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");

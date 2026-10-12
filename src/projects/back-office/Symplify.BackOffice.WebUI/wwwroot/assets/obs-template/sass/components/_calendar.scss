@@ -1,0 +1,219 @@
+// Akademik takvim: FullCalendar'ın resmi DOM/class yapısı üzerinde OBS tema katmanı.
+// Yapısal class üretmek için ek JS kullanılmaz; yalnız FullCalendar'ın standart .fc-* classları stillenir.
+.obs-academic-calendar {
+  --fc-border-color: var(--border-subtle);
+  --fc-page-bg-color: var(--surface-base);
+  --fc-neutral-bg-color: var(--surface-subtle);
+  --fc-neutral-text-color: var(--text-secondary);
+  --fc-today-bg-color: var(--surface-brand-subtle);
+  --fc-now-indicator-color: var(--danger-600);
+  --fc-button-text-color: var(--text-primary);
+  --fc-button-bg-color: var(--surface-base);
+  --fc-button-border-color: var(--border-subtle);
+  --fc-button-hover-bg-color: var(--surface-subtle);
+  --fc-button-hover-border-color: var(--border-default);
+  --fc-button-active-bg-color: var(--primary-600);
+  --fc-button-active-border-color: var(--primary-600);
+  --fc-event-bg-color: var(--primary-600);
+  --fc-event-border-color: var(--primary-600);
+  --fc-event-text-color: var(--white);
+  color: var(--text-primary);
+  background: var(--surface-base);
+
+  .fc-toolbar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: var(--size-16);
+    margin: 0 !important;
+    padding: var(--size-16) var(--size-16);
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--surface-base);
+  }
+
+  .fc-toolbar-chunk {
+    display: flex;
+    align-items: center;
+    gap: var(--size-8);
+  }
+
+  .fc-toolbar-chunk:first-child { justify-content: flex-start; }
+  .fc-toolbar-chunk:nth-child(2) { justify-content: center; }
+  .fc-toolbar-chunk:last-child { justify-content: flex-end; }
+
+  .fc-toolbar-title {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: var(--font-xl);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--line-height-snug);
+  }
+
+  .fc-button-group {
+    display: flex;
+    gap: var(--size-8);
+  }
+
+  .fc-button-group > .fc-button,
+  .fc-button {
+    margin: 0 !important;
+    border-radius: var(--rounded-8) !important;
+    box-shadow: none !important;
+    font-size: var(--font-sm) !important;
+    font-weight: var(--font-weight-medium) !important;
+  }
+
+  .fc-prev-button,
+  .fc-next-button {
+    width: 36px;
+    min-width: 36px;
+    padding-inline: 0 !important;
+  }
+
+  .fc-scrollgrid {
+    border-color: var(--border-subtle) !important;
+  }
+
+  .fc-scrollgrid td,
+  .fc-scrollgrid th {
+    border-color: var(--border-subtle) !important;
+  }
+
+  .fc-col-header-cell {
+    padding: var(--size-8) var(--size-6);
+    background: var(--surface-subtle);
+  }
+
+  .fc-col-header-cell-cushion {
+    color: var(--text-secondary);
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .fc-daygrid-day {
+    background: var(--surface-base);
+  }
+
+  .fc-day-other {
+    background: var(--surface-subtle);
+  }
+
+  .fc-daygrid-day-number {
+    padding: var(--size-8);
+    color: var(--text-primary);
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .fc-day-today {
+    background: var(--surface-brand-subtle) !important;
+  }
+
+  .fc-daygrid-event,
+  .fc-timegrid-event {
+    border-radius: var(--rounded-6);
+    padding: 2px 6px;
+    box-shadow: none;
+  }
+
+  .fc-event-title,
+  .fc-event-time {
+    font-size: var(--font-xs);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .fc-timegrid-slot {
+    height: 3rem;
+    background: var(--surface-base);
+  }
+
+  .fc-timegrid-slot-label-cushion,
+  .fc-timegrid-axis-cushion {
+    color: var(--text-secondary);
+    font-size: var(--font-sm);
+  }
+
+  .fc-timegrid-axis,
+  .fc-timegrid-slot-label {
+    background: var(--surface-base);
+  }
+
+  .fc-timegrid-col.fc-day-today {
+    background: var(--surface-brand-subtle) !important;
+  }
+
+  .fc-list {
+    border-color: var(--border-subtle) !important;
+    background: var(--surface-base);
+  }
+
+  .fc-list-day-cushion {
+    padding: var(--size-10) var(--size-12);
+    background: var(--surface-subtle) !important;
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .fc-list-event:hover td {
+    background: var(--surface-subtle) !important;
+  }
+
+  .fc-list-event td {
+    padding: var(--size-10) var(--size-12);
+    border-color: var(--border-subtle) !important;
+    color: var(--text-primary);
+  }
+
+  .fc-list-event-time {
+    color: var(--text-secondary);
+  }
+
+  @media (max-width: 991.98px) {
+    .fc-toolbar {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .fc-toolbar-chunk:nth-child(2) {
+      grid-column: 1 / -1;
+      grid-row: 1;
+      justify-content: center;
+    }
+
+    .fc-toolbar-chunk:first-child {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .fc-toolbar-chunk:last-child {
+      grid-column: 2;
+      grid-row: 2;
+      justify-content: flex-end;
+    }
+  }
+
+  @media (max-width: 575.98px) {
+    .fc-toolbar {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .fc-toolbar-chunk {
+      justify-content: center !important;
+      flex-wrap: wrap;
+    }
+  }
+}
+
+[data-theme="dark"] .obs-academic-calendar {
+  --fc-border-color: var(--border-subtle);
+  --fc-page-bg-color: var(--surface-base);
+  --fc-neutral-bg-color: var(--surface-subtle);
+  --fc-neutral-text-color: var(--text-secondary);
+  --fc-today-bg-color: var(--surface-brand-subtle);
+  --fc-button-text-color: var(--text-primary);
+  --fc-button-bg-color: var(--surface-elevated);
+  --fc-button-border-color: var(--border-subtle);
+  --fc-button-hover-bg-color: var(--surface-subtle);
+  --fc-button-hover-border-color: var(--border-default);
+}

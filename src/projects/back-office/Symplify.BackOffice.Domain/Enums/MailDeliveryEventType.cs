@@ -12,5 +12,7 @@ public enum MailDeliveryEventType
     Bounce = 40,
     Reject = 50,
     Complaint = 60,
-    RenderingFailure = 70
+    RenderingFailure = 70,
+    Open = 80,
+    Click = 90
 }

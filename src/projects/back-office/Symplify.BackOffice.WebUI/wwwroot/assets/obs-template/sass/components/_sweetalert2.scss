@@ -1,0 +1,951 @@
+@use "../abstracts/function";
+
+/* ==========================================================================
+   SweetAlert2 Theme
+   ========================================================================== */
+
+:root {
+  --swal-zindex: 2000;
+  --swal-width: 32rem;
+  --swal-padding: 1.5rem;
+  --swal-radius: var(--control-radius, 1rem);
+
+  --swal-toast-width: 22rem;
+  --swal-toast-padding-y: 0.875rem;
+  --swal-toast-padding-x: 1rem;
+  --swal-toast-radius: 0.875rem;
+
+  /* Toast durum renkleri */
+  --swal-success-bg: var(--success-600, #16a34a);
+  --swal-error-bg: var(--danger-600, #dc2626);
+  --swal-warning-bg: var(--warning-600, #d97706);
+  --swal-info-bg: var(--info-600, #2563eb);
+  --swal-question-bg: var(--primary-600, #4f46e5);
+  --swal-toast-text: #ffffff;
+}
+
+/* ==========================================================================
+   Container / Backdrop
+   ========================================================================== */
+
+div:where(.swal2-container) {
+  z-index: var(--swal-zindex) !important;
+  padding: function.rem(16px) !important;
+}
+
+/* Normal modal backdrop */
+div:where(.swal2-container).swal2-backdrop-show,
+div:where(.swal2-container).swal2-noanimation {
+  background: rgba(15, 23, 42, 0.48) !important;
+  backdrop-filter: blur(3px);
+}
+
+/* Toast açıkken sayfayı blur/karartma */
+div:where(.swal2-container).swal2-top-start.swal2-backdrop-show,
+div:where(.swal2-container).swal2-top.swal2-backdrop-show,
+div:where(.swal2-container).swal2-top-end.swal2-backdrop-show,
+div:where(.swal2-container).swal2-top-left.swal2-backdrop-show,
+div:where(.swal2-container).swal2-top-right.swal2-backdrop-show,
+div:where(.swal2-container).swal2-center-start.swal2-backdrop-show,
+div:where(.swal2-container).swal2-center-end.swal2-backdrop-show,
+div:where(.swal2-container).swal2-bottom-start.swal2-backdrop-show,
+div:where(.swal2-container).swal2-bottom.swal2-backdrop-show,
+div:where(.swal2-container).swal2-bottom-end.swal2-backdrop-show,
+div:where(.swal2-container).swal2-bottom-left.swal2-backdrop-show,
+div:where(.swal2-container).swal2-bottom-right.swal2-backdrop-show,
+div:where(.swal2-container).swal2-top-start.swal2-noanimation,
+div:where(.swal2-container).swal2-top.swal2-noanimation,
+div:where(.swal2-container).swal2-top-end.swal2-noanimation,
+div:where(.swal2-container).swal2-top-left.swal2-noanimation,
+div:where(.swal2-container).swal2-top-right.swal2-noanimation,
+div:where(.swal2-container).swal2-center-start.swal2-noanimation,
+div:where(.swal2-container).swal2-center-end.swal2-noanimation,
+div:where(.swal2-container).swal2-bottom-start.swal2-noanimation,
+div:where(.swal2-container).swal2-bottom.swal2-noanimation,
+div:where(.swal2-container).swal2-bottom-end.swal2-noanimation,
+div:where(.swal2-container).swal2-bottom-left.swal2-noanimation,
+div:where(.swal2-container).swal2-bottom-right.swal2-noanimation {
+  background: transparent !important;
+  backdrop-filter: none !important;
+}
+
+/* ==========================================================================
+   Popup
+   ========================================================================== */
+
+div:where(.swal2-popup) {
+  width: min(100%, var(--swal-width)) !important;
+  padding: var(--swal-padding) !important;
+  border: 1px solid var(--control-border);
+  border-radius: var(--swal-radius) !important;
+  background: var(--surface-base) !important;
+  color: var(--text-primary) !important;
+  box-shadow: var(--card-shadow);
+  font-family: inherit;
+}
+
+h2:where(.swal2-title) {
+  margin: 0 0 function.rem(8px) 0 !important;
+  padding: 0 !important;
+  color: var(--text-primary) !important;
+  font-size: clamp(1.125rem, 1rem + 0.4vw, 1.75rem) !important;
+  font-weight: var(--font-weight-semibold, 600) !important;
+  line-height: 1.2 !important;
+  text-align: center;
+}
+
+div:where(.swal2-html-container) {
+  margin: 0 !important;
+  padding: 0 !important;
+  color: var(--text-secondary) !important;
+  font-size: var(--font-sm) !important;
+  line-height: 1.65 !important;
+  text-align: center;
+
+  p:last-child {
+    margin-bottom: 0;
+  }
+}
+
+div:where(.swal2-icon) {
+  margin: 0 auto function.rem(16px) auto !important;
+  transform: scale(0.94);
+}
+
+div:where(.swal2-actions) {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: function.rem(10px);
+  width: 100%;
+  margin: function.rem(20px) 0 0 0 !important;
+  padding: 0 !important;
+}
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+
+button:where(.swal2-styled) {
+  margin: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: function.rem(12px) !important;
+  box-shadow: none !important;
+  font-size: var(--font-sm) !important;
+  font-weight: var(--font-weight-semibold, 600) !important;
+  line-height: 1.2 !important;
+  padding: function.rem(11px) function.rem(18px) !important;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+
+  &:focus,
+  &:focus-visible {
+    outline: none !important;
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+button:where(.swal2-confirm) {
+  background: var(--primary-600, #2563eb) !important;
+  border-color: var(--primary-600, #2563eb) !important;
+  color: #fff !important;
+
+  &:hover {
+    background: var(--primary-700, #1d4ed8) !important;
+    border-color: var(--primary-700, #1d4ed8) !important;
+  }
+
+  &:focus,
+  &:focus-visible {
+    box-shadow: var(--focus-ring) !important;
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+}
+
+button:where(.swal2-cancel) {
+  background: transparent !important;
+  border-color: var(--control-border) !important;
+  color: var(--text-primary) !important;
+
+  &:hover {
+    background: var(--surface-subtle) !important;
+    border-color: var(--control-border-hover) !important;
+    color: var(--text-primary) !important;
+  }
+
+  &:focus,
+  &:focus-visible {
+    box-shadow: var(--focus-ring) !important;
+  }
+}
+
+button:where(.swal2-deny) {
+  background: var(--danger-main, #ef4444) !important;
+  border-color: var(--danger-main, #ef4444) !important;
+  color: #fff !important;
+
+  &:hover {
+    filter: brightness(0.96);
+  }
+
+  &:focus,
+  &:focus-visible {
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.16) !important;
+  }
+}
+
+button:where(.swal2-close) {
+  width: function.rem(32px);
+  height: function.rem(32px);
+  border-radius: 999px;
+  color: var(--text-muted) !important;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+
+  &:hover {
+    background: var(--surface-subtle) !important;
+    color: var(--text-primary) !important;
+  }
+
+  &:focus,
+  &:focus-visible {
+    box-shadow: var(--focus-ring) !important;
+    outline: none !important;
+  }
+}
+
+/* ==========================================================================
+   Footer / Loader
+   ========================================================================== */
+
+div:where(.swal2-footer) {
+  margin-top: function.rem(16px) !important;
+  padding-top: function.rem(14px) !important;
+  border-top: 1px solid var(--control-border) !important;
+  color: var(--text-muted) !important;
+  font-size: var(--font-sm) !important;
+}
+
+div:where(.swal2-loader) {
+  border-color: var(--primary-600, #2563eb) transparent var(--primary-600, #2563eb) transparent !important;
+}
+
+/* ==========================================================================
+   Inputs
+   ========================================================================== */
+
+input:where(.swal2-input),
+input:where(.swal2-file),
+textarea:where(.swal2-textarea),
+select:where(.swal2-select) {
+  width: 100% !important;
+  margin: function.rem(10px) 0 0 0 !important;
+  border: 1px solid var(--control-border) !important;
+  border-radius: var(--control-radius) !important;
+  background: var(--control-bg) !important;
+  color: var(--text-primary) !important;
+  font-size: var(--font-sm) !important;
+  font-weight: var(--font-weight-medium, 500) !important;
+  line-height: var(--line-height-normal) !important;
+  box-shadow: none !important;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+
+  &::placeholder {
+    color: var(--control-placeholder) !important;
+    opacity: 1;
+  }
+
+  &:hover {
+    border-color: var(--control-border-hover) !important;
+  }
+
+  &:focus,
+  &:focus-visible {
+    border-color: var(--control-border-focus) !important;
+    background: var(--control-bg-hover) !important;
+    box-shadow: var(--focus-ring) !important;
+    outline: none !important;
+  }
+}
+
+input:where(.swal2-input),
+select:where(.swal2-select),
+input:where(.swal2-file) {
+  min-height: var(--control-height-md);
+  padding-inline: var(--control-padding-x-md);
+}
+
+textarea:where(.swal2-textarea) {
+  min-height: function.rem(120px);
+  padding: function.rem(12px) var(--control-padding-x-md);
+  resize: vertical;
+}
+
+input:where(.swal2-file) {
+  padding-block: function.rem(10px);
+}
+
+input:where(.swal2-range) {
+  width: 100%;
+  margin: function.rem(14px) 0 0 !important;
+}
+
+label:where(.swal2-checkbox),
+label:where(.swal2-radio) {
+  color: var(--text-secondary) !important;
+  font-size: var(--font-sm) !important;
+}
+
+div:where(.swal2-validation-message) {
+  margin: function.rem(10px) 0 0 0 !important;
+  padding: function.rem(10px) function.rem(12px) !important;
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  border-radius: function.rem(12px);
+  background: rgba(239, 68, 68, 0.08) !important;
+  color: var(--danger-main, #ef4444) !important;
+  font-size: var(--font-sm) !important;
+  line-height: 1.45 !important;
+}
+
+/* ==========================================================================
+   Progress / Queue
+   ========================================================================== */
+
+ul:where(.swal2-progress-steps) {
+  gap: function.rem(10px);
+  margin: 0 0 function.rem(18px) 0 !important;
+  padding: 0 !important;
+}
+
+li:where(.swal2-progress-step) {
+  width: function.rem(28px);
+  height: function.rem(28px);
+  border-radius: 999px !important;
+  background: var(--primary-600, #2563eb) !important;
+  color: #fff !important;
+  font-size: var(--font-xs, 0.75rem) !important;
+  font-weight: var(--font-weight-semibold, 600) !important;
+}
+
+li:where(.swal2-progress-step-line) {
+  background: var(--control-border) !important;
+  height: 2px !important;
+  margin: 0 function.rem(4px) !important;
+}
+
+img:where(.swal2-image) {
+  border-radius: function.rem(14px);
+}
+
+div:where(.swal2-timer-progress-bar) {
+  background: currentColor !important;
+  opacity: 0.18;
+}
+
+/* ==========================================================================
+   Toast
+   ========================================================================== */
+
+div:where(.swal2-popup).swal2-toast {
+  width: min(100%, var(--swal-toast-width)) !important;
+  min-height: auto !important;
+  padding: var(--swal-toast-padding-y) var(--swal-toast-padding-x) !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--swal-toast-radius) !important;
+  background: var(--surface-base) !important;
+  color: var(--text-primary) !important;
+  box-shadow: var(--card-shadow) !important;
+  display: grid !important;
+  grid-template-columns: auto 1fr auto !important;
+  align-items: center !important;
+  column-gap: function.rem(12px) !important;
+  row-gap: function.rem(4px) !important;
+}
+
+div:where(.swal2-popup).swal2-toast .swal2-icon {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  width: function.rem(28px) !important;
+  min-width: function.rem(28px) !important;
+  height: function.rem(28px) !important;
+  margin: 0 !important;
+  transform: none !important;
+}
+
+div:where(.swal2-popup).swal2-toast .swal2-title {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: var(--text-primary) !important;
+  font-size: var(--font-sm) !important;
+  font-weight: var(--font-weight-semibold, 600) !important;
+  line-height: 1.35 !important;
+  text-align: left !important;
+}
+
+div:where(.swal2-popup).swal2-toast .swal2-html-container {
+  grid-column: 2;
+  grid-row: 2;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: var(--font-xs, 0.75rem) !important;
+  line-height: 1.45 !important;
+  text-align: left !important;
+  color: var(--text-secondary) !important;
+  opacity: 1;
+}
+
+div:where(.swal2-popup).swal2-toast .swal2-actions {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-self: center;
+  justify-content: flex-end;
+  width: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: function.rem(6px) !important;
+}
+
+div:where(.swal2-popup).swal2-toast button:where(.swal2-styled) {
+  width: auto !important;
+  min-width: auto !important;
+  padding: function.rem(8px) function.rem(12px) !important;
+  border-radius: function.rem(10px) !important;
+  font-size: var(--font-xs, 0.75rem) !important;
+}
+
+div:where(.swal2-popup).swal2-toast .swal2-close {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-self: start;
+  justify-self: end;
+  width: function.rem(26px) !important;
+  height: function.rem(26px) !important;
+  margin: 0 !important;
+}
+
+div:where(.swal2-popup).swal2-toast .swal2-loader {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+}
+
+div:where(.swal2-popup).swal2-toast .swal2-timer-progress-bar-container {
+  grid-column: 1 / -1;
+  margin-top: function.rem(8px);
+}
+
+div:where(.swal2-popup).swal2-toast .swal2-input,
+div:where(.swal2-popup).swal2-toast .swal2-select,
+div:where(.swal2-popup).swal2-toast .swal2-textarea,
+div:where(.swal2-popup).swal2-toast .swal2-file,
+div:where(.swal2-popup).swal2-toast .swal2-validation-message,
+div:where(.swal2-popup).swal2-toast .swal2-footer {
+  grid-column: 1 / -1;
+}
+
+/* ==========================================================================
+   Toast Status Colors
+   SweetAlert2 durum bilgisini popup'a değil, popup içindeki .swal2-icon
+   elemanına (.swal2-success / error / warning / info / question) ekler.
+   Bu nedenle popup arka planı :has() ile doğru ikon üzerinden seçilir.
+   ========================================================================== */
+
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-success) {
+  background: var(--swal-success-bg) !important;
+  border-color: var(--swal-success-bg) !important;
+}
+
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-error) {
+  background: var(--swal-error-bg) !important;
+  border-color: var(--swal-error-bg) !important;
+}
+
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-warning) {
+  background: var(--swal-warning-bg) !important;
+  border-color: var(--swal-warning-bg) !important;
+}
+
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-info) {
+  background: var(--swal-info-bg) !important;
+  border-color: var(--swal-info-bg) !important;
+}
+
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-question) {
+  background: var(--swal-question-bg) !important;
+  border-color: var(--swal-question-bg) !important;
+}
+
+/* Tüm durum toast'larında içerik beyaz */
+div:where(.swal2-popup).swal2-toast:has(
+  .swal2-icon:is(
+    .swal2-success,
+    .swal2-error,
+    .swal2-warning,
+    .swal2-info,
+    .swal2-question
+  )
+) {
+  color: var(--swal-toast-text) !important;
+
+  .swal2-title,
+  .swal2-html-container,
+  .swal2-icon,
+  .swal2-icon-content,
+  .swal2-close,
+  .swal2-footer {
+    color: var(--swal-toast-text) !important;
+  }
+
+  .swal2-icon {
+    border-color: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  .swal2-close {
+    opacity: 0.9;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.14) !important;
+      color: var(--swal-toast-text) !important;
+    }
+
+    &:focus,
+    &:focus-visible {
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.28) !important;
+    }
+  }
+
+  .swal2-timer-progress-bar {
+    background: rgba(255, 255, 255, 0.95) !important;
+    opacity: 0.72;
+  }
+
+  .swal2-loader {
+    border-color: #fff transparent #fff transparent !important;
+  }
+
+  button:where(.swal2-styled) {
+    background: rgba(255, 255, 255, 0.14) !important;
+    border-color: rgba(255, 255, 255, 0.32) !important;
+    color: #fff !important;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.22) !important;
+      border-color: rgba(255, 255, 255, 0.48) !important;
+      color: #fff !important;
+    }
+  }
+}
+
+/* Success ikonunun tüm çizgileri */
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-success) {
+  .swal2-icon.swal2-success {
+    border-color: rgba(255, 255, 255, 0.9) !important;
+    color: #fff !important;
+  }
+
+  .swal2-success-line-tip,
+  .swal2-success-line-long {
+    background-color: #fff !important;
+  }
+
+  .swal2-success-ring {
+    border-color: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  .swal2-success-circular-line-left,
+  .swal2-success-circular-line-right,
+  .swal2-success-fix {
+    background-color: transparent !important;
+  }
+}
+
+/* Error ikonunun X çizgileri */
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-error) {
+  .swal2-icon.swal2-error {
+    border-color: #fff !important;
+    color: #fff !important;
+  }
+
+  .swal2-x-mark-line-left,
+  .swal2-x-mark-line-right {
+    background-color: #fff !important;
+  }
+}
+
+/* Warning / Info / Question ikonları */
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-warning),
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-info),
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-question) {
+  .swal2-icon {
+    border-color: #fff !important;
+    color: #fff !important;
+  }
+}
+
+/* modal icon colors */
+div:where(.swal2-icon).swal2-success {
+  border-color: rgba(34, 197, 94, 0.28) !important;
+  color: #22c55e !important;
+}
+
+div:where(.swal2-icon).swal2-error {
+  border-color: rgba(239, 68, 68, 0.28) !important;
+  color: #ef4444 !important;
+}
+
+div:where(.swal2-icon).swal2-warning {
+  border-color: rgba(245, 158, 11, 0.28) !important;
+  color: #f59e0b !important;
+}
+
+div:where(.swal2-icon).swal2-info {
+  border-color: rgba(59, 130, 246, 0.28) !important;
+  color: #3b82f6 !important;
+}
+
+div:where(.swal2-icon).swal2-question {
+  border-color: rgba(99, 102, 241, 0.28) !important;
+  color: #6366f1 !important;
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 767px) {
+  :root {
+    --swal-padding: 1rem;
+    --swal-toast-width: 100%;
+  }
+
+  div:where(.swal2-container) {
+    padding: function.rem(12px) !important;
+  }
+
+  div:where(.swal2-popup) {
+    width: 100% !important;
+    border-radius: function.rem(16px) !important;
+  }
+
+  h2:where(.swal2-title) {
+    font-size: 1.25rem !important;
+  }
+
+  div:where(.swal2-actions) {
+    gap: function.rem(8px);
+  }
+
+  button:where(.swal2-styled) {
+    width: 100%;
+  }
+
+  div:where(.swal2-popup).swal2-toast {
+    width: 100% !important;
+    grid-template-columns: auto 1fr auto !important;
+    padding: function.rem(12px) function.rem(14px) !important;
+  }
+
+  div:where(.swal2-popup).swal2-toast button:where(.swal2-styled) {
+    width: auto !important;
+  }
+}
+
+/* ==========================================================================
+   Dark Mode
+   ========================================================================== */
+
+html[data-theme="dark"] {
+  div:where(.swal2-container).swal2-backdrop-show,
+  div:where(.swal2-container).swal2-noanimation {
+    background: rgba(2, 6, 23, 0.72) !important;
+  }
+
+  /* Toast'ta yine blur olmasın */
+  div:where(.swal2-container).swal2-top-start.swal2-backdrop-show,
+  div:where(.swal2-container).swal2-top.swal2-backdrop-show,
+  div:where(.swal2-container).swal2-top-end.swal2-backdrop-show,
+  div:where(.swal2-container).swal2-top-left.swal2-backdrop-show,
+  div:where(.swal2-container).swal2-top-right.swal2-backdrop-show,
+  div:where(.swal2-container).swal2-center-start.swal2-backdrop-show,
+  div:where(.swal2-container).swal2-center-end.swal2-backdrop-show,
+  div:where(.swal2-container).swal2-bottom-start.swal2-backdrop-show,
+  div:where(.swal2-container).swal2-bottom.swal2-backdrop-show,
+  div:where(.swal2-container).swal2-bottom-end.swal2-backdrop-show,
+  div:where(.swal2-container).swal2-bottom-left.swal2-backdrop-show,
+  div:where(.swal2-container).swal2-bottom-right.swal2-backdrop-show,
+  div:where(.swal2-container).swal2-top-start.swal2-noanimation,
+  div:where(.swal2-container).swal2-top.swal2-noanimation,
+  div:where(.swal2-container).swal2-top-end.swal2-noanimation,
+  div:where(.swal2-container).swal2-top-left.swal2-noanimation,
+  div:where(.swal2-container).swal2-top-right.swal2-noanimation,
+  div:where(.swal2-container).swal2-center-start.swal2-noanimation,
+  div:where(.swal2-container).swal2-center-end.swal2-noanimation,
+  div:where(.swal2-container).swal2-bottom-start.swal2-noanimation,
+  div:where(.swal2-container).swal2-bottom.swal2-noanimation,
+  div:where(.swal2-container).swal2-bottom-end.swal2-noanimation,
+  div:where(.swal2-container).swal2-bottom-left.swal2-noanimation,
+  div:where(.swal2-container).swal2-bottom-right.swal2-noanimation {
+    background: transparent !important;
+    backdrop-filter: none !important;
+  }
+
+  div:where(.swal2-popup):not(.swal2-toast) {
+    background: var(--surface-base) !important;
+    border-color: var(--control-border) !important;
+    color: var(--text-primary) !important;
+  }
+
+  div:where(.swal2-validation-message) {
+    background: rgba(239, 68, 68, 0.1) !important;
+  }
+}
+
+/* ==========================================================================\n   SweetAlert2 11.26.x - current CSS variable bridge\n   ========================================================================== */
+.swal2-container {
+  --swal2-background: var(--surface-base);
+  --swal2-color: var(--text-primary);
+  --swal2-border-radius: var(--control-radius);
+  --swal2-input-background: var(--control-bg);
+  --swal2-input-border: 1px solid var(--control-border);
+}
+html[data-theme="dark"] .swal2-container {
+  --swal2-background: var(--surface-base);
+  --swal2-color: var(--text-primary);
+}
+
+
+
+/* ==========================================================================
+   TALIM / Enterprise UI override
+   - Daha kucuk dialog, daha az radius
+   - Status toast tam renk blok yerine notr yuzey + durum cizgisi
+   ========================================================================== */
+
+:root {
+  --swal-width: 30rem;
+  --swal-padding: 1.25rem;
+  --swal-radius: 0.625rem;
+  --swal-toast-width: 21rem;
+  --swal-toast-radius: 0.625rem;
+}
+
+div:where(.swal2-container).swal2-backdrop-show,
+div:where(.swal2-container).swal2-noanimation {
+  background: rgba(15, 23, 42, 0.44) !important;
+  backdrop-filter: none !important;
+}
+
+div:where(.swal2-popup):not(.swal2-toast) {
+  border-radius: function.rem(10px) !important;
+  border-color: var(--control-border) !important;
+  box-shadow: 0 function.rem(18px) function.rem(50px) rgba(15, 23, 42, 0.18) !important;
+}
+
+h2:where(.swal2-title) {
+  margin-bottom: function.rem(6px) !important;
+  font-size: function.rem(18px) !important;
+  font-weight: 650 !important;
+  line-height: 1.35 !important;
+}
+
+div:where(.swal2-html-container) {
+  font-size: function.rem(13px) !important;
+  line-height: 1.55 !important;
+}
+
+div:where(.swal2-popup):not(.swal2-toast) .swal2-icon {
+  margin-bottom: function.rem(12px) !important;
+  transform: scale(0.82) !important;
+}
+
+div:where(.swal2-actions) {
+  margin-top: function.rem(18px) !important;
+  gap: function.rem(8px) !important;
+}
+
+button:where(.swal2-styled) {
+  min-height: function.rem(40px) !important;
+  padding: function.rem(8px) function.rem(15px) !important;
+  border-radius: function.rem(8px) !important;
+  font-size: function.rem(13px) !important;
+  font-weight: 600 !important;
+}
+
+input:where(.swal2-input),
+textarea:where(.swal2-textarea),
+select:where(.swal2-select) {
+  border-radius: function.rem(8px) !important;
+  font-size: function.rem(13px) !important;
+}
+
+/* Kurumsal toast: notr kart + solda durum cizgisi */
+div:where(.swal2-popup).swal2-toast {
+  border: 1px solid var(--control-border) !important;
+  border-left-width: function.rem(4px) !important;
+  border-radius: function.rem(10px) !important;
+  background: var(--surface-base) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 function.rem(12px) function.rem(30px) rgba(15, 23, 42, 0.14) !important;
+}
+
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-success) {
+  background: var(--surface-base) !important;
+  border-color: var(--control-border) !important;
+  border-left-color: var(--success-600, #16a34a) !important;
+}
+
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-error) {
+  background: var(--surface-base) !important;
+  border-color: var(--control-border) !important;
+  border-left-color: var(--danger-600, #dc2626) !important;
+}
+
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-warning) {
+  background: var(--surface-base) !important;
+  border-color: var(--control-border) !important;
+  border-left-color: var(--warning-600, #d97706) !important;
+}
+
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-info) {
+  background: var(--surface-base) !important;
+  border-color: var(--control-border) !important;
+  border-left-color: var(--info-600, #2563eb) !important;
+}
+
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-question) {
+  background: var(--surface-base) !important;
+  border-color: var(--control-border) !important;
+  border-left-color: var(--primary-600, #4f46e5) !important;
+}
+
+div:where(.swal2-popup).swal2-toast:has(
+  .swal2-icon:is(.swal2-success, .swal2-error, .swal2-warning, .swal2-info, .swal2-question)
+) {
+  color: var(--text-primary) !important;
+
+  .swal2-title {
+    color: var(--text-primary) !important;
+  }
+
+  .swal2-html-container,
+  .swal2-footer {
+    color: var(--text-secondary) !important;
+  }
+
+  .swal2-close {
+    color: var(--text-muted) !important;
+
+    &:hover {
+      background: var(--surface-subtle) !important;
+      color: var(--text-primary) !important;
+    }
+  }
+
+  .swal2-timer-progress-bar {
+    background: var(--primary-600) !important;
+    opacity: 0.55;
+  }
+}
+
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-success) .swal2-icon {
+  color: var(--success-600, #16a34a) !important;
+  border-color: rgba(22, 163, 74, 0.28) !important;
+}
+
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-error) .swal2-icon {
+  color: var(--danger-600, #dc2626) !important;
+  border-color: rgba(220, 38, 38, 0.28) !important;
+}
+
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-warning) .swal2-icon {
+  color: var(--warning-600, #d97706) !important;
+  border-color: rgba(217, 119, 6, 0.28) !important;
+}
+
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-info) .swal2-icon {
+  color: var(--info-600, #2563eb) !important;
+  border-color: rgba(37, 99, 235, 0.28) !important;
+}
+
+html[data-theme="dark"] {
+  div:where(.swal2-popup):not(.swal2-toast) {
+    box-shadow: 0 function.rem(22px) function.rem(56px) rgba(0, 0, 0, 0.36) !important;
+  }
+
+  div:where(.swal2-popup).swal2-toast {
+    background: var(--surface-base) !important;
+    box-shadow: 0 function.rem(16px) function.rem(36px) rgba(0, 0, 0, 0.34) !important;
+  }
+}
+
+
+/* Toast ikon cizgilerini notr arka planda durum rengine geri getir */
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-success) {
+  .swal2-success-line-tip,
+  .swal2-success-line-long {
+    background-color: var(--success-600, #16a34a) !important;
+  }
+
+  .swal2-success-ring {
+    border-color: rgba(22, 163, 74, 0.32) !important;
+  }
+
+  .swal2-icon-content {
+    color: var(--success-600, #16a34a) !important;
+  }
+}
+
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-error) {
+  .swal2-x-mark-line-left,
+  .swal2-x-mark-line-right {
+    background-color: var(--danger-600, #dc2626) !important;
+  }
+
+  .swal2-icon-content {
+    color: var(--danger-600, #dc2626) !important;
+  }
+}
+
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-warning) .swal2-icon-content {
+  color: var(--warning-600, #d97706) !important;
+}
+
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-info) .swal2-icon-content {
+  color: var(--info-600, #2563eb) !important;
+}
+
+div:where(.swal2-popup).swal2-toast:has(.swal2-icon.swal2-question) .swal2-icon-content {
+  color: var(--primary-600, #4f46e5) !important;
+}
+
+div:where(.swal2-popup).swal2-toast:has(
+  .swal2-icon:is(.swal2-success, .swal2-error, .swal2-warning, .swal2-info, .swal2-question)
+) button:where(.swal2-styled) {
+  background: var(--surface-subtle) !important;
+  border-color: var(--control-border) !important;
+  color: var(--text-primary) !important;
+
+  &:hover {
+    background: var(--control-bg-hover, var(--surface-subtle)) !important;
+    border-color: var(--control-border-hover) !important;
+    color: var(--text-primary) !important;
+  }
+}

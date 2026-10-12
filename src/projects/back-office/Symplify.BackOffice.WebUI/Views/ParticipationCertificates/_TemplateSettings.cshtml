@@ -6,6 +6,7 @@
     string mailTitle = Model.Template?.MailTitle ?? Model.DefaultMailTitle;
     string mailBody = Model.Template?.MailBodyHtml ?? Model.DefaultMailBodyHtml;
     string fontColor = Model.Template?.NameFontColorHex ?? "#0F3791";
+    bool isTurkish = string.Equals(Model.TemplateCulture, "tr-TR", StringComparison.OrdinalIgnoreCase);
 }
 <form asp-action="SaveTemplate" asp-controller="ParticipationCertificates" asp-route-culture="@Model.CurrentCulture" method="post" enctype="multipart/form-data" class="row gy-4">
     @Html.AntiForgeryToken()
@@ -16,7 +17,28 @@
         <label class="form-label fw-semibold">@Model.CultureLabel PDF Template</label>
         <input class="form-control" type="file" name="templateFile" accept="application/pdf,.pdf" />
         <small class="text-neutral-500 d-block mt-1">
-            @(Model.Template is null ? "Henüz PDF template yüklenmedi." : $"Aktif dosya: {Model.Template.FileName}")
+            @if (Model.Template is null)
+            {
+                <span>Henüz PDF template yüklenmedi.</span>
+            }
+            else
+            {
+                <span>Aktif dosya: <strong>@Model.Template.FileName</strong></span>
+                <a class="ms-2 text-primary-600 fw-semibold"
+                   asp-action="DownloadTemplate"
+                   asp-controller="ParticipationCertificates"
+                   asp-route-culture="@Model.CurrentCulture"
+                   asp-route-congressId="@Model.CongressId"
+                   asp-route-templateCulture="@Model.TemplateCulture">
+                    <i class="ri-download-2-line"></i> Mevcut template'i indir
+                </a>
+                <button type="submit"
+                        form="remove-template-@prefix"
+                        class="btn btn-link btn-sm text-danger-600 fw-semibold ms-2 p-0 align-baseline js-remove-participation-template"
+                        data-culture-label="@Model.CultureLabel">
+                    <i class="ri-delete-bin-6-line"></i> Template'i kaldır
+                </button>
+            }
         </small>
     </div>
     <div class="col-lg-3">
@@ -24,23 +46,27 @@
         <input class="form-control form-control-color w-100" type="color" name="fontColorHex" value="@fontColor" />
     </div>
     <div class="col-lg-4 d-flex align-items-end">
-        <div class="form-check form-switch mb-2">
-            @if (Model.Template?.IsDefault == true)
-            {
-                <input class="form-check-input" type="checkbox" name="isDefault" value="true" id="@(prefix)DefaultTemplate" checked />
-            }
-            else
-            {
-                <input class="form-check-input" type="checkbox" name="isDefault" value="true" id="@(prefix)DefaultTemplate" />
-            }
-            <label class="form-check-label" for="@(prefix)DefaultTemplate">Varsayılan template</label>
-        </div>
+        @if (isTurkish)
+        {
+            <input type="hidden" name="isDefault" value="true" />
+            <div class="alert alert-primary py-2 px-3 mb-0 w-100"><i class="ri-star-fill me-1"></i> Türkçe varsayılan template</div>
+        }
+        else
+        {
+            <div class="alert alert-light border py-2 px-3 mb-0 w-100"><i class="ri-translate-2 me-1"></i> İngilizce alternatif template</div>
+        }
     </div>
 
     <div class="col-12">
         <label class="form-label fw-semibold">Sertifika Metni</label>
         <textarea class="form-control" name="bodyText" rows="3" maxlength="4000" required>@bodyText</textarea>
-        <small class="text-neutral-500">Kullanılabilir değişken: <code>{{SUBMISSION_TYPE}}</code></small>
+        <small class="text-neutral-500 d-block mt-1">
+            Kullanılabilir değişkenler:
+            <code>{{PARTICIPANT_NAME}}</code>, <code>{{INSTITUTION}}</code>,
+            <code>{{SUBMISSION_NUMBER}}</code>, <code>{{SUBMISSION_TITLE}}</code>, <code>{{SUBMISSION_TYPE}}</code>,
+            <code>{{CONGRESS_NAME}}</code>, <code>{{CONGRESS_DATE}}</code>, <code>{{CONGRESS_LOCATION}}</code>.
+        </small>
+        <small class="text-neutral-400 d-block mt-1">AcroForm alanları: Certificate.ParticipantName, Certificate.Text, Certificate.CommitteeSignature, Certificate.CommitteeSigner, Certificate.CommitteeRole, Certificate.QrCode, Certificate.VerificationCode (opsiyonel).</small>
     </div>
 
     <div class="col-lg-6">
@@ -65,3 +91,16 @@
         </button>
     </div>
 </form>
+@if (Model.Template is not null)
+{
+    <form id="remove-template-@prefix"
+          asp-action="RemoveTemplate"
+          asp-controller="ParticipationCertificates"
+          asp-route-culture="@Model.CurrentCulture"
+          method="post"
+          class="d-none">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="congressId" value="@Model.CongressId" />
+        <input type="hidden" name="templateCulture" value="@Model.TemplateCulture" />
+    </form>
+}

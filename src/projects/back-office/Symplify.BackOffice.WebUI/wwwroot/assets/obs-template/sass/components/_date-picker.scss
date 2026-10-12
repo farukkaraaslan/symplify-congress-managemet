@@ -1,0 +1,27 @@
+/* ================== Date Picker Css Start ====================== */
+.flatpickr-day.selected {
+    border-color: var(--primary-600);
+    background-color: var(--primary-600);
+    color: #fff !important;
+}
+.flatpickr-calendar {
+    background-color: var(--dropdown-bg) !important;
+    border: 1px solid var(--dropdown-border) !important;
+    border-radius: var(--rounded-16) !important;
+    box-shadow: var(--dropdown-shadow) !important;
+}
+.flatpickr-calendar p, .flatpickr-calendar span, .flatpickr-calendar div, .flatpickr-calendar input {
+    color: var(--text-primary-light) !important;
+}
+
+.flatpickr-months .flatpickr-prev-month, .flatpickr-months .flatpickr-next-month  {
+    fill: var(--text-primary-light) !important;
+}
+
+.flatpickr-day:hover {
+    background-color: var(--surface-brand-subtle) !important;
+    border-color: transparent !important;
+    color: var(--primary-600) !important;
+}
+
+/* ================== Date Picker Css End ====================== */

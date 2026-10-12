@@ -1,0 +1,47 @@
+/*
+ * Mail Deliveries DataTable
+ * General columns use natural DataTables sizing.
+ * Only Organization/Congress and Delivery diagnostic areas are bounded.
+ */
+
+#mailDeliveriesTable th.mail-delivery-context-column,
+#mailDeliveriesTable td.mail-delivery-context-column {
+    width: 230px !important;
+    min-width: 230px !important;
+    max-width: 230px !important;
+    white-space: normal;
+}
+
+#mailDeliveriesTable th.mail-delivery-delivery-column,
+#mailDeliveriesTable td.mail-delivery-delivery-column {
+    width: 300px !important;
+    min-width: 300px !important;
+    max-width: 300px !important;
+    white-space: normal;
+}
+
+#mailDeliveriesTable .mail-delivery-context-column,
+#mailDeliveriesTable .mail-delivery-delivery-column,
+#mailDeliveriesTable .mail-delivery-diagnostic {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+#mailDeliveriesTable .mail-delivery-subject {
+    white-space: normal;
+}
+
+/* DataTables scrollX creates a separate header table.
+   Keep its sizing synchronized with the body instead of forcing custom widths. */
+#mailDeliveriesPage .dt-scroll,
+#mailDeliveriesPage .dataTables_scroll {
+    width: 100%;
+    max-width: 100%;
+}
+
+#mailDeliveriesPage .dt-scroll-head,
+#mailDeliveriesPage .dt-scroll-body,
+#mailDeliveriesPage .dataTables_scrollHead,
+#mailDeliveriesPage .dataTables_scrollBody {
+    max-width: 100%;
+}

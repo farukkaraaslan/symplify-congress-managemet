@@ -1,0 +1,40 @@
+@use "../abstracts/function";
+
+.avatar-xl {
+  width: function.rem(44px);
+  height: function.rem(44px);
+}
+
+.avatar-lg {
+  width: function.rem(40px);
+  height: function.rem(40px);
+}
+
+.avatar-md {
+  width: function.rem(32px);
+  height: function.rem(32px);
+}
+
+.avatar-sm {
+  width: function.rem(24px);
+  height: function.rem(24px);
+}
+
+.media-thumb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+
+.media-thumb > img,
+.media-thumb > svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.media-thumb > img {
+  object-fit: cover;
+}

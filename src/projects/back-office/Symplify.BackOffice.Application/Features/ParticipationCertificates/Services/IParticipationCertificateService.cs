@@ -30,11 +30,22 @@ public interface IParticipationCertificateService
         IReadOnlyCollection<Guid>? certificateIds = null,
         CancellationToken cancellationToken = default);
 
+    Task<ParticipationCertificateTemplateFileDto?> GetTemplateFileAsync(
+        Guid congressId,
+        string? culture,
+        CancellationToken cancellationToken = default);
+
     Task<ParticipationCertificateTemplateDto> UploadTemplateAsync(
         ParticipationCertificateTemplateUploadInput input,
         CancellationToken cancellationToken = default);
 
     Task SetDefaultTemplateAsync(
+        Guid congressId,
+        string? culture,
+        Guid? performedByUserId,
+        CancellationToken cancellationToken = default);
+
+    Task RemoveTemplateAsync(
         Guid congressId,
         string? culture,
         Guid? performedByUserId,
@@ -90,6 +101,14 @@ public interface IParticipationCertificateService
 
     Task<int> ProcessRequestedEmailQueueBatchAsync(
         int batchSize = 100,
+        CancellationToken cancellationToken = default);
+
+    Task<ParticipationCertificateVerificationDto?> GetVerificationAsync(
+        string verificationCode,
+        CancellationToken cancellationToken = default);
+
+    Task<ParticipationCertificateVerificationDto?> GetVerificationAsync(
+        Guid publicId,
         CancellationToken cancellationToken = default);
 
     Task<ParticipationCertificatePublicAccessResult> ResolvePublicAccessAsync(

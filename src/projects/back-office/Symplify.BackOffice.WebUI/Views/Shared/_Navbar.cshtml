@@ -42,88 +42,74 @@
 }
 else
 {
+    @* OBS template: partials/navbar.html — tek satırlık, responsive header. *@
     <div class="navbar-header symplify-navbar">
-        <div class="navbar-responsive-row @(suppressSidebar ? "justify-content-between" : string.Empty)">
-            @if (suppressSidebar)
-            {
-                <a href="@homeUrl" class="d-flex align-items-center gap-2">
-                    <img src="/assets/images/logo/symplify-logo-horizontal-light.svg" alt="Symplify" class="h-40-px light-logo" />
-                    <img src="/assets/images/logo/symplify-logo-horizontal-dark.svg" alt="Symplify" class="h-40-px dark-logo" />
-                </a>
-            }
-            else
-            {
-                <div class="navbar-left-controls">
-                    <button type="button" class="sidebar-toggle" aria-label='@T("BackOffice.Navbar.ToggleSidebar", "Sidebar aç/kapat")'>
-                        <iconify-icon icon="heroicons:bars-3-solid" class="icon text-2xl non-active"></iconify-icon>
-                        <iconify-icon icon="iconoir:arrow-right" class="icon text-2xl active"></iconify-icon>
-                    </button>
+        <div class="row align-items-center justify-content-between g-3 flex-nowrap">
+            <div class="col-auto">
+                @if (suppressSidebar)
+                {
+                    <a href="@homeUrl" class="d-inline-flex align-items-center">
+                        <img src="/assets/images/logo/symplify-logo-horizontal-light.svg" alt="Symplify" class="h-40-px light-logo" />
+                        <img src="/assets/images/logo/symplify-logo-horizontal-dark.svg" alt="Symplify" class="h-40-px dark-logo" />
+                    </a>
+                }
+                else
+                {
+                    <div class="d-flex align-items-center gap-3">
+                        <button type="button" class="sidebar-toggle" aria-label='@T("BackOffice.Navbar.ToggleSidebar", "Menüyü daralt")'>
+                            <iconify-icon icon="heroicons:bars-3-solid" class="icon text-2xl non-active"></iconify-icon>
+                            <iconify-icon icon="iconoir:arrow-right" class="icon text-2xl active"></iconify-icon>
+                        </button>
+                        <button type="button" class="sidebar-mobile-toggle" aria-label='@T("BackOffice.Navbar.OpenMobileMenu", "Mobil menüyü aç")'>
+                            <iconify-icon icon="heroicons:bars-3-solid" class="icon"></iconify-icon>
+                        </button>
+                    </div>
+                }
+            </div>
 
-                    <button type="button" class="sidebar-mobile-toggle" aria-label='@T("BackOffice.Navbar.OpenMobileMenu", "Mobil menüyü aç")'>
-                        <iconify-icon icon="heroicons:bars-3-solid" class="icon text-2xl"></iconify-icon>
-                    </button>
-                </div>
-            }
-
-            <div class="navbar-right-actions">
-                <button type="button"
-                        data-theme-toggle
-                        class="navbar-action-btn w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center"
-                        aria-label='@T("BackOffice.AuthorTopbar.ThemeToggle", "Tema değiştir")'>
-                    <iconify-icon icon="solar:sun-2-outline" class="text-primary-light text-xl"></iconify-icon>
-                </button>
-
-                @await Component.InvokeAsync("LanguageSwitcher")
-
-                <div class="dropdown">
-                    <button class="navbar-action-btn w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center"
-                            type="button"
-                            data-bs-toggle="dropdown"
-                            aria-label='@T("BackOffice.Navbar.Messages", "Mesajlar")'>
-                        <iconify-icon icon="mage:email" class="text-primary-light text-xl"></iconify-icon>
-                    </button>
-
-                    <div class="dropdown-menu dropdown-menu-lg p-0">
-                        <div class="m-16 py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2">
-                            <div>
-                                <h6 class="text-lg text-primary-light fw-semibold mb-0">@T("BackOffice.Navbar.Messages", "Mesajlar")</h6>
-                                <small class="text-secondary-light">@T("BackOffice.Navbar.MessagesDescription", "Kişisel mesajlarınız burada gösterilecek.")</small>
+            <div class="col-auto ms-auto">
+                <div class="d-flex flex-nowrap align-items-center justify-content-end gap-2">
+                    <div class="dropdown">
+                        <button type="button" class="has-indicator w-40-px h-40-px bg-neutral-100 rounded-circle d-flex align-items-center justify-content-center border-0"
+                                data-bs-toggle="dropdown" aria-expanded="false"
+                                aria-label='@T("BackOffice.AuthorTopbar.Notifications", "Bildirimler")'>
+                            <iconify-icon icon="iconoir:bell" class="text-primary-light text-xl"></iconify-icon>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end dropdown-menu-lg p-0">
+                            <div class="m-16 py-12 px-16 radius-8 bg-primary-50 d-flex align-items-center justify-content-between gap-2">
+                                <div>
+                                    <h6 class="text-md fw-semibold mb-1">@T("BackOffice.AuthorTopbar.Notifications", "Bildirimler")</h6>
+                                    <span class="text-xs text-secondary-light">@T("BackOffice.Navbar.NotificationsDescription", "Sistem bildirimleri")</span>
+                                </div>
                             </div>
-                            <span class="text-primary-600 fw-semibold text-lg w-40-px h-40-px rounded-circle bg-base d-flex justify-content-center align-items-center">0</span>
-                        </div>
-
-                        <div class="px-24 py-24 text-center text-secondary-light">
-                            <iconify-icon icon="tabler:message-circle-off" class="text-3xl d-block mb-8"></iconify-icon>
-                            @T("BackOffice.Navbar.NoUnreadMessages", "Henüz okunmamış mesaj yok.")
+                            <div class="px-24 py-24 text-center text-secondary-light">
+                                @T("BackOffice.Navbar.NoNotifications", "Şu anda yeni bildiriminiz yok.")
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="dropdown">
-                    <button class="navbar-action-btn w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center"
-                            type="button"
-                            data-bs-toggle="dropdown"
-                            aria-label='@T("BackOffice.AuthorTopbar.Notifications", "Bildirimler")'>
-                        <iconify-icon icon="iconoir:bell" class="text-primary-light text-xl"></iconify-icon>
+                    <button type="button" data-theme-toggle
+                            class="w-40-px h-40-px bg-neutral-100 rounded-circle d-flex align-items-center justify-content-center border-0"
+                            aria-label='@T("BackOffice.AuthorTopbar.ThemeToggle", "Tema değiştir")'>
+                        <iconify-icon icon="solar:sun-2-outline" class="text-primary-light text-xl"></iconify-icon>
                     </button>
 
-                    <div class="dropdown-menu dropdown-menu-lg p-0">
-                        <div class="m-16 py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2">
-                            <div>
-                                <h6 class="text-lg text-primary-light fw-semibold mb-0">@T("BackOffice.AuthorTopbar.Notifications", "Bildirimler")</h6>
-                                <small class="text-secondary-light">@T("BackOffice.Navbar.NotificationsDescription", "Sistem bildirimleri burada gösterilecek.")</small>
-                            </div>
-                            <span class="text-primary-600 fw-semibold text-lg w-40-px h-40-px rounded-circle bg-base d-flex justify-content-center align-items-center">0</span>
-                        </div>
+                    @if (!suppressSidebar)
+                    {
+                        <button type="button" data-obs-appearance-open aria-controls="obsAppearancePanel" aria-expanded="false"
+                                class="w-40-px h-40-px bg-neutral-100 rounded-circle d-none d-md-flex align-items-center justify-content-center border-0"
+                                title="Tema ayarları" aria-label="Tema ayarları">
+                            <i class="ri-settings-3-line text-primary-light text-xl"></i>
+                        </button>
+                    }
 
-                        <div class="px-24 py-24 text-center text-secondary-light">
-                            <iconify-icon icon="solar:bell-off-linear" class="text-3xl d-block mb-8"></iconify-icon>
-                            @T("BackOffice.Navbar.NoNotifications", "Şu anda yeni bildiriminiz yok.")
-                        </div>
+                    <div class="d-none d-sm-flex align-items-center">
+                        @await Component.InvokeAsync("LanguageSwitcher")
+                    </div>
+                    <div class="d-flex align-items-center flex-shrink-0">
+                        @await Component.InvokeAsync("UserMenu")
                     </div>
                 </div>
-
-                @await Component.InvokeAsync("UserMenu")
             </div>
         </div>
     </div>

@@ -401,6 +401,7 @@ public static class SubmissionUiResourceSeedDefinitions
         new("BackOffice.Submissions", "BackOffice.Submissions.FinalFiles.ReplaceHelp", "Yeni dosya seçmezseniz mevcut dosya korunur.", "If you do not select a new file, the existing file will be kept."),
         new("BackOffice.Submissions", "BackOffice.Submissions.FinalFiles.VideoEditorHelp", "Yazar kongreye katılamayacaksa video sunum dosyası buradan yönetilir.", "If the author cannot attend the congress, the presentation video is managed here."),
         new("BackOffice.Submissions", "BackOffice.Submissions.FinalFiles.UploadLocked", "Tam metin ve video yükleme alanı ödeme işlemi tamamlandıktan sonra aktif olur.", "The full text and video upload section becomes active after the payment is completed."),
+        new("BackOffice.Submissions", "BackOffice.Submissions.FinalFiles.VideoUploadDisabled", "Bu kongre için video sunum yükleme işlemi kapalıdır.", "Presentation video upload is disabled for this congress."),
         new("BackOffice.Submissions", "BackOffice.Submissions.FinalFiles.Validation.FullTextRequired", "Lütfen tam metin dosyası seçin.", "Please select a full text document."),
         new("BackOffice.Submissions", "BackOffice.Submissions.FinalFiles.Validation.FullTextType", "Tam metin dosyası yalnızca DOCX formatında olmalıdır.", "The full text document must be in DOCX format only."),
         new("BackOffice.Submissions", "BackOffice.Submissions.FinalFiles.Validation.FullTextSize", "Tam metin dosyası en fazla 50 MB olabilir.", "The full text document can be at most 50 MB."),

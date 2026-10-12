@@ -1,0 +1,1588 @@
+$dt-radius: var(--rounded-12);
+$dt-radius-sm: var(--rounded-10);
+$dt-head-bg: var(--table-head-bg);
+$dt-head-color: var(--text-primary);
+$dt-body-bg: var(--surface-base);
+$dt-body-color: var(--text-secondary);
+$dt-border: var(--border-subtle);
+$dt-border-soft: var(--border-soft);
+$dt-hover-bg: var(--table-row-hover);
+
+// DataTables dışındaki ikinci scroll katmanını engeller; scroll sahibi yalnız DataTables olur.
+.datatable-shell {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+$dt-select-arrow-light: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6.5L8 10.5L12 6.5' stroke='%236B7280' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E";
+$dt-select-arrow-dark: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6.5L8 10.5L12 6.5' stroke='%23D1D5DB' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E";
+
+$dt-sort-both-light: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='M4.5 5.25L7 2.75L9.5 5.25' stroke='%239CA3AF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M4.5 8.75L7 11.25L9.5 8.75' stroke='%239CA3AF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E";
+$dt-sort-asc-light: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='M4.5 8.25L7 5.75L9.5 8.25' stroke='%23487FFF' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E";
+$dt-sort-desc-light: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='M4.5 5.75L7 8.25L9.5 5.75' stroke='%23487FFF' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E";
+
+$dt-sort-both-dark: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='M4.5 5.25L7 2.75L9.5 5.25' stroke='%239CA3AF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M4.5 8.75L7 11.25L9.5 8.75' stroke='%239CA3AF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E";
+$dt-sort-asc-dark: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='M4.5 8.25L7 5.75L9.5 8.25' stroke='%2395C7FF' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E";
+$dt-sort-desc-dark: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='M4.5 5.75L7 8.25L9.5 5.75' stroke='%2395C7FF' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E";
+
+.basic-data-table,
+div.dt-container,
+.dataTables_wrapper {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+div.dt-container .dt-scroll,
+.dataTables_wrapper .dataTables_scroll {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid $dt-border;
+  border-radius: $dt-radius;
+  background-color: $dt-body-bg;
+  overflow: hidden;
+}
+
+div.dt-container .dt-scroll-head,
+.dataTables_wrapper .dataTables_scrollHead {
+  width: 100% !important;
+  max-width: 100%;
+  overflow: hidden !important;
+  background-color: $dt-head-bg !important;
+  border: 0 !important;
+}
+
+div.dt-container .dt-scroll-headInner,
+.dataTables_wrapper .dataTables_scrollHeadInner {
+  min-width: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+div.dt-container .dt-scroll-body,
+.dataTables_wrapper .dataTables_scrollBody {
+  width: 100% !important;
+  max-width: 100%;
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  background-color: $dt-body-bg !important;
+  overscroll-behavior: contain;
+  // DataTables kendi scrollbar genisligini hesapliyor; stable gutter header/body
+  // senkronunu bozabildigi icin ekstra alan ayirmiyoruz.
+  scrollbar-gutter: auto;
+}
+
+div.dt-container .dt-scroll-headInner table,
+div.dt-container .dt-scroll-body table,
+.dataTables_wrapper .dataTables_scrollHeadInner table,
+.dataTables_wrapper .dataTables_scrollBody table {
+  margin: 0 !important;
+}
+
+// DataTables scroll modunda body tablosunda bir sizing THEAD tutar.
+// Kolon hesabinda bu içerik gerekli olduğu için title/input gibi çocukları display:none
+// yapmıyoruz. Sadece DataTables'ın kendi sizing wrapper'ını dikey olarak sıfırlıyoruz.
+div.dt-container .dt-scroll-body > table.dataTable > thead .dt-scroll-sizing,
+.dataTables_wrapper .dataTables_scrollBody > table.dataTable > thead .dt-scroll-sizing,
+.dataTables_wrapper .dataTables_scrollBody > table.dataTable > thead .dataTables_sizing {
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  line-height: 0 !important;
+  overflow: hidden !important;
+}
+
+div.dt-container table.dataTable,
+.dataTables_wrapper table.dataTable {
+  width: 100%;
+  max-width: none;
+  margin: 0 !important;
+  border-spacing: 0;
+  border-collapse: separate;
+  border: 0;
+  border-radius: 0;
+  background-color: $dt-body-bg;
+
+  thead {
+    tr:first-child {
+      th,
+      td {
+        position: relative;
+        background-color: $dt-head-bg !important;
+        color: $dt-head-color !important;
+        font-size: var(--font-sm);
+        font-weight: var(--font-weight-semibold);
+        line-height: var(--line-height-snug);
+        text-align: left !important;
+        vertical-align: middle;
+        white-space: nowrap;
+        box-sizing: border-box;
+        padding: var(--size-13) var(--size-16) !important;
+        padding-inline-start: calc(var(--size-16) + 22px) !important;
+        padding-inline-end: var(--size-16) !important;
+        border-bottom: 1px solid $dt-border !important;
+        box-shadow: none !important;
+        background-clip: padding-box;
+
+        &:first-child {
+          border-start-start-radius: $dt-radius;
+        }
+
+        &:last-child {
+          border-start-end-radius: $dt-radius;
+        }
+      }
+    }
+
+    tr:not(:first-child) {
+      th,
+      td {
+        position: relative;
+        background-color: $dt-head-bg !important;
+        color: $dt-head-color !important;
+        font-size: var(--font-sm);
+        font-weight: var(--font-weight-semibold);
+        line-height: var(--line-height-snug);
+        text-align: left !important;
+        vertical-align: middle;
+        white-space: nowrap;
+        box-sizing: border-box;
+        padding: var(--size-10) var(--size-12) !important;
+        border-bottom: 1px solid $dt-border !important;
+        box-shadow: none !important;
+        border-start-start-radius: 0 !important;
+        border-start-end-radius: 0 !important;
+        border-end-start-radius: 0 !important;
+        border-end-end-radius: 0 !important;
+        background-clip: padding-box;
+      }
+    }
+  }
+
+  tbody {
+    tr {
+      transition: background-color 0.18s ease;
+
+      &:hover {
+        > * {
+          background-color: $dt-hover-bg !important;
+        }
+      }
+
+      &.selected,
+      &.active,
+      &.current {
+        > * {
+          background-color: var(--surface-brand-subtle) !important;
+          color: var(--text-primary) !important;
+        }
+      }
+
+      &:last-child {
+        td {
+          border-bottom: 0 !important;
+
+          &:first-child {
+            border-end-start-radius: $dt-radius;
+          }
+
+          &:last-child {
+            border-end-end-radius: $dt-radius;
+          }
+        }
+      }
+    }
+
+    td,
+    th {
+      background-color: $dt-body-bg;
+      color: $dt-body-color;
+      font-size: var(--font-sm);
+      font-weight: var(--font-weight-medium);
+      line-height: var(--line-height-normal);
+      text-align: left;
+      vertical-align: middle;
+      white-space: nowrap;
+      box-sizing: border-box;
+      padding: var(--size-12) var(--size-16) !important;
+      border-bottom: 1px solid $dt-border !important;
+      box-shadow: none !important;
+    }
+
+    tr.odd > *,
+    tr.even > * {
+      background-color: $dt-body-bg !important;
+    }
+  }
+}
+
+/* Row details control (responsive inline expand) */
+table.dataTable tbody td.dtr-control,
+table.dataTable tbody th.dtr-control {
+  position: relative;
+  padding: 0 var(--size-8) !important;
+  cursor: pointer;
+}
+
+table.dataTable tbody td.dtr-control::before,
+table.dataTable tbody th.dtr-control::before {
+  content: "";
+  display: inline-block;
+  width: var(--size-18);
+  height: var(--size-18);
+  margin: var(--size-3) var(--size-3);
+  background-color: var(--text-muted);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 15.5l-5-5h10l-5 5Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 15.5l-5-5h10l-5 5Z' fill='%23000'/%3E%3C/svg%3E");
+  mask-repeat: no-repeat;
+  mask-size: 100% 100%;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+table.dataTable tbody tr.parent td.dtr-control::before,
+table.dataTable tbody tr.parent th.dtr-control::before {
+  transform: rotate(180deg);
+  background-color: var(--primary-600);
+}
+
+/* Alternative caret element inside cell when checkbox used side-by-side */
+.dt-control-cell {
+  padding: 0 var(--size-8) !important;
+  cursor: pointer;
+}
+
+table.dataTable tbody td.dt-control-cell.dtr-control::before,
+table.dataTable tbody th.dt-control-cell.dtr-control::before {
+  display: none !important;
+}
+
+.dt-control-cell .dt-caret {
+  display: inline-block;
+  width: var(--size-18);
+  height: var(--size-18);
+  flex: 0 0 var(--size-18);
+  background-color: var(--text-muted);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M9 6l6 6-6 6' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: 100% 100%;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M9 6l6 6-6 6' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: 100% 100%;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+  margin-inline-end: var(--size-8);
+}
+
+.parent .dt-control-cell .dt-caret {
+  transform: rotate(90deg);
+  background-color: var(--primary-600);
+}
+
+/* Details panel content - Able Pro inspired, WowDash themed */
+table.dataTable tbody tr > td.child {
+  background-color: var(--surface-subtle) !important;
+  border-top: 1px solid var(--border-soft) !important;
+  padding: var(--size-16) !important;
+}
+
+.dt-row-details {
+  width: min(1760px, calc(100vw - 180px));
+  max-width: calc(100% - var(--size-16));
+  position: sticky;
+  inset-inline-start: var(--size-8);
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: var(--size-16);
+  align-items: stretch;
+  color: var(--text-secondary);
+}
+
+.dt-detail-profile,
+.dt-detail-card {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--rounded-12);
+  background-color: var(--surface-base);
+  box-shadow: var(--card-shadow);
+}
+
+.dt-detail-profile {
+  position: relative;
+  overflow: hidden;
+  padding: var(--size-20);
+}
+
+.dt-detail-profile__badge {
+  position: absolute;
+  inset-block-start: var(--size-12);
+  inset-inline-end: var(--size-12);
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 10px;
+  border-radius: var(--rounded-full);
+  background-color: var(--surface-brand-subtle);
+  color: var(--primary-600);
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+.dt-detail-profile__identity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--size-12) var(--size-8) var(--size-18);
+}
+
+.dt-detail-profile__avatar-wrap {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--size-10);
+  border-radius: var(--rounded-full);
+  background-color: var(--surface-brand-subtle);
+  box-shadow: 0 0 0 5px var(--surface-subtle);
+}
+
+.dt-detail-profile__avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--rounded-full);
+  object-fit: cover;
+}
+
+.dt-detail-profile__name {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--font-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.dt-detail-profile__role {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: var(--font-sm);
+  line-height: var(--line-height-normal);
+}
+
+.dt-detail-profile__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: var(--size-18);
+  padding-block: var(--size-14);
+  border-top: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.dt-detail-profile__stat {
+  min-width: 0;
+  padding-inline: var(--size-10);
+  text-align: center;
+}
+
+.dt-detail-profile__stat + .dt-detail-profile__stat {
+  border-inline-start: 1px solid var(--border-soft);
+}
+
+.dt-detail-profile__stat strong,
+.dt-detail-profile__stat span {
+  display: block;
+}
+
+.dt-detail-profile__stat strong {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dt-detail-profile__stat span {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: var(--font-xs);
+}
+
+.dt-detail-profile__contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-10);
+}
+
+.dt-detail-profile__contact-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--size-10);
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  line-height: var(--line-height-normal);
+}
+
+.dt-detail-profile__contact-item > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dt-detail-profile__contact-icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-600);
+  font-size: 18px;
+}
+
+.dt-detail-content {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: var(--size-16);
+}
+
+.dt-detail-card {
+  overflow: hidden;
+}
+
+.dt-detail-card__header {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--size-12);
+  padding: var(--size-14) var(--size-16);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.dt-detail-card__title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-semibold);
+}
+
+.dt-detail-card__subtitle {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: var(--font-xs);
+}
+
+.dt-detail-card__header-actions,
+.dt-detail-card__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--size-8);
+  flex-wrap: wrap;
+}
+
+.dt-detail-card__body {
+  padding: var(--size-8) var(--size-16) var(--size-16);
+}
+
+.dt-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--size-32);
+}
+
+.dt-detail-item {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1.2fr);
+  gap: var(--size-12);
+  align-items: center;
+  padding: var(--size-12) 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.dt-detail-item:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+
+.dt-detail-item__label {
+  color: var(--text-muted);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.dt-detail-item__value {
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.dt-detail-card--note .dt-detail-card__body {
+  padding-top: var(--size-16);
+}
+
+.dt-detail-note {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  line-height: 1.65;
+}
+
+.dt-detail-last-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--size-12);
+  margin-top: var(--size-14);
+  padding-top: var(--size-12);
+  border-top: 1px dashed var(--border-soft);
+  color: var(--text-muted);
+  font-size: var(--font-xs);
+}
+
+.dt-detail-last-action strong {
+  color: var(--text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.dt-detail-action {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--rounded-full);
+  font-size: 17px;
+  transition: transform 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+
+.dt-detail-action:hover {
+  transform: translateY(-1px);
+}
+
+.dt-detail-action--view {
+  background-color: var(--surface-brand-subtle);
+  color: var(--primary-600);
+}
+
+.dt-detail-action--edit {
+  background-color: var(--success-focus);
+  color: var(--success-main);
+}
+
+.dt-detail-action--delete {
+  background-color: var(--danger-focus);
+  color: var(--danger-main);
+}
+
+@media (max-width: 1199.98px) {
+  .dt-row-details {
+    width: calc(100vw - 96px);
+    grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+  }
+
+  .dt-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dt-detail-item:nth-last-child(-n + 2) {
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .dt-detail-item:last-child {
+    border-bottom: 0;
+  }
+}
+
+@media (max-width: 767.98px) {
+  div.dt-container .dt-button-collection,
+  .dataTables_wrapper .dt-button-collection,
+  div.dt-button-collection {
+    max-height: 52vh !important;
+  }
+
+  table.dataTable tbody tr > td.child {
+    padding: var(--size-12) !important;
+  }
+
+  .dt-row-details {
+    width: calc(100vw - 48px);
+    grid-template-columns: 1fr;
+    gap: var(--size-12);
+  }
+
+  .dt-detail-profile,
+  .dt-detail-card {
+    border-radius: var(--rounded-10);
+  }
+
+  .dt-detail-card__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dt-detail-item {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
+
+div.dt-container table.dataTable thead > tr > th::before,
+div.dt-container table.dataTable thead > tr > th::after,
+div.dt-container table.dataTable thead > tr > td::before,
+div.dt-container table.dataTable thead > tr > td::after,
+.dataTables_wrapper table.dataTable thead > tr > th::before,
+.dataTables_wrapper table.dataTable thead > tr > th::after,
+.dataTables_wrapper table.dataTable thead > tr > td::before,
+.dataTables_wrapper table.dataTable thead > tr > td::after,
+div.dt-container table.dataTable thead > tr > th .dt-column-order::before,
+div.dt-container table.dataTable thead > tr > th .dt-column-order::after,
+div.dt-container table.dataTable thead > tr > td .dt-column-order::before,
+div.dt-container table.dataTable thead > tr > td .dt-column-order::after,
+.dataTables_wrapper table.dataTable thead > tr > th .dt-column-order::before,
+.dataTables_wrapper table.dataTable thead > tr > th .dt-column-order::after,
+.dataTables_wrapper table.dataTable thead > tr > td .dt-column-order::before,
+.dataTables_wrapper table.dataTable thead > tr > td .dt-column-order::after {
+  display: none !important;
+  content: none !important;
+}
+
+div.dt-container table.dataTable thead > tr > th .dt-column-title,
+div.dt-container table.dataTable thead > tr > td .dt-column-title,
+.dataTables_wrapper table.dataTable thead > tr > th .dt-column-title,
+.dataTables_wrapper table.dataTable thead > tr > td .dt-column-title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+div.dt-container table.dataTable thead > tr > th .dt-column-order,
+div.dt-container table.dataTable thead > tr > td .dt-column-order,
+.dataTables_wrapper table.dataTable thead > tr > th .dt-column-order,
+.dataTables_wrapper table.dataTable thead > tr > td .dt-column-order {
+  position: absolute;
+  inset-inline-start: var(--size-12);
+  inset-inline-end: auto;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  transform: translateY(-50%);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 16px 16px;
+  background-image: url("#{$dt-sort-both-light}");
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+div.dt-container table.dataTable thead > tr > th[aria-sort="ascending"] .dt-column-order,
+div.dt-container table.dataTable thead > tr > td[aria-sort="ascending"] .dt-column-order,
+div.dt-container table.dataTable thead > tr > th.sorting_asc .dt-column-order,
+div.dt-container table.dataTable thead > tr > td.sorting_asc .dt-column-order,
+div.dt-container table.dataTable thead > tr > th.dt-ordering-asc .dt-column-order,
+div.dt-container table.dataTable thead > tr > td.dt-ordering-asc .dt-column-order,
+.dataTables_wrapper table.dataTable thead > tr > th[aria-sort="ascending"] .dt-column-order,
+.dataTables_wrapper table.dataTable thead > tr > td[aria-sort="ascending"] .dt-column-order,
+.dataTables_wrapper table.dataTable thead > tr > th.sorting_asc .dt-column-order,
+.dataTables_wrapper table.dataTable thead > tr > td.sorting_asc .dt-column-order,
+.dataTables_wrapper table.dataTable thead > tr > th.dt-ordering-asc .dt-column-order,
+.dataTables_wrapper table.dataTable thead > tr > td.dt-ordering-asc .dt-column-order {
+  background-image: url("#{$dt-sort-asc-light}");
+  opacity: 1;
+  filter: brightness(0) saturate(100%) invert(29%) sepia(78%) saturate(2121%) hue-rotate(199deg) brightness(98%) contrast(95%);
+}
+
+div.dt-container table.dataTable thead > tr > th[aria-sort="descending"] .dt-column-order,
+div.dt-container table.dataTable thead > tr > td[aria-sort="descending"] .dt-column-order,
+div.dt-container table.dataTable thead > tr > th.sorting_desc .dt-column-order,
+div.dt-container table.dataTable thead > tr > td.sorting_desc .dt-column-order,
+div.dt-container table.dataTable thead > tr > th.dt-ordering-desc .dt-column-order,
+div.dt-container table.dataTable thead > tr > td.dt-ordering-desc .dt-column-order,
+.dataTables_wrapper table.dataTable thead > tr > th[aria-sort="descending"] .dt-column-order,
+.dataTables_wrapper table.dataTable thead > tr > td[aria-sort="descending"] .dt-column-order,
+.dataTables_wrapper table.dataTable thead > tr > th.sorting_desc .dt-column-order,
+.dataTables_wrapper table.dataTable thead > tr > td.sorting_desc .dt-column-order,
+.dataTables_wrapper table.dataTable thead > tr > th.dt-ordering-desc .dt-column-order,
+.dataTables_wrapper table.dataTable thead > tr > td.dt-ordering-desc .dt-column-order {
+  background-image: url("#{$dt-sort-desc-light}");
+  opacity: 1;
+  filter: brightness(0) saturate(100%) invert(29%) sepia(78%) saturate(2121%) hue-rotate(199deg) brightness(98%) contrast(95%);
+}
+
+div.dt-container table.dataTable thead > tr > th.dt-orderable-none,
+div.dt-container table.dataTable thead > tr > th.sorting_disabled,
+div.dt-container table.dataTable thead > tr > td.dt-orderable-none,
+div.dt-container table.dataTable thead > tr > td.sorting_disabled,
+.dataTables_wrapper table.dataTable thead > tr > th.dt-orderable-none,
+.dataTables_wrapper table.dataTable thead > tr > th.sorting_disabled,
+.dataTables_wrapper table.dataTable thead > tr > td.dt-orderable-none,
+.dataTables_wrapper table.dataTable thead > tr > td.sorting_disabled {
+  padding-inline-start: var(--size-16) !important;
+  padding-inline-end: var(--size-16) !important;
+
+  .dt-column-order {
+    display: none !important;
+  }
+}
+
+div.dt-container table.dataTable thead > tr > th.sorting,
+div.dt-container table.dataTable thead > tr > th.sorting_asc,
+div.dt-container table.dataTable thead > tr > th.sorting_desc,
+div.dt-container table.dataTable thead > tr > th.dt-orderable-asc,
+div.dt-container table.dataTable thead > tr > th.dt-orderable-desc,
+.dataTables_wrapper table.dataTable thead > tr > th.sorting,
+.dataTables_wrapper table.dataTable thead > tr > th.sorting_asc,
+.dataTables_wrapper table.dataTable thead > tr > th.sorting_desc,
+.dataTables_wrapper table.dataTable thead > tr > th.dt-orderable-asc,
+.dataTables_wrapper table.dataTable thead > tr > th.dt-orderable-desc {
+  cursor: pointer;
+}
+
+div.dt-container table.dataTable thead .dt-filter-row th,
+.dataTables_wrapper table.dataTable thead .dt-filter-row th {
+  background-color: var(--surface-subtle) !important;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: var(--size-8) var(--size-10) !important;
+  border-bottom: 1px solid $dt-border !important;
+  border-start-start-radius: 0 !important;
+  border-start-end-radius: 0 !important;
+  border-end-start-radius: 0 !important;
+  border-end-end-radius: 0 !important;
+}
+
+div.dt-container table.dataTable thead .dt-filter-row th:first-child,
+div.dt-container table.dataTable thead .dt-filter-row th:last-child,
+.dataTables_wrapper table.dataTable thead .dt-filter-row th:first-child,
+.dataTables_wrapper table.dataTable thead .dt-filter-row th:last-child {
+  border-radius: 0 !important;
+}
+
+div.dt-container table.dataTable thead .dt-filter-row .dt-column-order,
+.dataTables_wrapper table.dataTable thead .dt-filter-row .dt-column-order {
+  display: none !important;
+}
+
+div.dt-container table.dataTable thead .dt-filter-row input,
+div.dt-container table.dataTable thead .dt-filter-row select,
+.dataTables_wrapper table.dataTable thead .dt-filter-row input,
+.dataTables_wrapper table.dataTable thead .dt-filter-row select {
+  display: block;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: var(--control-height-sm);
+  min-height: var(--control-height-sm);
+  margin: 0 !important;
+  padding: 0 var(--size-10) !important;
+  box-sizing: border-box;
+  border: 1px solid var(--control-border) !important;
+  border-radius: var(--control-radius-sm) !important;
+  background-color: var(--control-bg) !important;
+  color: var(--text-primary) !important;
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  box-shadow: none !important;
+  outline: 0 !important;
+}
+
+div.dt-container table.dataTable thead .dt-filter-row input::placeholder,
+.dataTables_wrapper table.dataTable thead .dt-filter-row input::placeholder {
+  color: var(--control-placeholder) !important;
+  opacity: 1;
+  text-overflow: ellipsis;
+}
+
+div.dt-container table.dataTable thead .dt-filter-row input:focus,
+div.dt-container table.dataTable thead .dt-filter-row select:focus,
+.dataTables_wrapper table.dataTable thead .dt-filter-row input:focus,
+.dataTables_wrapper table.dataTable thead .dt-filter-row select:focus {
+  border-color: var(--control-border-focus) !important;
+  box-shadow: var(--focus-ring) !important;
+}
+
+.basic-data-table .dt-layout-row,
+div.dt-container .dt-layout-row,
+.dataTables_wrapper .dt-layout-row,
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate {
+  color: var(--text-secondary);
+}
+
+.basic-data-table .dt-layout-row,
+div.dt-container .dt-layout-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--size-12);
+  padding-bottom: var(--size-14);
+
+  .dt-layout-cell {
+    padding: 0;
+  }
+
+  .dt-length,
+  .dt-search {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--size-12);
+  }
+
+  .dt-search {
+    justify-content: flex-end;
+    margin-inline-start: auto;
+  }
+
+  div,
+  label {
+    color: var(--text-secondary);
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-normal);
+  }
+
+  select,
+  .dt-input {
+    min-height: var(--control-height-sm);
+    border: 1px solid var(--control-border) !important;
+    border-radius: var(--control-radius-sm);
+    background-color: var(--control-bg) !important;
+    color: var(--text-primary) !important;
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-normal);
+    box-shadow: none !important;
+    outline: 0 !important;
+    transition:
+      border-color 0.2s ease,
+      background-color 0.2s ease,
+      color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    min-width: var(--size-72);
+    padding: var(--size-10) var(--size-40) var(--size-10) var(--size-14) !important;
+    background-image: url("#{$dt-select-arrow-light}");
+    background-repeat: no-repeat;
+    background-position: calc(100% - 14px) 50%;
+    background-size: 14px 14px;
+    cursor: pointer;
+  }
+
+  .dt-input {
+    min-width: 13.75rem;
+    padding-inline: var(--size-14);
+  }
+
+  select::placeholder,
+  .dt-input::placeholder {
+    color: var(--control-placeholder) !important;
+    opacity: 1;
+  }
+
+  select:hover,
+  .dt-input:hover {
+    border-color: var(--control-border-hover) !important;
+  }
+
+  select:focus,
+  .dt-input:focus {
+    border-color: var(--control-border-focus) !important;
+    background-color: var(--control-bg-hover) !important;
+    box-shadow: var(--focus-ring) !important;
+  }
+}
+
+.dataTables_wrapper {
+  .dataTables_length,
+  .dataTables_filter {
+    label {
+      display: flex;
+      align-items: center;
+      gap: var(--size-12);
+      flex-wrap: wrap;
+      color: var(--text-secondary);
+      font-size: var(--font-sm);
+      font-weight: var(--font-weight-medium);
+      line-height: var(--line-height-normal);
+      margin-bottom: 0;
+    }
+
+    select,
+    input {
+      min-height: var(--control-height-sm);
+      border: 1px solid var(--control-border) !important;
+      border-radius: var(--control-radius-sm);
+      background-color: var(--control-bg) !important;
+      color: var(--text-primary) !important;
+      font-size: var(--font-sm);
+      font-weight: var(--font-weight-medium);
+      line-height: var(--line-height-normal);
+      box-shadow: none !important;
+      outline: 0 !important;
+    }
+
+    select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      min-width: var(--size-72);
+      padding: var(--size-10) var(--size-40) var(--size-10) var(--size-14) !important;
+      background-image: url("#{$dt-select-arrow-light}");
+      background-repeat: no-repeat;
+      background-position: calc(100% - 14px) 50%;
+      background-size: 14px 14px;
+      cursor: pointer;
+    }
+
+    input {
+      padding-inline: var(--size-14);
+    }
+  }
+
+  .dataTables_filter {
+    text-align: right;
+  }
+}
+
+div.dt-container .dt-layout-row:last-child,
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate {
+  margin-top: var(--size-16);
+}
+
+div.dt-container .dt-info,
+.dataTables_wrapper .dataTables_info {
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+}
+
+div.dt-container .dt-paging,
+.dataTables_wrapper .dataTables_paginate {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--size-10);
+}
+
+div.dt-container .dt-paging .dt-paging-button,
+.dataTables_wrapper .paginate_button {
+  min-width: 2.5rem;
+  height: 2.5rem;
+  margin: 0 var(--size-4) !important;
+  padding: 0 var(--size-14) !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--control-border) !important;
+  border-radius: var(--control-radius-sm) !important;
+  background-color: var(--control-bg) !important;
+  background-image: none !important;
+  color: var(--text-secondary) !important;
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  box-shadow: none !important;
+  position: relative;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+div.dt-container .dt-paging .dt-paging-button:hover,
+.dataTables_wrapper .paginate_button:hover {
+  background-color: var(--surface-brand-subtle) !important;
+  border-color: var(--primary-600) !important;
+  color: var(--primary-600) !important;
+  transform: translateY(-1px);
+}
+
+div.dt-container .dt-paging .dt-paging-button:focus,
+.dataTables_wrapper .paginate_button:focus {
+  outline: 0 !important;
+  border-color: var(--control-border-focus) !important;
+  color: var(--text-primary) !important;
+  box-shadow: var(--focus-ring) !important;
+}
+
+div.dt-container .dt-paging .dt-paging-button.current,
+.dataTables_wrapper .paginate_button.current {
+  background-color: var(--primary-600) !important;
+  border-color: var(--primary-600) !important;
+  color: var(--text-on-brand) !important;
+}
+
+div.dt-container .dt-paging .dt-paging-button.disabled,
+.dataTables_wrapper .paginate_button.disabled {
+  background-color: var(--control-disabled-bg) !important;
+  border-color: var(--control-disabled-border) !important;
+  color: var(--text-muted) !important;
+  opacity: 0.45;
+  pointer-events: none;
+  cursor: not-allowed !important;
+}
+
+
+div.dt-container .dt-paging .dt-paging-button.ellipsis,
+.dataTables_wrapper .paginate_button.ellipsis {
+  min-width: auto;
+  padding: 0 var(--size-6) !important;
+  border-color: transparent !important;
+  background-color: transparent !important;
+  color: var(--text-muted) !important;
+}
+
+div.dt-container .dt-paging .dt-paging-button.first,
+div.dt-container .dt-paging .dt-paging-button.previous,
+div.dt-container .dt-paging .dt-paging-button.next,
+div.dt-container .dt-paging .dt-paging-button.last,
+.dataTables_wrapper .paginate_button.first,
+.dataTables_wrapper .paginate_button.previous,
+.dataTables_wrapper .paginate_button.next,
+.dataTables_wrapper .paginate_button.last {
+  min-width: 2.75rem;
+  padding: 0 var(--size-16) !important;
+  background-color: var(--surface-subtle) !important;
+  color: var(--text-secondary) !important;
+}
+
+div.dt-container .dt-paging .dt-paging-button.previous,
+.dataTables_wrapper .paginate_button.previous {
+  margin-inline-end: 0 !important;
+}
+
+div.dt-container .dt-paging .dt-paging-button.next,
+.dataTables_wrapper .paginate_button.next {
+  margin-inline-start: 0 !important;
+}
+
+div.dt-container .dt-paging .dt-paging-button.first:hover,
+div.dt-container .dt-paging .dt-paging-button.previous:hover,
+div.dt-container .dt-paging .dt-paging-button.next:hover,
+div.dt-container .dt-paging .dt-paging-button.last:hover,
+.dataTables_wrapper .paginate_button.first:hover,
+.dataTables_wrapper .paginate_button.previous:hover,
+.dataTables_wrapper .paginate_button.next:hover,
+.dataTables_wrapper .paginate_button.last:hover {
+  background-color: var(--surface-brand-subtle) !important;
+  border-color: var(--primary-600) !important;
+  color: var(--primary-600) !important;
+}
+
+div.dt-container .dt-buttons,
+.dataTables_wrapper .dt-buttons {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--size-8);
+}
+
+div.dt-container .dt-button,
+div.dt-container button.dt-button,
+div.dt-container a.dt-button,
+.dataTables_wrapper .dt-button,
+.dataTables_wrapper button.dt-button,
+.dataTables_wrapper a.dt-button {
+  min-height: var(--control-height-sm);
+  border: 1px solid var(--control-border) !important;
+  border-radius: var(--control-radius-sm) !important;
+  background: var(--control-bg) !important;
+  color: var(--text-secondary) !important;
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  padding: 0 var(--size-14) !important;
+  box-shadow: none !important;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+div.dt-container .dt-button:hover,
+div.dt-container button.dt-button:hover,
+div.dt-container a.dt-button:hover,
+.dataTables_wrapper .dt-button:hover,
+.dataTables_wrapper button.dt-button:hover,
+.dataTables_wrapper a.dt-button:hover {
+  background: var(--surface-brand-subtle) !important;
+  border-color: var(--primary-600) !important;
+  color: var(--primary-600) !important;
+}
+
+div.dt-container .dt-button:focus,
+div.dt-container button.dt-button:focus,
+div.dt-container a.dt-button:focus,
+.dataTables_wrapper .dt-button:focus,
+.dataTables_wrapper button.dt-button:focus,
+.dataTables_wrapper a.dt-button:focus {
+  outline: none !important;
+  border-color: var(--control-border-focus) !important;
+  box-shadow: var(--focus-ring) !important;
+}
+
+div.dt-container .dt-button.active,
+div.dt-container .dt-button.buttons-collection,
+.dataTables_wrapper .dt-button.active,
+.dataTables_wrapper .dt-button.buttons-collection {
+  background: var(--surface-brand-subtle) !important;
+  border-color: var(--primary-600) !important;
+  color: var(--primary-600) !important;
+}
+
+div.dt-container .dt-button.disabled,
+div.dt-container .dt-button:disabled,
+.dataTables_wrapper .dt-button.disabled,
+.dataTables_wrapper .dt-button:disabled {
+  background: var(--control-disabled-bg) !important;
+  border-color: var(--control-disabled-border) !important;
+  color: var(--control-disabled-text) !important;
+  opacity: 1 !important;
+  pointer-events: none;
+}
+
+div.dt-container .dt-button-background,
+.dataTables_wrapper .dt-button-background,
+div.dt-button-background {
+  background: rgba(15, 23, 42, 0.32) !important;
+}
+
+div.dt-container .dt-button-collection,
+.dataTables_wrapper .dt-button-collection,
+div.dt-button-collection {
+  min-width: 220px !important;
+  max-height: min(62vh, 520px) !important;
+  padding: var(--size-8) !important;
+  border: 1px solid var(--dropdown-border) !important;
+  border-radius: var(--rounded-16) !important;
+  background: var(--dropdown-bg) !important;
+  box-shadow: var(--dropdown-shadow) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--control-border) transparent;
+  backdrop-filter: blur(8px);
+}
+
+div.dt-container .dt-button-collection::-webkit-scrollbar,
+.dataTables_wrapper .dt-button-collection::-webkit-scrollbar,
+div.dt-button-collection::-webkit-scrollbar {
+  width: 8px;
+}
+
+div.dt-container .dt-button-collection::-webkit-scrollbar-track,
+.dataTables_wrapper .dt-button-collection::-webkit-scrollbar-track,
+div.dt-button-collection::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+div.dt-container .dt-button-collection::-webkit-scrollbar-thumb,
+.dataTables_wrapper .dt-button-collection::-webkit-scrollbar-thumb,
+div.dt-button-collection::-webkit-scrollbar-thumb {
+  background: var(--control-border);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+div.dt-container .dt-button-collection::-webkit-scrollbar-thumb:hover,
+.dataTables_wrapper .dt-button-collection::-webkit-scrollbar-thumb:hover,
+div.dt-button-collection::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+div.dt-container .dt-button-collection .dt-button,
+.dataTables_wrapper .dt-button-collection .dt-button,
+div.dt-button-collection .dt-button {
+  width: 100% !important;
+  min-height: 44px;
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 !important;
+  padding: 0 var(--size-14) !important;
+  border: 0 !important;
+  border-radius: var(--rounded-10) !important;
+  background: transparent !important;
+  color: var(--text-secondary) !important;
+  box-shadow: none !important;
+}
+
+div.dt-container .dt-button-collection .dt-button + .dt-button,
+.dataTables_wrapper .dt-button-collection .dt-button + .dt-button,
+div.dt-button-collection .dt-button + .dt-button {
+  margin-top: var(--size-4) !important;
+}
+
+div.dt-container .dt-button-collection .dt-button:hover,
+.dataTables_wrapper .dt-button-collection .dt-button:hover,
+div.dt-button-collection .dt-button:hover {
+  background: var(--surface-subtle) !important;
+  color: var(--text-primary) !important;
+}
+
+div.dt-container .dt-button-collection .dt-button.active,
+.dataTables_wrapper .dt-button-collection .dt-button.active,
+div.dt-button-collection .dt-button.active {
+  background: var(--surface-brand-subtle) !important;
+  color: var(--primary-600) !important;
+}
+
+div.dt-container .dt-button-collection .dt-button:focus,
+.dataTables_wrapper .dt-button-collection .dt-button:focus,
+div.dt-button-collection .dt-button:focus {
+  outline: none !important;
+  box-shadow: var(--focus-ring) !important;
+}
+
+div.dt-container .dt-button-collection .dt-button::after,
+div.dt-container .dt-button-collection .dt-button::before,
+.dataTables_wrapper .dt-button-collection .dt-button::after,
+.dataTables_wrapper .dt-button-collection .dt-button::before,
+div.dt-button-collection .dt-button::after,
+div.dt-button-collection .dt-button::before {
+  box-shadow: none !important;
+}
+
+div.dt-container .dt-processing,
+.dataTables_wrapper .dataTables_processing {
+  position: absolute;
+  inset-inline-start: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: var(--size-12) var(--size-16);
+  border: 1px solid var(--dropdown-border);
+  border-radius: var(--rounded-12);
+  background: var(--dropdown-bg);
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-semibold);
+  box-shadow: var(--dropdown-shadow);
+  z-index: 10;
+}
+
+div.dt-container table.dataTable tbody td.dataTables_empty,
+div.dt-container table.dataTable tbody td.dt-empty,
+.dataTables_wrapper table.dataTable tbody td.dataTables_empty,
+.dataTables_wrapper table.dataTable tbody td.dt-empty {
+  padding: var(--size-24) !important;
+  color: var(--text-muted) !important;
+  text-align: center !important;
+  background-color: var(--surface-base) !important;
+}
+
+html[data-theme="dark"] {
+  div.dt-container table.dataTable thead > tr > th .dt-column-order,
+  div.dt-container table.dataTable thead > tr > td .dt-column-order,
+  .dataTables_wrapper table.dataTable thead > tr > th .dt-column-order,
+  .dataTables_wrapper table.dataTable thead > tr > td .dt-column-order {
+    background-image: url("#{$dt-sort-both-dark}");
+    opacity: 0.72;
+  }
+
+  div.dt-container table.dataTable thead > tr > th[aria-sort="ascending"] .dt-column-order,
+  div.dt-container table.dataTable thead > tr > td[aria-sort="ascending"] .dt-column-order,
+  div.dt-container table.dataTable thead > tr > th.sorting_asc .dt-column-order,
+  div.dt-container table.dataTable thead > tr > td.sorting_asc .dt-column-order,
+  div.dt-container table.dataTable thead > tr > th.dt-ordering-asc .dt-column-order,
+  div.dt-container table.dataTable thead > tr > td.dt-ordering-asc .dt-column-order,
+  .dataTables_wrapper table.dataTable thead > tr > th[aria-sort="ascending"] .dt-column-order,
+  .dataTables_wrapper table.dataTable thead > tr > td[aria-sort="ascending"] .dt-column-order,
+  .dataTables_wrapper table.dataTable thead > tr > th.sorting_asc .dt-column-order,
+  .dataTables_wrapper table.dataTable thead > tr > td.sorting_asc .dt-column-order,
+  .dataTables_wrapper table.dataTable thead > tr > th.dt-ordering-asc .dt-column-order,
+  .dataTables_wrapper table.dataTable thead > tr > td.dt-ordering-asc .dt-column-order {
+    background-image: url("#{$dt-sort-asc-dark}");
+    opacity: 1;
+    filter: brightness(0) saturate(100%) invert(56%) sepia(81%) saturate(437%) hue-rotate(70deg) brightness(92%) contrast(90%);
+  }
+
+  div.dt-container table.dataTable thead > tr > th[aria-sort="descending"] .dt-column-order,
+  div.dt-container table.dataTable thead > tr > td[aria-sort="descending"] .dt-column-order,
+  div.dt-container table.dataTable thead > tr > th.sorting_desc .dt-column-order,
+  div.dt-container table.dataTable thead > tr > td.sorting_desc .dt-column-order,
+  div.dt-container table.dataTable thead > tr > th.dt-ordering-desc .dt-column-order,
+  div.dt-container table.dataTable thead > tr > td.dt-ordering-desc .dt-column-order,
+  .dataTables_wrapper table.dataTable thead > tr > th[aria-sort="descending"] .dt-column-order,
+  .dataTables_wrapper table.dataTable thead > tr > td[aria-sort="descending"] .dt-column-order,
+  .dataTables_wrapper table.dataTable thead > tr > th.sorting_desc .dt-column-order,
+  .dataTables_wrapper table.dataTable thead > tr > td.sorting_desc .dt-column-order,
+  .dataTables_wrapper table.dataTable thead > tr > th.dt-ordering-desc .dt-column-order,
+  .dataTables_wrapper table.dataTable thead > tr > td.dt-ordering-desc .dt-column-order {
+    background-image: url("#{$dt-sort-desc-dark}");
+    opacity: 1;
+    filter: brightness(0) saturate(100%) invert(56%) sepia(81%) saturate(437%) hue-rotate(70deg) brightness(92%) contrast(90%);
+  }
+
+
+  .basic-data-table .dt-layout-row select,
+  .dataTables_wrapper .dataTables_length select {
+    background-image: url("#{$dt-select-arrow-dark}");
+  }
+
+  div.dt-container .dt-button-collection,
+  .dataTables_wrapper .dt-button-collection,
+  div.dt-button-collection {
+    background: var(--dropdown-bg) !important;
+    border-color: var(--dropdown-border) !important;
+  }
+
+  div.dt-container .dt-button-collection .dt-button.active,
+  .dataTables_wrapper .dt-button-collection .dt-button.active,
+  div.dt-button-collection .dt-button.active {
+    color: var(--primary-300) !important;
+  }
+
+  div.dt-container .dt-paging .dt-paging-button.current,
+  .dataTables_wrapper .paginate_button.current {
+    color: #fff !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .basic-data-table .dt-layout-row,
+  div.dt-container .dt-layout-row {
+    .dt-search {
+      justify-content: flex-start;
+      width: 100%;
+
+      .dt-input {
+        min-width: 100%;
+        width: 100%;
+      }
+    }
+  }
+
+  .dataTables_wrapper {
+    .dataTables_filter {
+      text-align: left;
+
+      input {
+        width: 100%;
+      }
+    }
+
+    .dataTables_length,
+    .dataTables_filter {
+      label {
+        width: 100%;
+      }
+    }
+
+    .dataTables_paginate,
+    .dataTables_info {
+      text-align: center;
+    }
+  }
+
+  div.dt-container .dt-layout-row:last-child {
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  div.dt-container .dt-info {
+    text-align: center;
+  }
+
+  div.dt-container .dt-paging,
+  .dataTables_wrapper .dataTables_paginate {
+    justify-content: center;
+    gap: var(--size-8);
+
+    .dt-paging-button,
+    .paginate_button {
+      min-width: 2.25rem;
+      height: 2.25rem;
+      padding: 0 var(--size-12) !important;
+      font-size: 0.8125rem;
+      border-radius: var(--rounded-8) !important;
+    }
+  }
+}
+
+// The Bootstrap `.table-responsive` wrapper would create a second horizontal
+// scrollbar around DataTables. Let DataTables `.dt-scroll-body` own scrolling.
+@supports selector(:has(*)) {
+  .table-responsive:has(.dt-container),
+  .table-responsive:has(.dataTables_wrapper) {
+    overflow: visible !important;
+  }
+}
+
+// Never force `overflow: visible` on the DataTables table/body/cells. The scroll
+// wrapper must remain the only horizontal/vertical scrolling surface.
+
+div.dt-container .dt-scroll-body,
+.dataTables_wrapper .dataTables_scrollBody {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) var(--surface-subtle);
+}
+
+div.dt-container .dt-scroll-body::-webkit-scrollbar,
+.dataTables_wrapper .dataTables_scrollBody::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+div.dt-container .dt-scroll-body::-webkit-scrollbar-track,
+.dataTables_wrapper .dataTables_scrollBody::-webkit-scrollbar-track {
+  background: var(--surface-subtle);
+}
+
+div.dt-container .dt-scroll-body::-webkit-scrollbar-thumb,
+.dataTables_wrapper .dataTables_scrollBody::-webkit-scrollbar-thumb {
+  border: 2px solid var(--surface-subtle);
+  border-radius: var(--rounded-full);
+  background: var(--scroll-thumb);
+}
+
+// Ordered column highlight. Kept subtle so it doesn't fight status badges.
+div.dt-container table.dataTable thead > tr:first-child > th[aria-sort="ascending"],
+div.dt-container table.dataTable thead > tr:first-child > th[aria-sort="descending"],
+div.dt-container table.dataTable thead > tr:first-child > th.dt-ordering-asc,
+div.dt-container table.dataTable thead > tr:first-child > th.dt-ordering-desc,
+.dataTables_wrapper table.dataTable thead > tr:first-child > th[aria-sort="ascending"],
+.dataTables_wrapper table.dataTable thead > tr:first-child > th[aria-sort="descending"],
+.dataTables_wrapper table.dataTable thead > tr:first-child > th.dt-ordering-asc,
+.dataTables_wrapper table.dataTable thead > tr:first-child > th.dt-ordering-desc {
+  background-color: var(--surface-brand-subtle) !important;
+  color: var(--text-primary) !important;
+}
+
+div.dt-container table.dataTable tbody td.sorting_1,
+div.dt-container table.dataTable tbody td.dt-ordering-1,
+.dataTables_wrapper table.dataTable tbody td.sorting_1,
+.dataTables_wrapper table.dataTable tbody td.dt-ordering-1 {
+  background-color: var(--surface-brand-subtle) !important;
+}
+
+div.dt-container table.dataTable tbody tr:hover > td.sorting_1,
+div.dt-container table.dataTable tbody tr:hover > td.dt-ordering-1,
+.dataTables_wrapper table.dataTable tbody tr:hover > td.sorting_1,
+.dataTables_wrapper table.dataTable tbody tr:hover > td.dt-ordering-1 {
+  background-color: var(--surface-brand-soft) !important;
+}
+
+// Utility classes for wide enterprise tables.
+table.dataTable th.dt-nowrap,
+table.dataTable td.dt-nowrap {
+  white-space: nowrap !important;
+}
+
+table.dataTable th.dt-wrap,
+table.dataTable td.dt-wrap {
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+}
+
+table.dataTable td.dt-ellipsis {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap !important;
+}
+
+table.dataTable th.dt-actions,
+table.dataTable td.dt-actions {
+  min-width: 116px;
+  white-space: nowrap !important;
+  text-align: center !important;
+}
+
+/* Customer column: prevent long names from overflowing into Issued Date */
+table.dataTable th.dt-customer-column,
+table.dataTable td.dt-customer-column {
+  width: 220px !important;
+  min-width: 220px !important;
+  max-width: 220px !important;
+  box-sizing: border-box;
+}
+
+table.dataTable td.dt-customer-column {
+  overflow: hidden;
+}
+
+.dt-customer {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--size-12);
+  overflow: hidden;
+}
+
+.dt-customer__avatar {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: var(--rounded-full);
+  object-fit: cover;
+}
+
+.dt-customer__name {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: block;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+// DataTables scroll body sizing THEAD: kolon hesabı korunur, dekoratif order ikonları görünmez.
+div.dt-container .dt-scroll-body > table.dataTable > thead > tr > th,
+div.dt-container .dt-scroll-body > table.dataTable > thead > tr > td {
+  overflow: hidden !important;
+}
+div.dt-container .dt-scroll-body > table.dataTable > thead .dt-column-order {
+  display: none !important;
+}
+
+/* ============================================================
+   DATATABLE SCROLL CHAIN
+   scrollX-only tabloda dikey mouse wheel sayfayı kaydırabilmeli.
+   ============================================================ */
+div.dt-container.dt-scroll-x-only .dt-scroll-body,
+.dataTables_wrapper.dt-scroll-x-only .dataTables_scrollBody {
+  overflow-y: hidden !important;
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: auto;
+}
+
+div.dt-container.dt-scroll-y-enabled .dt-scroll-body,
+.dataTables_wrapper.dt-scroll-y-enabled .dataTables_scrollBody {
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}

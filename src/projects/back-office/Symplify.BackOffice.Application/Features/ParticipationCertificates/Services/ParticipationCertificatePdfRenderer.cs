@@ -1,5 +1,9 @@
 using iText.IO.Font.Constants;
 using iText.IO.Image;
+using iText.Forms;
+using iText.Forms.Fields;
+using iText.Kernel.Pdf.Annot;
+using QRCoder;
 using iText.Kernel.Colors;
 using iText.Kernel.Font;
 using iText.Kernel.Geom;
@@ -16,6 +20,13 @@ namespace Symplify.BackOffice.Application.Features.ParticipationCertificates.Ser
 
 public sealed class ParticipationCertificatePdfRenderer : IParticipationCertificatePdfRenderer
 {
+    private static readonly string[] AcroParticipantNameFields = { "Certificate.ParticipantName", "ParticipantName" };
+    private static readonly string[] AcroCertificateTextFields = { "Certificate.Text", "CertificateText" };
+    private static readonly string[] AcroCommitteeSignatureFields = { "Certificate.CommitteeSignature", "CommitteeSignature" };
+    private static readonly string[] AcroCommitteeSignerFields = { "Certificate.CommitteeSigner", "CommitteeSigner" };
+    private static readonly string[] AcroCommitteeRoleFields = { "Certificate.CommitteeRole", "CommitteeRole" };
+    private static readonly string[] AcroQrCodeFields = { "Certificate.QrCode", "QrCode", "QrCodeImage" };
+    private static readonly string[] AcroVerificationCodeFields = { "Certificate.VerificationCode", "VerificationCode" };
     private static readonly string[] ParticipantNameTokens =
     {
         "{{PARTICIPANT_NAME}}",
@@ -64,55 +75,189 @@ public sealed class ParticipationCertificatePdfRenderer : IParticipationCertific
         using PdfReader reader = new(inputStream);
         using PdfDocument pdfDocument = new(reader);
 
-        PdfPlaceholderLayout placeholders = PdfPlaceholderLayout.Extract(pdfDocument.GetFirstPage());
-        List<string> missing = new();
-
-        if (placeholders.FindFirst(ParticipantNameTokens) is null)
-            missing.Add("{{PARTICIPANT_NAME}}");
-
-        if (placeholders.FindFirst(CertificateTextTokens) is null)
-            missing.Add("{{CERTIFICATE_TEXT}}");
-
-        if (placeholders.FindFirst(CommitteeSignatureTokens) is null)
-            missing.Add("{{COMMITTEE_SIGNATURE}}");
-
-        if (placeholders.FindFirst(CommitteeSignerTokens) is null)
-            missing.Add("{{COMMITTEE_SIGNER}}");
-
-        if (placeholders.FindFirst(CommitteeRoleTokens) is null)
-            missing.Add("{{COMMITTEE_ROLE}}");
-
-        if (missing.Count > 0)
+        PdfAcroForm? form = PdfAcroForm.GetAcroForm(pdfDocument, false);
+        IDictionary<string, PdfFormField>? fields = form?.GetAllFormFields();
+        if (fields is { Count: > 0 })
         {
-            throw new InvalidOperationException(
-                $"Template PDF içinde zorunlu değişkenler eksik: {string.Join(", ", missing)}.");
+            List<string> missing = new();
+            if (FindField(fields, AcroParticipantNameFields) is null) missing.Add("Certificate.ParticipantName");
+            if (FindField(fields, AcroCertificateTextFields) is null) missing.Add("Certificate.Text");
+            if (FindField(fields, AcroQrCodeFields) is null) missing.Add("Certificate.QrCode");
+            if (missing.Count > 0)
+                throw new InvalidOperationException($"AcroForm template içinde zorunlu alanlar eksik: {string.Join(", ", missing)}.");
+            return;
         }
+
+        PdfPlaceholderLayout placeholders = PdfPlaceholderLayout.Extract(pdfDocument.GetFirstPage());
+        List<string> legacyMissing = new();
+        if (placeholders.FindFirst(ParticipantNameTokens) is null) legacyMissing.Add("{{PARTICIPANT_NAME}}");
+        if (placeholders.FindFirst(CertificateTextTokens) is null) legacyMissing.Add("{{CERTIFICATE_TEXT}}");
+        if (placeholders.FindFirst(CommitteeSignatureTokens) is null) legacyMissing.Add("{{COMMITTEE_SIGNATURE}}");
+        if (placeholders.FindFirst(CommitteeSignerTokens) is null) legacyMissing.Add("{{COMMITTEE_SIGNER}}");
+        if (placeholders.FindFirst(CommitteeRoleTokens) is null) legacyMissing.Add("{{COMMITTEE_ROLE}}");
+        if (legacyMissing.Count > 0)
+            throw new InvalidOperationException($"Template PDF içinde zorunlu değişkenler eksik: {string.Join(", ", legacyMissing)}.");
     }
 
     public byte[] Render(ParticipationCertificatePdfRenderRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
-
         ValidateTemplate(request.TemplatePdfBytes);
 
         using MemoryStream inputStream = new(request.TemplatePdfBytes);
         using MemoryStream outputStream = new();
-
         using PdfReader reader = new(inputStream);
         using PdfWriter writer = new(outputStream);
         using PdfDocument pdfDocument = new(reader, writer);
 
-        PdfPage page = pdfDocument.GetFirstPage();
-        Rectangle pageSize = page.GetPageSize();
-        PdfPlaceholderLayout placeholders = PdfPlaceholderLayout.Extract(page);
-
-        RenderParticipantName(pdfDocument, page, pageSize, placeholders, request);
-        RenderCertificateText(pdfDocument, page, pageSize, placeholders, request);
-        RenderCommitteeSignatureBlock(pdfDocument, page, pageSize, placeholders, request);
+        PdfAcroForm? form = PdfAcroForm.GetAcroForm(pdfDocument, false);
+        if (form is not null && form.GetAllFormFields().Count > 0)
+        {
+            RenderAcroForm(pdfDocument, form, request);
+        }
+        else
+        {
+            PdfPage page = pdfDocument.GetFirstPage();
+            Rectangle pageSize = page.GetPageSize();
+            PdfPlaceholderLayout placeholders = PdfPlaceholderLayout.Extract(page);
+            RenderParticipantName(pdfDocument, page, pageSize, placeholders, request);
+            RenderCertificateText(pdfDocument, page, pageSize, placeholders, request);
+            RenderCommitteeSignatureBlock(pdfDocument, page, pageSize, placeholders, request);
+        }
 
         pdfDocument.Close();
         return outputStream.ToArray();
     }
+
+    private static void RenderAcroForm(PdfDocument pdfDocument, PdfAcroForm form, ParticipationCertificatePdfRenderRequest request)
+    {
+        IDictionary<string, PdfFormField> fields = form.GetAllFormFields();
+        Color contentColor = ParseColor(request.NameFontColorHex, ColorConstants.BLACK);
+
+        SetAcroText(
+            fields,
+            AcroParticipantNameFields,
+            NormalizeName(request.AuthorFullName),
+            contentColor);
+        SetAcroText(
+            fields,
+            AcroCertificateTextFields,
+            request.CertificateText?.Trim() ?? string.Empty,
+            contentColor);
+        SetAcroText(
+            fields,
+            AcroCommitteeSignerFields,
+            BuildSignerDisplayName(request.CommitteeSignerAcademicTitle, request.CommitteeSignerFullName),
+            contentColor);
+        SetAcroText(
+            fields,
+            AcroCommitteeRoleFields,
+            FirstNonEmpty(request.CommitteeSignerRole, "Düzenleme Kurulu Başkanı"),
+            contentColor);
+        SetAcroText(
+            fields,
+            AcroVerificationCodeFields,
+            request.VerificationCode,
+            contentColor);
+
+        StampAcroImage(pdfDocument, form, fields, AcroCommitteeSignatureFields, request.CommitteeSignatureImageBytes);
+
+        byte[]? qrBytes = CreateQrCodePng(request.VerificationUrl, contentColor);
+        StampAcroImage(pdfDocument, form, fields, AcroQrCodeFields, qrBytes);
+
+        form.FlattenFields();
+    }
+
+    private static void SetAcroText(
+        IDictionary<string, PdfFormField> fields,
+        IEnumerable<string> aliases,
+        string? value,
+        Color? fontColor = null)
+    {
+        PdfFormField? field = FindField(fields, aliases);
+        if (field is null) return;
+
+        // AcroForm görünümü tamamen PDF template tarafından belirlenir:
+        // font family, font size, alignment, multiline vb.
+        // Uygulama yalnızca dinamik değeri ve seçilen rengi uygular.
+        if (fontColor is not null)
+        {
+            field.SetColor(fontColor);
+        }
+
+        field.SetValue(value ?? string.Empty);
+    }
+
+    private static PdfFormField? FindField(IDictionary<string, PdfFormField> fields, IEnumerable<string> aliases)
+    {
+        foreach (string alias in aliases)
+        {
+            if (fields.TryGetValue(alias, out PdfFormField? exact)) return exact;
+            KeyValuePair<string, PdfFormField> match = fields.FirstOrDefault(item => string.Equals(item.Key, alias, StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrEmpty(match.Key)) return match.Value;
+        }
+        return null;
+    }
+
+    private static string? FindFieldName(IDictionary<string, PdfFormField> fields, IEnumerable<string> aliases)
+    {
+        foreach (string alias in aliases)
+        {
+            if (fields.ContainsKey(alias)) return alias;
+            string? match = fields.Keys.FirstOrDefault(key => string.Equals(key, alias, StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrWhiteSpace(match)) return match;
+        }
+        return null;
+    }
+
+    private static void StampAcroImage(PdfDocument pdfDocument, PdfAcroForm form, IDictionary<string, PdfFormField> fields, IEnumerable<string> aliases, byte[]? imageBytes)
+    {
+        string? fieldName = FindFieldName(fields, aliases);
+        if (fieldName is null) return;
+        PdfFormField field = fields[fieldName];
+        PdfWidgetAnnotation? widget = field.GetWidgets().FirstOrDefault();
+        if (widget?.GetPage() is PdfPage page && imageBytes is { Length: > 0 })
+        {
+            Rectangle rect = widget.GetRectangle().ToRectangle();
+            ImageData imageData = ImageDataFactory.Create(imageBytes);
+            PdfCanvas canvas = new(page.NewContentStreamAfter(), page.GetResources(), pdfDocument);
+            canvas.AddImageFittedIntoRectangle(imageData, rect, false);
+        }
+        form.RemoveField(fieldName);
+    }
+
+    private static byte[]? CreateQrCodePng(string? verificationUrl, Color? foregroundColor = null)
+    {
+        if (string.IsNullOrWhiteSpace(verificationUrl)) return null;
+
+        byte[] darkColorRgba = ToRgbaBytes(foregroundColor, 0, 0, 0);
+        byte[] lightColorRgba = new byte[] { 255, 255, 255, 255 };
+
+        using QRCodeGenerator generator = new();
+        using QRCodeData data = generator.CreateQrCode(verificationUrl.Trim(), QRCodeGenerator.ECCLevel.Q);
+        using PngByteQRCode qr = new(data);
+        return qr.GetGraphic(8, darkColorRgba, lightColorRgba, drawQuietZones: true);
+    }
+
+
+    private static byte[] ToRgbaBytes(Color? color, byte fallbackR, byte fallbackG, byte fallbackB)
+    {
+        if (color is DeviceRgb rgb)
+        {
+            return new[]
+            {
+                ClampByte(rgb.GetColorValue()[0] * 255f),
+                ClampByte(rgb.GetColorValue()[1] * 255f),
+                ClampByte(rgb.GetColorValue()[2] * 255f),
+                (byte)255
+            };
+        }
+
+        return new[] { fallbackR, fallbackG, fallbackB, (byte)255 };
+    }
+
+    private static byte ClampByte(float value)
+        => (byte)Math.Max(0, Math.Min(255, (int)Math.Round(value)));
 
     private static void RenderParticipantName(
         PdfDocument pdfDocument,

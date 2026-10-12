@@ -43,19 +43,22 @@ public sealed class GetMailDeliveryListQuery : IRequest<GetMailDeliveryListRespo
         private readonly IOrganizationUserRepository _organizationUserRepository;
         private readonly ICongressRepository _congressRepository;
         private readonly ISubmissionRepository _submissionRepository;
+        private readonly IMailDeliveryEventRepository _eventRepository;
 
         public Handler(
             IMailOutboxMessageRepository outboxRepository,
             IOrganizationRepository organizationRepository,
             IOrganizationUserRepository organizationUserRepository,
             ICongressRepository congressRepository,
-            ISubmissionRepository submissionRepository)
+            ISubmissionRepository submissionRepository,
+            IMailDeliveryEventRepository eventRepository)
         {
             _outboxRepository = outboxRepository;
             _organizationRepository = organizationRepository;
             _organizationUserRepository = organizationUserRepository;
             _congressRepository = congressRepository;
             _submissionRepository = submissionRepository;
+            _eventRepository = eventRepository;
         }
 
         public async Task<GetMailDeliveryListResponse> Handle(
@@ -129,6 +132,7 @@ public sealed class GetMailDeliveryListQuery : IRequest<GetMailDeliveryListRespo
             Dictionary<Guid, string> organizationNames = await LoadOrganizationNamesAsync(rows, cancellationToken);
             Dictionary<Guid, string> congressNames = await LoadCongressNamesAsync(rows, cancellationToken);
             Dictionary<Guid, string> submissionNumbers = await LoadSubmissionNumbersAsync(rows, cancellationToken);
+            Dictionary<Guid, MailEngagementSummary> engagementSummaries = await LoadEngagementSummariesAsync(rows, cancellationToken);
 
             IReadOnlyList<MailDeliveryFilterOptionDto> organizations = await LoadOrganizationOptionsAsync(
                 request.IsSuperAdmin,
@@ -155,37 +159,48 @@ public sealed class GetMailDeliveryListQuery : IRequest<GetMailDeliveryListRespo
                 DelayedCount = delayedCount,
                 Organizations = organizations,
                 Congresses = congresses,
-                Items = rows.Select(row => new MailDeliveryListItemDto
+                Items = rows.Select(row =>
                 {
-                    Id = row.Id,
-                    MailType = row.MailType,
-                    RecipientName = row.ToName ?? string.Empty,
-                    RecipientEmail = row.ToEmail,
-                    Subject = row.Subject,
-                    OrganizationId = row.OrganizationId,
-                    OrganizationName = row.OrganizationId.HasValue &&
-                                       organizationNames.TryGetValue(row.OrganizationId.Value, out string? organizationName)
-                        ? organizationName
-                        : string.Empty,
-                    CongressId = row.CongressId,
-                    CongressName = row.CongressId.HasValue &&
-                                   congressNames.TryGetValue(row.CongressId.Value, out string? congressName)
-                        ? congressName
-                        : string.Empty,
-                    RelatedUserId = row.RelatedUserId,
-                    RelatedSubmissionId = row.RelatedSubmissionId,
-                    SubmissionNumber = row.RelatedSubmissionId.HasValue &&
-                                       submissionNumbers.TryGetValue(row.RelatedSubmissionId.Value, out string? submissionNumber)
-                        ? submissionNumber
-                        : null,
-                    Status = row.Status,
-                    DeliveryStatus = row.DeliveryStatus,
-                    Provider = row.Provider,
-                    CreatedAt = row.CreatedDate,
-                    SentAt = row.SentAt,
-                    DeliveredAt = row.DeliveredAt,
-                    LastError = row.LastError,
-                    DeliveryDiagnosticCode = row.DeliveryDiagnosticCode
+                    engagementSummaries.TryGetValue(row.Id, out MailEngagementSummary? engagement);
+
+                    return new MailDeliveryListItemDto
+                    {
+                        Id = row.Id,
+                        MailType = row.MailType,
+                        RecipientName = row.ToName ?? string.Empty,
+                        RecipientEmail = row.ToEmail,
+                        Subject = row.Subject,
+                        OrganizationId = row.OrganizationId,
+                        OrganizationName = row.OrganizationId.HasValue &&
+                                           organizationNames.TryGetValue(row.OrganizationId.Value, out string? organizationName)
+                            ? organizationName
+                            : string.Empty,
+                        CongressId = row.CongressId,
+                        CongressName = row.CongressId.HasValue &&
+                                       congressNames.TryGetValue(row.CongressId.Value, out string? congressName)
+                            ? congressName
+                            : string.Empty,
+                        RelatedUserId = row.RelatedUserId,
+                        RelatedSubmissionId = row.RelatedSubmissionId,
+                        SubmissionNumber = row.RelatedSubmissionId.HasValue &&
+                                           submissionNumbers.TryGetValue(row.RelatedSubmissionId.Value, out string? submissionNumber)
+                            ? submissionNumber
+                            : null,
+                        Status = row.Status,
+                        DeliveryStatus = row.DeliveryStatus,
+                        Provider = row.Provider,
+                        CreatedAt = row.CreatedDate,
+                        SentAt = row.SentAt,
+                        DeliveredAt = row.DeliveredAt,
+                        SesOpenCount = engagement?.OpenCount ?? 0,
+                        SesFirstOpenedAt = engagement?.FirstOpenedAt,
+                        SesLastOpenedAt = engagement?.LastOpenedAt,
+                        SesClickCount = engagement?.ClickCount ?? 0,
+                        SesFirstClickedAt = engagement?.FirstClickedAt,
+                        SesLastClickedAt = engagement?.LastClickedAt,
+                        LastError = row.LastError,
+                        DeliveryDiagnosticCode = row.DeliveryDiagnosticCode
+                    };
                 }).ToList()
             };
         }
@@ -281,6 +296,71 @@ public sealed class GetMailDeliveryListQuery : IRequest<GetMailDeliveryListRespo
                     ? query.OrderByDescending(item => item.CreatedDate).ThenByDescending(item => item.Id)
                     : query.OrderBy(item => item.CreatedDate).ThenBy(item => item.Id)
             };
+        }
+
+        private async Task<Dictionary<Guid, MailEngagementSummary>> LoadEngagementSummariesAsync(
+            IReadOnlyCollection<MailOutboxMessage> rows,
+            CancellationToken cancellationToken)
+        {
+            List<Guid> messageIds = rows.Select(item => item.Id).Distinct().ToList();
+            if (messageIds.Count == 0)
+                return new Dictionary<Guid, MailEngagementSummary>();
+
+            List<EngagementEventSnapshot> events = await _eventRepository.Query()
+                .AsNoTracking()
+                .Where(item =>
+                    messageIds.Contains(item.MailOutboxMessageId) &&
+                    (item.EventType == MailDeliveryEventType.Open || item.EventType == MailDeliveryEventType.Click))
+                .Select(item => new EngagementEventSnapshot
+                {
+                    MailOutboxMessageId = item.MailOutboxMessageId,
+                    EventType = item.EventType,
+                    OccurredAt = item.OccurredAt
+                })
+                .ToListAsync(cancellationToken);
+
+            return events
+                .GroupBy(item => item.MailOutboxMessageId)
+                .ToDictionary(
+                    group => group.Key,
+                    group => new MailEngagementSummary
+                    {
+                        OpenCount = group.Count(item => item.EventType == MailDeliveryEventType.Open),
+                        FirstOpenedAt = group
+                            .Where(item => item.EventType == MailDeliveryEventType.Open)
+                            .Select(item => (DateTime?)item.OccurredAt)
+                            .Min(),
+                        LastOpenedAt = group
+                            .Where(item => item.EventType == MailDeliveryEventType.Open)
+                            .Select(item => (DateTime?)item.OccurredAt)
+                            .Max(),
+                        ClickCount = group.Count(item => item.EventType == MailDeliveryEventType.Click),
+                        FirstClickedAt = group
+                            .Where(item => item.EventType == MailDeliveryEventType.Click)
+                            .Select(item => (DateTime?)item.OccurredAt)
+                            .Min(),
+                        LastClickedAt = group
+                            .Where(item => item.EventType == MailDeliveryEventType.Click)
+                            .Select(item => (DateTime?)item.OccurredAt)
+                            .Max()
+                    });
+        }
+
+        private sealed class EngagementEventSnapshot
+        {
+            public Guid MailOutboxMessageId { get; set; }
+            public MailDeliveryEventType EventType { get; set; }
+            public DateTime OccurredAt { get; set; }
+        }
+
+        private sealed class MailEngagementSummary
+        {
+            public int OpenCount { get; set; }
+            public DateTime? FirstOpenedAt { get; set; }
+            public DateTime? LastOpenedAt { get; set; }
+            public int ClickCount { get; set; }
+            public DateTime? FirstClickedAt { get; set; }
+            public DateTime? LastClickedAt { get; set; }
         }
 
         private async Task<IReadOnlyList<Guid>> ResolveAllowedOrganizationIdsAsync(

@@ -59,6 +59,8 @@ public static class CongressResourceSeedDefinitions
         new("BackOffice", "BackOffice.Congresses.Fields.Location", "Lokasyon", "Location"),
         new("BackOffice", "BackOffice.Congresses.Fields.Language", "Dil", "Language"),
         new("BackOffice", "BackOffice.Congresses.Fields.Status", "Durum", "Status"),
+        new("BackOffice", "BackOffice.Congresses.Fields.AuthorVideoUpload", "Video Sunum Yükleme", "Presentation Video Upload"),
+        new("BackOffice", "BackOffice.Congresses.Help.AuthorVideoUpload", "Katılımcıların bu kongre için video sunum dosyası yükleyebilmesine izin verir.", "Allows participants to upload presentation videos for this congress."),
         new("BackOffice", "BackOffice.Congresses.Fields.ContactEmail", "E-posta", "Email"),
         new("BackOffice", "BackOffice.Congresses.Fields.ContactPhone", "Telefon", "Phone"),
         new("BackOffice", "BackOffice.Congresses.Fields.ContactName", "İletişim Kişisi", "Contact Person"),

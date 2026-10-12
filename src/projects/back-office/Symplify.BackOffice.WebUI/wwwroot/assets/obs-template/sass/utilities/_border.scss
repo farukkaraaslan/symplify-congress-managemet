@@ -1,0 +1,187 @@
+@use "../abstracts/mixins";
+@use "../abstracts/variables";
+
+// =========================
+// Helpers
+// =========================
+@mixin border-color-class($name, $value) {
+  .border-#{$name} {
+    border-color: #{$value} !important;
+  }
+}
+
+@mixin border-hover-class($name, $value) {
+  .br-hover-#{$name} {
+    @include mixins.transition(all 0.3s);
+
+    &:hover {
+      border-color: #{$value} !important;
+    }
+  }
+}
+
+@mixin generate-border-color-utilities($map) {
+  @each $color, $shades in $map {
+    @each $shade, $value in $shades {
+      @include border-color-class("#{$color}-#{$shade}", var(--#{$color}-#{$shade}));
+    }
+  }
+}
+
+@mixin generate-border-extra-utilities($map) {
+  @each $property, $value in $map {
+    @include border-color-class($property, var(--#{$property}));
+  }
+}
+
+@mixin generate-border-width-classes($prefix, $property, $values...) {
+  .#{$prefix} {
+    @each $value in $values {
+      &-#{$value}-px {
+        #{$property}: #{$value}px !important;
+      }
+    }
+  }
+}
+
+// =========================
+// Base Borders
+// =========================
+.border {
+  border: 1px solid var(--border-color) !important;
+}
+
+.border-start {
+  border-inline-start: 1px solid var(--border-color) !important;
+}
+
+.border-end {
+  border-inline-end: 1px solid var(--border-color) !important;
+}
+
+.border-bottom {
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+// =========================
+// Border Color Utilities
+// =========================
+@each $property, $value in variables.$border-light-colors {
+  @include border-color-class($property, var(--#{$property}));
+}
+
+@include generate-border-color-utilities(variables.$colors);
+@include generate-border-color-utilities(variables.$semantic-colors);
+@include generate-border-extra-utilities(variables.$extra-colors);
+
+// semantic aliases
+.br-success {
+  border-color: var(--success-border) !important;
+}
+
+.br-white,
+.border-white {
+  border-color: var(--base) !important;
+}
+
+.border-light-white {
+  border-color: var(--border-soft) !important;
+}
+
+.input-form-light {
+  border-color: var(--input-form-light) !important;
+}
+
+.input-form-dark {
+  border-color: var(--input-form-dark) !important;
+}
+
+// optional semantic utilities
+.border-subtle {
+  border-color: var(--border-subtle) !important;
+}
+
+.border-soft {
+  border-color: var(--border-soft) !important;
+}
+
+.border-strong {
+  border-color: var(--border-strong) !important;
+}
+
+.border-brand {
+  border-color: var(--brand) !important;
+}
+
+// =========================
+// Border Hover Utilities
+// =========================
+$border-hover-colors: (
+  "primary": var(--primary-600),
+  "success": var(--success-main),
+  "info": var(--info-main),
+  "warning": var(--warning-main),
+  "danger": var(--danger-main)
+);
+
+@each $name, $value in $border-hover-colors {
+  @include border-hover-class($name, $value);
+}
+
+// =========================
+// Border Width Utilities
+// =========================
+@include generate-border-width-classes("border-width", border-width, 2, 3, 4, 5);
+@include generate-border-width-classes("border-start-width", border-inline-start-width, 2, 3, 4, 5);
+@include generate-border-width-classes("border-end-width", border-inline-end-width, 2, 3, 4, 5, 6);
+
+.border-3 {
+  border-width: 3px !important;
+}
+
+// =========================
+// Border Reset Utilities
+// =========================
+.border-top-0 {
+  border-top: 0 !important;
+}
+
+.border-end-0 {
+  border-right: 0 !important;
+}
+
+.border-start-0 {
+  border-left: 0 !important;
+}
+
+.border-bottom-0 {
+  border-bottom: 0 !important;
+}
+
+// =========================
+// Border Style Utilities
+// =========================
+.border-dashed {
+  border-style: dashed !important;
+}
+
+// =========================
+// Special Utilities
+// =========================
+.center-border {
+  position: relative;
+
+  &::before {
+    position: absolute;
+    content: "";
+    width: 1px;
+    height: calc(100% - 9px);
+    background-color: var(--border-strong);
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+.border-inline-start {
+  border-inline-start: 3px solid var(--danger-500);
+}

@@ -1195,10 +1195,31 @@ public sealed class SubmissionsController : Controller
         if (!CanCurrentUserAccessSubmission(submission))
             return Forbid();
 
-        if (!CanCurrentUserManageSubmissions() && !CanUploadFinalFilesForSubmission(submission))
+        bool canManageSubmissions = CanCurrentUserManageSubmissions();
+
+        if (!canManageSubmissions && !CanUploadFinalFilesForSubmission(submission))
         {
             TempData["ErrorMessage"] = T("BackOffice.Submissions.FinalFiles.UploadLocked", "Tam metin ve video yükleme alanı ödeme işlemi tamamlandıktan sonra aktif olur.");
             return RedirectToAction(nameof(Index), new { culture = RouteData.Values["culture"]?.ToString() });
+        }
+
+        if (!canManageSubmissions && fileKind == SubmissionFileKind.Presentation)
+        {
+            bool videoUploadEnabled = await _congressRepository
+                .Query()
+                .AsNoTracking()
+                .Where(item => item.Id == submission.CongressId && item.DeletedDate == null)
+                .Select(item => item.IsAuthorVideoUploadEnabled)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (!videoUploadEnabled)
+            {
+                TempData["ErrorMessage"] = T(
+                    "BackOffice.Submissions.FinalFiles.VideoUploadDisabled",
+                    "Bu kongre için video sunum yükleme işlemi kapalıdır.");
+
+                return RedirectToAction(nameof(Index), new { culture = RouteData.Values["culture"]?.ToString() });
+            }
         }
 
         if (file is null || file.Length <= 0)

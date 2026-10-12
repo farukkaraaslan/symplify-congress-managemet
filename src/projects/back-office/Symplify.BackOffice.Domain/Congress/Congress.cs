@@ -29,6 +29,10 @@ public class Congress : Entity<Guid>, IEntityTimestamps, IAuditable, IAggregateR
 
     public CongressStatus Status { get; set; } = CongressStatus.Draft;
 
+    // Katılımcı/yazar tarafındaki sunum videosu yükleme alanını kongre bazında yönetir.
+    // Mevcut davranış geriye dönük uyumluluk için varsayılan olarak açıktır.
+    public bool IsAuthorVideoUploadEnabled { get; set; } = true;
+
     // Kongreye özel iletişim bilgileri. Organization iletişiminden farklı olabilir.
     public string? ContactName { get; set; }
 

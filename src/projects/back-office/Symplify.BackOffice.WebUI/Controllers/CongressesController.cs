@@ -259,6 +259,7 @@ public sealed class CongressesController : Controller
                 Status = string.Equals(submitMode, "draft", StringComparison.OrdinalIgnoreCase)
                     ? CongressStatus.Draft
                     : model.Status,
+                IsAuthorVideoUploadEnabled = model.IsAuthorVideoUploadEnabled,
                 ContactName = NormalizeText(model.ContactName),
                 ContactTitle = NormalizeText(model.ContactTitle),
                 ContactPhone = NormalizeText(model.ContactPhone),
@@ -348,6 +349,7 @@ public sealed class CongressesController : Controller
                 Status = string.Equals(submitMode, "draft", StringComparison.OrdinalIgnoreCase)
                     ? CongressStatus.Draft
                     : model.Status,
+                IsAuthorVideoUploadEnabled = model.IsAuthorVideoUploadEnabled,
                 ContactName = NormalizeText(model.ContactName),
                 ContactTitle = NormalizeText(model.ContactTitle),
                 ContactPhone = NormalizeText(model.ContactPhone),
@@ -488,6 +490,7 @@ public sealed class CongressesController : Controller
             StartDate = response.StartDate,
             EndDate = response.EndDate,
             Status = response.Status,
+            IsAuthorVideoUploadEnabled = response.IsAuthorVideoUploadEnabled,
             ContactName = response.ContactName,
             ContactTitle = response.ContactTitle,
             ContactPhone = response.ContactPhone,
@@ -691,6 +694,7 @@ public sealed class CongressesController : Controller
             StartDate = DateTime.UtcNow.Date,
             EndDate = DateTime.UtcNow.Date,
             Status = CongressStatus.Draft,
+            IsAuthorVideoUploadEnabled = true,
             ShiftRelativeDates = true,
             CloneModules = Enum.GetValues<CongressCloneModule>().ToList(),
             ContactEmails = new List<CreateCongressContactEmailViewModel>

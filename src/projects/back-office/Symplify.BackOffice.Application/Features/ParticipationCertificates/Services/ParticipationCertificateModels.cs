@@ -237,6 +237,32 @@ public sealed class ParticipationCertificateDocumentDto
         !string.Equals(EmailStatus, "Queued", StringComparison.OrdinalIgnoreCase);
 }
 
+public sealed class ParticipationCertificateTemplateFileDto
+{
+    public Guid Id { get; init; }
+    public Guid CongressId { get; init; }
+    public string Culture { get; init; } = ParticipationCertificateCultures.Turkish;
+    public string FileName { get; init; } = string.Empty;
+    public string ContentType { get; init; } = "application/pdf";
+    public string BucketName { get; init; } = string.Empty;
+    public string ObjectName { get; init; } = string.Empty;
+}
+
+public sealed class ParticipationCertificateVerificationDto
+{
+    public Guid PublicId { get; init; }
+    public string VerificationCode { get; init; } = string.Empty;
+    public bool IsValid { get; init; }
+    public bool IsRevoked { get; init; }
+    public string Culture { get; init; } = ParticipationCertificateCultures.Turkish;
+    public string CongressName { get; init; } = string.Empty;
+    public string SubmissionNumber { get; init; } = string.Empty;
+    public string SubmissionTitle { get; init; } = string.Empty;
+    public string ParticipantName { get; init; } = string.Empty;
+    public DateTime GeneratedAt { get; init; }
+    public string? Message { get; init; }
+}
+
 public sealed class ParticipationCertificateStoredFileDto
 {
     public Guid Id { get; init; }
@@ -335,4 +361,7 @@ public sealed class ParticipationCertificatePdfRenderRequest
     public string CommitteeSignerFullName { get; init; } = string.Empty;
     public string? CommitteeSignerAcademicTitle { get; init; }
     public string? CommitteeSignerRole { get; init; }
+    public string? VerificationUrl { get; init; }
+    public string? VerificationCode { get; init; }
 }
+

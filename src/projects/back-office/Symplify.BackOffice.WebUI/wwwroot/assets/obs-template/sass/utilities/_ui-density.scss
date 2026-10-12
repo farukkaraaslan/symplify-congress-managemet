@@ -1,0 +1,760 @@
+/* ============================================================
+   SYMPLIFY UI DENSITY
+   data-ui-size yalnızca yazıyı değil, içerik bileşenlerinin
+   fiziksel yoğunluğunu da birlikte ölçekler.
+
+   Sidebar bilinçli olarak bu katmanın dışında bırakılmıştır.
+   ============================================================ */
+
+:root,
+html[data-ui-size="standard"] {
+  --ui-card-radius: 0.75rem;
+  --ui-card-header-py: 0.72rem;
+  --ui-card-header-px: 1.05rem;
+  --ui-card-body-py: 0.90rem;
+  --ui-card-body-px: 1.05rem;
+  --ui-card-footer-py: 0.68rem;
+  --ui-card-footer-px: 1.05rem;
+  --ui-card-gap: 0.70rem;
+
+  --ui-control-height-sm: 2.15rem;
+  --ui-control-height-md: 2.40rem;
+  --ui-control-height-lg: 2.75rem;
+  --ui-control-py: 0.50rem;
+  --ui-control-radius: 0.56rem;
+  --ui-textarea-min: 6.25rem;
+
+  --ui-table-head-py: 0.55rem;
+  --ui-table-body-py: 0.58rem;
+  --ui-table-px: 0.85rem;
+  --ui-table-radius: 0.625rem;
+  --ui-filter-cell-py: 0.45rem;
+  --ui-filter-cell-px: 0.60rem;
+
+  --ui-toolbar-gap: 0.70rem;
+  --ui-pagination-size: 2.20rem;
+  --ui-button-min-height: 2.20rem;
+  --ui-button-py: 0.45rem;
+  --ui-button-px: 0.80rem;
+  --ui-button-sm-py: 0.34rem;
+  --ui-button-sm-px: 0.66rem;
+  --ui-button-lg-py: 0.58rem;
+  --ui-button-lg-px: 0.92rem;
+
+  --ui-dropdown-padding: 0.375rem;
+  --ui-dropdown-radius: 0.70rem;
+  --ui-dropdown-item-radius: 0.56rem;
+  --ui-dropdown-item-min-height: 2.15rem;
+  --ui-dropdown-item-py: 0.38rem;
+  --ui-dropdown-item-px: 0.65rem;
+  --ui-dropdown-gap: 0.56rem;
+}
+
+html[data-ui-size="compact"] {
+  --ui-card-radius: 0.58rem;
+  --ui-card-header-py: 0.55rem;
+  --ui-card-header-px: 0.78rem;
+  --ui-card-body-py: 0.72rem;
+  --ui-card-body-px: 0.78rem;
+  --ui-card-footer-py: 0.52rem;
+  --ui-card-footer-px: 0.78rem;
+  --ui-card-gap: 0.50rem;
+
+  --ui-control-height-sm: 1.95rem;
+  --ui-control-height-md: 2.18rem;
+  --ui-control-height-lg: 2.48rem;
+  --ui-control-py: 0.34rem;
+  --ui-control-radius: 0.44rem;
+  --ui-textarea-min: 5.20rem;
+
+  --ui-table-head-py: 0.40rem;
+  --ui-table-body-py: 0.44rem;
+  --ui-table-px: 0.62rem;
+  --ui-table-radius: 0.50rem;
+  --ui-filter-cell-py: 0.30rem;
+  --ui-filter-cell-px: 0.42rem;
+
+  --ui-toolbar-gap: 0.45rem;
+  --ui-pagination-size: 1.92rem;
+  --ui-button-min-height: 1.95rem;
+  --ui-button-py: 0.30rem;
+  --ui-button-px: 0.58rem;
+  --ui-button-sm-py: 0.23rem;
+  --ui-button-sm-px: 0.48rem;
+  --ui-button-lg-py: 0.40rem;
+  --ui-button-lg-px: 0.68rem;
+
+  --ui-dropdown-padding: 0.25rem;
+  --ui-dropdown-radius: 0.52rem;
+  --ui-dropdown-item-radius: 0.42rem;
+  --ui-dropdown-item-min-height: 1.90rem;
+  --ui-dropdown-item-py: 0.28rem;
+  --ui-dropdown-item-px: 0.50rem;
+  --ui-dropdown-gap: 0.44rem;
+}
+
+html[data-ui-size="small"] {
+  --ui-card-radius: 0.66rem;
+  --ui-card-header-py: 0.64rem;
+  --ui-card-header-px: 0.90rem;
+  --ui-card-body-py: 0.80rem;
+  --ui-card-body-px: 0.90rem;
+  --ui-card-footer-py: 0.60rem;
+  --ui-card-footer-px: 0.90rem;
+  --ui-card-gap: 0.60rem;
+
+  --ui-control-height-sm: 2.05rem;
+  --ui-control-height-md: 2.28rem;
+  --ui-control-height-lg: 2.60rem;
+  --ui-control-py: 0.42rem;
+  --ui-control-radius: 0.50rem;
+  --ui-textarea-min: 5.70rem;
+
+  --ui-table-head-py: 0.48rem;
+  --ui-table-body-py: 0.50rem;
+  --ui-table-px: 0.73rem;
+  --ui-table-radius: 0.56rem;
+  --ui-filter-cell-py: 0.37rem;
+  --ui-filter-cell-px: 0.50rem;
+
+  --ui-toolbar-gap: 0.56rem;
+  --ui-pagination-size: 2.05rem;
+  --ui-button-min-height: 2.05rem;
+  --ui-button-py: 0.37rem;
+  --ui-button-px: 0.68rem;
+  --ui-button-sm-py: 0.29rem;
+  --ui-button-sm-px: 0.56rem;
+  --ui-button-lg-py: 0.48rem;
+  --ui-button-lg-px: 0.78rem;
+
+  --ui-dropdown-padding: 0.31rem;
+  --ui-dropdown-radius: 0.60rem;
+  --ui-dropdown-item-radius: 0.48rem;
+  --ui-dropdown-item-min-height: 2.02rem;
+  --ui-dropdown-item-py: 0.33rem;
+  --ui-dropdown-item-px: 0.57rem;
+  --ui-dropdown-gap: 0.50rem;
+}
+
+html[data-ui-size="large"] {
+  --ui-card-radius: 0.84rem;
+  --ui-card-header-py: 0.82rem;
+  --ui-card-header-px: 1.16rem;
+  --ui-card-body-py: 1.02rem;
+  --ui-card-body-px: 1.16rem;
+  --ui-card-footer-py: 0.76rem;
+  --ui-card-footer-px: 1.16rem;
+  --ui-card-gap: 0.80rem;
+
+  --ui-control-height-sm: 2.28rem;
+  --ui-control-height-md: 2.52rem;
+  --ui-control-height-lg: 2.90rem;
+  --ui-control-py: 0.58rem;
+  --ui-control-radius: 0.62rem;
+  --ui-textarea-min: 6.75rem;
+
+  --ui-table-head-py: 0.64rem;
+  --ui-table-body-py: 0.68rem;
+  --ui-table-px: 0.96rem;
+  --ui-table-radius: 0.70rem;
+  --ui-filter-cell-py: 0.53rem;
+  --ui-filter-cell-px: 0.68rem;
+
+  --ui-toolbar-gap: 0.80rem;
+  --ui-pagination-size: 2.38rem;
+  --ui-button-min-height: 2.38rem;
+  --ui-button-py: 0.53rem;
+  --ui-button-px: 0.92rem;
+  --ui-button-sm-py: 0.42rem;
+  --ui-button-sm-px: 0.76rem;
+  --ui-button-lg-py: 0.68rem;
+  --ui-button-lg-px: 1.04rem;
+
+  --ui-dropdown-padding: 0.43rem;
+  --ui-dropdown-radius: 0.78rem;
+  --ui-dropdown-item-radius: 0.62rem;
+  --ui-dropdown-item-min-height: 2.32rem;
+  --ui-dropdown-item-py: 0.44rem;
+  --ui-dropdown-item-px: 0.74rem;
+  --ui-dropdown-gap: 0.66rem;
+}
+
+html[data-ui-size="xlarge"] {
+  --ui-card-radius: 0.94rem;
+  --ui-card-header-py: 0.92rem;
+  --ui-card-header-px: 1.28rem;
+  --ui-card-body-py: 1.14rem;
+  --ui-card-body-px: 1.28rem;
+  --ui-card-footer-py: 0.86rem;
+  --ui-card-footer-px: 1.28rem;
+  --ui-card-gap: 0.90rem;
+
+  --ui-control-height-sm: 2.42rem;
+  --ui-control-height-md: 2.68rem;
+  --ui-control-height-lg: 3.08rem;
+  --ui-control-py: 0.66rem;
+  --ui-control-radius: 0.70rem;
+  --ui-textarea-min: 7.30rem;
+
+  --ui-table-head-py: 0.73rem;
+  --ui-table-body-py: 0.78rem;
+  --ui-table-px: 1.08rem;
+  --ui-table-radius: 0.78rem;
+  --ui-filter-cell-py: 0.61rem;
+  --ui-filter-cell-px: 0.76rem;
+
+  --ui-toolbar-gap: 0.90rem;
+  --ui-pagination-size: 2.55rem;
+  --ui-button-min-height: 2.55rem;
+  --ui-button-py: 0.61rem;
+  --ui-button-px: 1.02rem;
+  --ui-button-sm-py: 0.49rem;
+  --ui-button-sm-px: 0.84rem;
+  --ui-button-lg-py: 0.78rem;
+  --ui-button-lg-px: 1.15rem;
+
+  --ui-dropdown-padding: 0.50rem;
+  --ui-dropdown-radius: 0.86rem;
+  --ui-dropdown-item-radius: 0.70rem;
+  --ui-dropdown-item-min-height: 2.50rem;
+  --ui-dropdown-item-py: 0.50rem;
+  --ui-dropdown-item-px: 0.82rem;
+  --ui-dropdown-gap: 0.72rem;
+}
+
+/* Existing component classes; no alternate component system is introduced. */
+.dashboard-main .card {
+  border-radius: var(--ui-card-radius);
+}
+
+.dashboard-main .card .card-header {
+  min-height: 0;
+  padding: var(--ui-card-header-py) var(--ui-card-header-px);
+  gap: var(--ui-card-gap);
+}
+
+.dashboard-main .card .card-body {
+  padding: var(--ui-card-body-py) var(--ui-card-body-px);
+}
+
+.dashboard-main .card .card-footer {
+  padding: var(--ui-card-footer-py) var(--ui-card-footer-px);
+}
+
+.dashboard-main .card .card-title,
+.dashboard-main .card .card-header h6 {
+  font-size: var(--font-md) !important;
+}
+
+.dashboard-main .form-label {
+  margin-bottom: var(--size-6);
+  font-size: var(--font-sm);
+}
+
+.dashboard-main .form-control,
+.dashboard-main .form-select,
+.dashboard-main textarea {
+  min-height: var(--ui-control-height-md);
+  border-radius: var(--ui-control-radius);
+  padding-block: var(--ui-control-py);
+  font-size: var(--font-sm);
+}
+
+.dashboard-main .form-control.form-control-sm,
+.dashboard-main .form-select.form-select-sm {
+  min-height: var(--ui-control-height-sm);
+}
+
+.dashboard-main .form-control.form-control-lg,
+.dashboard-main .form-select.form-select-lg {
+  min-height: var(--ui-control-height-lg);
+}
+
+.dashboard-main textarea.form-control,
+.dashboard-main textarea {
+  min-height: var(--ui-textarea-min);
+}
+
+.dashboard-main .btn {
+  min-height: var(--ui-button-min-height);
+  padding: var(--ui-button-py) var(--ui-button-px);
+  border-radius: var(--ui-control-radius);
+  font-size: var(--font-sm);
+  gap: var(--size-6);
+}
+
+.dashboard-main .btn.btn-sm {
+  min-height: var(--ui-control-height-sm);
+  padding: var(--ui-button-sm-py) var(--ui-button-sm-px);
+  font-size: var(--font-xs);
+}
+
+.dashboard-main .btn.btn-lg {
+  min-height: var(--ui-control-height-lg);
+  padding: var(--ui-button-lg-py) var(--ui-button-lg-px);
+  font-size: var(--font-md);
+}
+
+.dashboard-main .bordered-table,
+.dashboard-main .basic-border-table,
+.dashboard-main table.dataTable,
+.dashboard-main div.dt-container table.dataTable {
+  border-radius: var(--ui-table-radius);
+}
+
+.dashboard-main .bordered-table thead th,
+.dashboard-main .basic-border-table thead th,
+.dashboard-main table.dataTable thead th,
+.dashboard-main div.dt-container table.dataTable thead th {
+  padding: var(--ui-table-head-py) var(--ui-table-px) !important;
+  font-size: var(--font-sm) !important;
+}
+
+.dashboard-main .bordered-table tbody td,
+.dashboard-main .basic-border-table tbody td,
+.dashboard-main table.dataTable tbody td,
+.dashboard-main div.dt-container table.dataTable tbody td {
+  padding: var(--ui-table-body-py) var(--ui-table-px) !important;
+  font-size: var(--font-sm);
+}
+
+/* Column filters must shrink/grow with the same density as the table. */
+.dashboard-main div.dt-container table.dataTable thead .dt-filter-row th,
+.dashboard-main .dataTables_wrapper table.dataTable thead .dt-filter-row th {
+  padding: var(--ui-filter-cell-py) var(--ui-filter-cell-px) !important;
+}
+
+.dashboard-main div.dt-container table.dataTable thead .dt-filter-row input,
+.dashboard-main div.dt-container table.dataTable thead .dt-filter-row select,
+.dashboard-main .dataTables_wrapper table.dataTable thead .dt-filter-row input,
+.dashboard-main .dataTables_wrapper table.dataTable thead .dt-filter-row select {
+  height: var(--ui-control-height-sm);
+  min-height: var(--ui-control-height-sm);
+  padding-inline: var(--ui-filter-cell-px) !important;
+  border-radius: var(--ui-control-radius) !important;
+  font-size: var(--font-sm);
+}
+
+/* Advanced DataTable filters (Fakülte/Bölüm/Sınıf/Durum/Yıl). */
+.dashboard-main [data-dt-filters-for] {
+  --bs-gutter-x: var(--ui-toolbar-gap);
+  --bs-gutter-y: var(--ui-toolbar-gap);
+}
+
+.dashboard-main [data-dt-filters-for] .form-label {
+  margin-bottom: var(--ui-filter-cell-py) !important;
+}
+
+.dashboard-main [data-dt-filters-for] .form-select,
+.dashboard-main [data-dt-filters-for] .form-control {
+  min-height: var(--ui-control-height-md);
+  padding-block: var(--ui-control-py);
+  font-size: var(--font-sm);
+}
+
+/* DataTables toolbar, search, page length, buttons and pagination. */
+.dashboard-main .basic-data-table .dt-layout-row,
+.dashboard-main div.dt-container .dt-layout-row {
+  gap: var(--ui-toolbar-gap);
+  padding-bottom: var(--ui-toolbar-gap);
+}
+
+.dashboard-main div.dt-container .dt-layout-row .dt-length,
+.dashboard-main div.dt-container .dt-layout-row .dt-search,
+.dashboard-main .dataTables_wrapper .dataTables_length label,
+.dashboard-main .dataTables_wrapper .dataTables_filter label {
+  gap: var(--ui-toolbar-gap);
+}
+
+.dashboard-main div.dt-container .dt-layout-row select,
+.dashboard-main div.dt-container .dt-layout-row .dt-input,
+.dashboard-main .dataTables_wrapper .dataTables_length select,
+.dashboard-main .dataTables_wrapper .dataTables_filter input,
+.dashboard-main div.dt-container .dt-button,
+.dashboard-main div.dt-container button.dt-button,
+.dashboard-main div.dt-container a.dt-button,
+.dashboard-main .dataTables_wrapper .dt-button,
+.dashboard-main .dataTables_wrapper button.dt-button,
+.dashboard-main .dataTables_wrapper a.dt-button {
+  min-height: var(--ui-control-height-sm);
+  border-radius: var(--ui-control-radius) !important;
+  font-size: var(--font-sm);
+}
+
+.dashboard-main div.dt-container .dt-paging,
+.dashboard-main .dataTables_wrapper .dataTables_paginate {
+  gap: var(--ui-toolbar-gap);
+}
+
+.dashboard-main div.dt-container .dt-paging .dt-paging-button,
+.dashboard-main .dataTables_wrapper .paginate_button {
+  min-width: var(--ui-pagination-size);
+  height: var(--ui-pagination-size);
+  padding-inline: var(--ui-table-px) !important;
+  border-radius: var(--ui-control-radius) !important;
+  font-size: var(--font-sm);
+}
+
+/* Dropdowns follow the selected density as well. */
+.dashboard-main .dropdown-menu {
+  padding: var(--ui-dropdown-padding);
+  border-radius: var(--ui-dropdown-radius);
+}
+
+.dashboard-main .dropdown-item {
+  min-height: var(--ui-dropdown-item-min-height);
+  padding: var(--ui-dropdown-item-py) var(--ui-dropdown-item-px);
+  border-radius: var(--ui-dropdown-item-radius);
+  gap: var(--ui-dropdown-gap);
+  font-size: var(--font-sm);
+}
+
+/* Select2 should visually match regular filters when used inside content. */
+.dashboard-main .select2-container .select2-selection--single {
+  min-height: var(--ui-control-height-md) !important;
+  border-radius: var(--ui-control-radius) !important;
+}
+
+.dashboard-main .select2-container .select2-selection--multiple {
+  min-height: var(--ui-control-height-md) !important;
+  border-radius: var(--ui-control-radius) !important;
+  padding-block: var(--ui-filter-cell-py) !important;
+}
+
+.dashboard-main .select2-container--default .select2-selection--single .select2-selection__rendered {
+  line-height: var(--ui-control-height-md) !important;
+  font-size: var(--font-sm);
+}
+
+.dashboard-main .select2-dropdown,
+.dashboard-main .select2-results__option {
+  font-size: var(--font-sm);
+}
+
+
+/* ============================================================
+   STUDENT FILTER WORKSPACE
+   Çok sayıda filtreyi tabloyu görünmez hale getirmeden gösterir.
+   Mevcut form/nav/card bileşenleri kullanılır; sadece yerleşim
+   ve density ilişkisi tanımlanır.
+   ============================================================ */
+
+.dashboard-main .student-filter-panel {
+  padding: calc(var(--ui-card-header-py) * 0.85) var(--ui-card-header-px);
+}
+
+.dashboard-main .student-filter-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-toolbar-gap);
+  margin-bottom: var(--ui-toolbar-gap);
+}
+
+.dashboard-main .student-filter-panel__icon {
+  width: var(--ui-control-height-sm);
+  height: var(--ui-control-height-sm);
+  font-size: var(--font-md);
+}
+
+.dashboard-main .student-filter-basic,
+.dashboard-main .student-filter-advanced {
+  min-width: 0;
+}
+
+.dashboard-main .student-filter-advanced {
+  margin-top: var(--ui-toolbar-gap);
+  padding-top: var(--ui-toolbar-gap);
+  border-top: 1px solid var(--border-color);
+}
+
+.dashboard-main .student-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: calc(var(--ui-toolbar-gap) * 0.82) var(--ui-toolbar-gap);
+  min-width: 0;
+}
+
+.dashboard-main .student-filter-field {
+  min-width: 0;
+}
+
+.dashboard-main .student-filter-field .form-label {
+  display: block;
+  margin-bottom: calc(var(--ui-filter-cell-py) * 0.75) !important;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard-main .student-filter-field .form-control,
+.dashboard-main .student-filter-field .form-select {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--ui-control-height-sm);
+  height: var(--ui-control-height-sm);
+  padding-block: var(--ui-filter-cell-py);
+  font-size: var(--font-sm);
+}
+
+.dashboard-main .student-filter-tabs-bar {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  margin-bottom: calc(var(--ui-toolbar-gap) * 0.80);
+}
+
+.dashboard-main .student-filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--ui-toolbar-gap) * 0.55);
+  border: 0;
+  min-width: 0;
+}
+
+.dashboard-main .student-filter-tabs .nav-item {
+  margin: 0;
+}
+
+.dashboard-main .student-filter-tabs .nav-link {
+  min-height: var(--ui-control-height-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--ui-toolbar-gap) * 0.45);
+  padding: var(--ui-button-sm-py) var(--ui-button-sm-px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--ui-control-radius);
+  background: var(--white);
+  color: var(--text-secondary-light);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.dashboard-main .student-filter-tabs .nav-link:hover {
+  color: var(--primary-600);
+  border-color: var(--primary-200);
+}
+
+.dashboard-main .student-filter-tabs .nav-link.active {
+  color: var(--primary-600);
+  background: var(--primary-50);
+  border-color: var(--primary-200);
+}
+
+.dashboard-main .student-filter-count {
+  min-width: 1.35rem;
+  height: 1.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 0.3rem;
+  border-radius: 999px;
+  background: var(--neutral-100);
+  color: var(--text-secondary-light);
+  font-size: 0.72em;
+  line-height: 1;
+}
+
+.dashboard-main .student-filter-tabs .nav-link.active .student-filter-count {
+  background: var(--white);
+  color: var(--primary-600);
+}
+
+.dashboard-main .student-filter-tab-content {
+  min-width: 0;
+}
+
+/* Küçük density seçildiğinde aynı alana daha fazla filtre sığar. */
+@media (min-width: 1600px) {
+  html[data-ui-size="compact"] .dashboard-main .student-filter-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+
+  html[data-ui-size="small"] .dashboard-main .student-filter-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  html[data-ui-size="standard"] .dashboard-main .student-filter-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  html[data-ui-size="large"] .dashboard-main .student-filter-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  html[data-ui-size="xlarge"] .dashboard-main .student-filter-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1599.98px) and (min-width: 1200px) {
+  .dashboard-main .student-filter-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  html[data-ui-size="large"] .dashboard-main .student-filter-grid,
+  html[data-ui-size="xlarge"] .dashboard-main .student-filter-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1199.98px) and (min-width: 768px) {
+  .dashboard-main .student-filter-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767.98px) {
+  .dashboard-main .student-filter-panel__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dashboard-main .student-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 575.98px) {
+  .dashboard-main .student-filter-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Kısa ekranlarda tabloyu ekranda tutmak için yalnız detay pane'i kayar.
+   1080p masaüstünde bu kurala girilmez; standart kullanım scroll'suzdur. */
+@media (max-height: 820px) and (min-width: 992px) {
+  .dashboard-main .student-filter-tab-content {
+    max-height: 11.5rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 0.25rem;
+  }
+}
+
+/* ============================================================
+   STUDENT FILTER CATEGORIES v6.2.9
+   Detay filtreleri açık/kapalı tutar; açık durumda kategoriler
+   masaüstünde 4 x col-3 olarak yan yana görünür.
+   ============================================================ */
+.dashboard-main .student-filter-categories {
+  align-items: stretch;
+}
+
+.dashboard-main .student-filter-category {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: calc(var(--ui-toolbar-gap) * 0.85);
+  border: 1px solid var(--border-color);
+  border-radius: var(--ui-control-radius);
+  background: var(--white);
+}
+
+.dashboard-main .student-filter-category__header {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(var(--ui-toolbar-gap) * 0.65);
+  padding-bottom: calc(var(--ui-toolbar-gap) * 0.70);
+  margin-bottom: calc(var(--ui-toolbar-gap) * 0.72);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dashboard-main .student-filter-category__icon {
+  width: calc(var(--ui-control-height-sm) * 0.78);
+  height: calc(var(--ui-control-height-sm) * 0.78);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border-radius: var(--ui-control-radius);
+  background: var(--primary-50);
+  color: var(--primary-600);
+  font-size: var(--font-sm);
+}
+
+.dashboard-main .student-filter-category__title {
+  color: var(--text-primary-light);
+  font-size: var(--font-sm);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.dashboard-main .student-filter-category__description {
+  margin-top: 0.22rem;
+  color: var(--text-secondary-light);
+  font-size: var(--font-xs);
+  line-height: 1.3;
+}
+
+.dashboard-main .student-filter-category-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(var(--ui-toolbar-gap) * 0.72) calc(var(--ui-toolbar-gap) * 0.72);
+  min-width: 0;
+  align-content: start;
+}
+
+.dashboard-main .student-filter-category-grid .student-filter-field--wide {
+  grid-column: 1 / -1;
+}
+
+.dashboard-main .student-filter-category-grid .student-filter-field .form-label {
+  font-size: var(--font-xs) !important;
+}
+
+.dashboard-main .student-filter-category-grid .student-filter-field .form-control,
+.dashboard-main .student-filter-category-grid .student-filter-field .form-select {
+  font-size: var(--font-xs);
+}
+
+.dashboard-main [data-bs-target="#studentAdvancedFilters"] .student-filter-toggle-label--open {
+  display: none;
+}
+
+.dashboard-main [data-bs-target="#studentAdvancedFilters"][aria-expanded="true"] .student-filter-toggle-label--closed {
+  display: none;
+}
+
+.dashboard-main [data-bs-target="#studentAdvancedFilters"][aria-expanded="true"] .student-filter-toggle-label--open {
+  display: inline;
+}
+
+.dashboard-main [data-bs-target="#studentAdvancedFilters"][aria-expanded="true"] .ri-equalizer-2-line {
+  transform: rotate(180deg);
+}
+
+.dashboard-main [data-bs-target="#studentAdvancedFilters"] .ri-equalizer-2-line {
+  transition: transform 160ms ease;
+}
+
+@media (max-width: 1399.98px) {
+  .dashboard-main .student-filter-category-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 575.98px) {
+  .dashboard-main .student-filter-category-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-main .student-filter-category-grid .student-filter-field--wide {
+    grid-column: auto;
+  }
+}
+
+\n/* Standalone/auth/error pages use the same density variables. */
+body .auth, body .auth-card, body .system-error-card, body .theme-customization-sidebar {
+  font-size: inherit;
+}
+body:not(:has(.dashboard-main)) .card { border-radius: var(--ui-card-radius); }
+body:not(:has(.dashboard-main)) .card .card-header { padding: var(--ui-card-header-py) var(--ui-card-header-px); }
+body:not(:has(.dashboard-main)) .card .card-body { padding: var(--ui-card-body-py) var(--ui-card-body-px); }
+body:not(:has(.dashboard-main)) .form-control,
+body:not(:has(.dashboard-main)) .form-select,
+body:not(:has(.dashboard-main)) textarea { min-height: var(--ui-control-height-md); border-radius: var(--ui-control-radius); padding-block: var(--ui-control-py); font-size: var(--font-sm); }
+body:not(:has(.dashboard-main)) .btn { min-height: var(--ui-button-min-height); padding: var(--ui-button-py) var(--ui-button-px); border-radius: var(--ui-control-radius); font-size: var(--font-sm); }

@@ -66,62 +66,6 @@
     <div class="sidebar-menu-area">
         <ul class="sidebar-menu" id="sidebar-menu">
 
-            @if (canDefinitions)
-            {
-                <li class="sidebar-menu-group-title">@L["BackOffice.Sidebar.Definitions"]</li>
-
-                @if (CanRead("Topics"))
-                {
-                    <li><a href="@MenuUrl("Topics")" class="@ActiveClass("Topics")"><iconify-icon icon="solar:tag-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.Topics"]</span></a></li>
-                }
-
-                @if (CanRead("Titles"))
-                {
-                    <li><a href="@MenuUrl("Titles")" class="@ActiveClass("Titles")"><iconify-icon icon="solar:user-id-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.Titles"]</span></a></li>
-                }
-
-                @if (CanRead("DocumentTypes"))
-                {
-                    <li><a href="@MenuUrl("DocumentTypes")" class="@ActiveClass("DocumentTypes")"><iconify-icon icon="solar:document-text-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.DocumentTypes"]</span></a></li>
-                }
-
-                @if (CanRead("SubmissionTypes"))
-                {
-                    <li><a href="@MenuUrl("SubmissionTypes")" class="@ActiveClass("SubmissionTypes")"><iconify-icon icon="solar:document-add-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.SubmissionTypes"]</span></a></li>
-                }
-
-                @if (CanRead("EventRooms"))
-                {
-                    <li><a href="@MenuUrl("EventRooms")" class="@ActiveClass("EventRooms")"><iconify-icon icon="solar:buildings-2-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.EventRooms"]</span></a></li>
-                }
-
-                @if (CanRead("EvaluationCriteria"))
-                {
-                    <li><a href="@MenuUrl("EvaluationCriteria")" class="@ActiveClass("EvaluationCriteria")"><iconify-icon icon="solar:checklist-minimalistic-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.EvaluationCriteria"]</span></a></li>
-                }
-            }
-
-            @if (canOrganization)
-            {
-                <li class="sidebar-menu-group-title">@L["BackOffice.Sidebar.OrganizationManagement"]</li>
-
-                @if (CanRead("Organizations"))
-                {
-                    <li><a href="@MenuUrl("Organizations")" class="@ActiveClass("Organizations")"><iconify-icon icon="solar:buildings-2-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.Organizations"]</span></a></li>
-                }
-
-                @if (CanRead("Congresses"))
-                {
-                    <li><a href="@MenuUrl("Congresses")" class="@ActiveClass("Congresses")"><iconify-icon icon="solar:calendar-mark-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.Congresses"]</span></a></li>
-                }
-
-                @if (CanRead("Organizations"))
-                {
-                    <li><a href="@MenuUrl("OrganizationMailConfigurations")" class="@ActiveClass("OrganizationMailConfigurations")"><iconify-icon icon="solar:letter-outline" class="menu-icon"></iconify-icon><span>@TextOrFallback("BackOffice.Sidebar.OrganizationMailSettings", "Mail Ayarları", "Mail Settings")</span></a></li>
-                }
-
-            }
-
             @if (canSubmission)
             {
                 <li class="sidebar-menu-group-title">@L["BackOffice.Sidebar.SubmissionManagement"]</li>
@@ -180,6 +124,27 @@
                 }
             }
 
+            @if (canOrganization)
+            {
+                <li class="sidebar-menu-group-title">@L["BackOffice.Sidebar.OrganizationManagement"]</li>
+
+                @if (CanRead("Organizations"))
+                {
+                    <li><a href="@MenuUrl("Organizations")" class="@ActiveClass("Organizations")"><iconify-icon icon="solar:buildings-2-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.Organizations"]</span></a></li>
+                }
+
+                @if (CanRead("Congresses"))
+                {
+                    <li><a href="@MenuUrl("Congresses")" class="@ActiveClass("Congresses")"><iconify-icon icon="solar:calendar-mark-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.Congresses"]</span></a></li>
+                }
+
+                @if (CanRead("Organizations"))
+                {
+                    <li><a href="@MenuUrl("OrganizationMailConfigurations")" class="@ActiveClass("OrganizationMailConfigurations")"><iconify-icon icon="solar:letter-outline" class="menu-icon"></iconify-icon><span>@TextOrFallback("BackOffice.Sidebar.OrganizationMailSettings", "Mail Ayarları", "Mail Settings")</span></a></li>
+                }
+
+            }
+
             @if (canSystem)
             {
                 <li class="sidebar-menu-group-title">@L["BackOffice.Sidebar.SystemManagement"]</li>
@@ -197,6 +162,41 @@
                 @if (CanRead("MailDeliveries"))
                 {
                     <li><a href="@MenuUrl("MailDeliveries")" class="@ActiveClass("MailDeliveries")"><iconify-icon icon="solar:letter-unread-outline" class="menu-icon"></iconify-icon><span>@TextOrFallback("BackOffice.Sidebar.MailDeliveries", "E-posta Gönderimleri", "Email Deliveries")</span></a></li>
+                }
+            }
+
+            @if (canDefinitions)
+            {
+                <li class="sidebar-menu-group-title">@L["BackOffice.Sidebar.Definitions"]</li>
+
+                @if (CanRead("Topics"))
+                {
+                    <li><a href="@MenuUrl("Topics")" class="@ActiveClass("Topics")"><iconify-icon icon="solar:tag-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.Topics"]</span></a></li>
+                }
+
+                @if (CanRead("Titles"))
+                {
+                    <li><a href="@MenuUrl("Titles")" class="@ActiveClass("Titles")"><iconify-icon icon="solar:user-id-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.Titles"]</span></a></li>
+                }
+
+                @if (CanRead("DocumentTypes"))
+                {
+                    <li><a href="@MenuUrl("DocumentTypes")" class="@ActiveClass("DocumentTypes")"><iconify-icon icon="solar:document-text-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.DocumentTypes"]</span></a></li>
+                }
+
+                @if (CanRead("SubmissionTypes"))
+                {
+                    <li><a href="@MenuUrl("SubmissionTypes")" class="@ActiveClass("SubmissionTypes")"><iconify-icon icon="solar:document-add-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.SubmissionTypes"]</span></a></li>
+                }
+
+                @if (CanRead("EventRooms"))
+                {
+                    <li><a href="@MenuUrl("EventRooms")" class="@ActiveClass("EventRooms")"><iconify-icon icon="solar:buildings-2-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.EventRooms"]</span></a></li>
+                }
+
+                @if (CanRead("EvaluationCriteria"))
+                {
+                    <li><a href="@MenuUrl("EvaluationCriteria")" class="@ActiveClass("EvaluationCriteria")"><iconify-icon icon="solar:checklist-minimalistic-outline" class="menu-icon"></iconify-icon><span>@L["BackOffice.Sidebar.EvaluationCriteria"]</span></a></li>
                 }
             }
 

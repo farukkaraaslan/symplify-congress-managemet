@@ -40,6 +40,10 @@ public sealed class CongressConfiguration : IEntityTypeConfiguration<EntityType>
             .HasConversion<int>()
             .IsRequired();
 
+        builder.Property(entity => entity.IsAuthorVideoUploadEnabled)
+            .HasDefaultValue(true)
+            .IsRequired();
+
         builder.Property(entity => entity.ContactName)
             .HasMaxLength(200);
 

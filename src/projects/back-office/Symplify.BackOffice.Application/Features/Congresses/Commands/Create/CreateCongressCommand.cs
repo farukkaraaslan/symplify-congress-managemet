@@ -24,6 +24,7 @@ public class CreateCongressCommand : IRequest<CreatedCongressResponse>, ISecured
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
     public CongressStatus Status { get; set; } = CongressStatus.Draft;
+    public bool IsAuthorVideoUploadEnabled { get; set; } = true;
     public string? ContactName { get; set; }
     public string? ContactTitle { get; set; }
     public string? ContactEmail { get; set; }
@@ -178,6 +179,7 @@ public class CreateCongressCommand : IRequest<CreatedCongressResponse>, ISecured
                 StartDate = ToUtc(request.StartDate),
                 EndDate = ToUtc(request.EndDate),
                 Status = request.Status,
+                IsAuthorVideoUploadEnabled = request.IsAuthorVideoUploadEnabled,
                 ContactName = Normalize(request.ContactName),
                 ContactTitle = Normalize(request.ContactTitle),
                 ContactEmail = Normalize(primaryContactEmail),

@@ -166,6 +166,22 @@ public sealed class AmazonSesSnsAdapter : IAmazonSesSnsAdapter
                     result.Detail = GetString(failure, "errorMessage") ?? GetString(failure, "templateName");
                 }
                 break;
+
+            case MailDeliveryEventType.Open:
+                if (root.TryGetProperty("open", out JsonElement open))
+                {
+                    result.OccurredAt = ParseTimestamp(GetString(open, "timestamp")) ?? result.OccurredAt;
+                    result.Detail = BuildEngagementDetail(open, includeLink: false);
+                }
+                break;
+
+            case MailDeliveryEventType.Click:
+                if (root.TryGetProperty("click", out JsonElement click))
+                {
+                    result.OccurredAt = ParseTimestamp(GetString(click, "timestamp")) ?? result.OccurredAt;
+                    result.Detail = BuildEngagementDetail(click, includeLink: true);
+                }
+                break;
         }
 
         return result;
@@ -338,8 +354,34 @@ public sealed class AmazonSesSnsAdapter : IAmazonSesSnsAdapter
         if (normalized.Equals("Rendering Failure", StringComparison.OrdinalIgnoreCase) ||
             normalized.Equals("RenderingFailure", StringComparison.OrdinalIgnoreCase))
             return MailDeliveryEventType.RenderingFailure;
+        if (normalized.Equals("Open", StringComparison.OrdinalIgnoreCase))
+            return MailDeliveryEventType.Open;
+        if (normalized.Equals("Click", StringComparison.OrdinalIgnoreCase))
+            return MailDeliveryEventType.Click;
 
         return MailDeliveryEventType.Unknown;
+    }
+
+    private static string? BuildEngagementDetail(JsonElement element, bool includeLink)
+    {
+        List<string> parts = new();
+
+        if (includeLink)
+        {
+            string? link = GetString(element, "link");
+            if (!string.IsNullOrWhiteSpace(link))
+                parts.Add($"Link: {link}");
+        }
+
+        string? ipAddress = GetString(element, "ipAddress");
+        if (!string.IsNullOrWhiteSpace(ipAddress))
+            parts.Add($"IP: {ipAddress}");
+
+        string? userAgent = GetString(element, "userAgent");
+        if (!string.IsNullOrWhiteSpace(userAgent))
+            parts.Add($"UserAgent: {userAgent}");
+
+        return parts.Count == 0 ? null : string.Join(" | ", parts);
     }
 
     private static JsonElement? FindRecipient(JsonElement container, string propertyName, string? email)

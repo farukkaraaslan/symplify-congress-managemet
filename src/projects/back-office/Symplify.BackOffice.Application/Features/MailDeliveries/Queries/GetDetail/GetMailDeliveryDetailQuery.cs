@@ -5,6 +5,7 @@ using Symplify.BackOffice.Application.Features.MailDeliveries.Constants;
 using Symplify.BackOffice.Application.Features.MailDeliveries.Dtos;
 using Symplify.BackOffice.Application.Services.Repositories;
 using Symplify.BackOffice.Domain.Communication;
+using Symplify.BackOffice.Domain.Enums;
 
 namespace Symplify.BackOffice.Application.Features.MailDeliveries.Queries.GetDetail;
 
@@ -150,6 +151,13 @@ public sealed class GetMailDeliveryDetailQuery : IRequest<GetMailDeliveryDetailR
                 })
                 .ToListAsync(cancellationToken);
 
+            List<MailDeliveryEventDto> openEvents = events
+                .Where(item => item.EventType == MailDeliveryEventType.Open)
+                .ToList();
+            List<MailDeliveryEventDto> clickEvents = events
+                .Where(item => item.EventType == MailDeliveryEventType.Click)
+                .ToList();
+
             return new GetMailDeliveryDetailResponse
             {
                 Id = message.Id,
@@ -188,6 +196,12 @@ public sealed class GetMailDeliveryDetailQuery : IRequest<GetMailDeliveryDetailR
                 DeliverySmtpResponse = message.DeliverySmtpResponse,
                 BounceType = message.BounceType,
                 BounceSubType = message.BounceSubType,
+                SesOpenCount = openEvents.Count,
+                SesFirstOpenedAt = openEvents.Count == 0 ? null : openEvents.Min(item => item.OccurredAt),
+                SesLastOpenedAt = openEvents.Count == 0 ? null : openEvents.Max(item => item.OccurredAt),
+                SesClickCount = clickEvents.Count,
+                SesFirstClickedAt = clickEvents.Count == 0 ? null : clickEvents.Min(item => item.OccurredAt),
+                SesLastClickedAt = clickEvents.Count == 0 ? null : clickEvents.Max(item => item.OccurredAt),
                 Events = events
             };
         }

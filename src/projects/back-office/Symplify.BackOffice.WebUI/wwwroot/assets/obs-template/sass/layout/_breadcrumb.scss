@@ -1,0 +1,30 @@
+
+/* ================= SYMPLIFY Enterprise V6 page header ================= */
+.page-header {
+  min-height: 48px;
+  margin-bottom: 18px !important;
+}
+.page-header > div:first-child > h5,
+.page-header > h5,
+.page-header > h6 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 24px !important;
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+.page-header > div:first-child > p {
+  margin: 5px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.page-header ul {
+  margin: 0;
+  padding: 0;
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+.page-header ul a { color: var(--text-secondary); }
+.page-header ul a:hover { color: var(--primary-600); }
+.page-header ul li:not(:last-child) { color: var(--text-muted); }

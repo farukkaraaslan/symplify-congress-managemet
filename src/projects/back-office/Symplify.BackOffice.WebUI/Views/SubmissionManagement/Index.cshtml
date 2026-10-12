@@ -7,7 +7,7 @@
 @inject IBackOfficeViewLocalizer L
 
 @{
-    ViewData["Title"] = L.GetStringValue(SubmissionManagementResourceKeys.PageTitle);
+    ViewData["Title"] = L.GetStringValue(Model.ArchiveMode ? SubmissionManagementResourceKeys.ViewArchive : SubmissionManagementResourceKeys.PageTitle);
     ViewData["ClientResourcePrefixes"] = new[] { "BackOffice.Submissions.Management.Editor." };
     string? currentCulture = Context.Request.RouteValues["culture"]?.ToString();
 
@@ -38,12 +38,13 @@
 }
 
 
-<div class="dashboard-main-body">
+<link rel="stylesheet" href="~/css/features/submission-management.css" asp-append-version="true" />
+<div class="dashboard-main-body submission-management-page @(Model.ArchiveMode ? "submission-management-page--archive" : "")">
 @Html.AntiForgeryToken()
 
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
         <div>
-            <h6 class="fw-semibold mb-0">@L[SubmissionManagementResourceKeys.PageTitle]</h6>
+            <h6 class="fw-semibold mb-0">@L[Model.ArchiveMode ? SubmissionManagementResourceKeys.ViewArchive : SubmissionManagementResourceKeys.PageTitle]</h6>
         </div>
         <ul class="d-flex align-items-center gap-2 mb-0 list-unstyled">
             <li class="fw-medium">
@@ -53,11 +54,14 @@
                 </a>
             </li>
             <li>-</li>
-            <li class="fw-medium">@L[SubmissionManagementResourceKeys.BreadcrumbIndex]</li>
+            <li class="fw-medium">@L[Model.ArchiveMode ? SubmissionManagementResourceKeys.ViewArchive : SubmissionManagementResourceKeys.BreadcrumbIndex]</li>
         </ul>
     </div>
 
-    <div class="d-flex flex-nowrap gap-3 mb-24" id="submissionManagementStats">
+    <section class="card submission-management-workspace">
+    <div class="card-body p-20">
+    <div class="submission-management-section-heading"><span class="fw-semibold">@L[Model.ArchiveMode ? SubmissionManagementResourceKeys.ViewArchive : SubmissionManagementResourceKeys.PageTitle]</span></div>
+    <div class="submission-management-stats" id="submissionManagementStats">
         @RenderStat("total", SubmissionManagementResourceKeys.StatTotal, totalCount, "bg-primary-50 text-primary-600", "ri-file-list-3-line")
         @RenderStat("accepted", SubmissionManagementResourceKeys.StatAccepted, acceptedCount, "bg-success-focus text-success-main", "ri-check-line")
         @RenderStat("rejected", SubmissionManagementResourceKeys.StatRejected, rejectedCount, "bg-danger-focus text-danger-main", "ri-close-line")
@@ -67,7 +71,7 @@
         @RenderStat("paymentCompleted", SubmissionManagementResourceKeys.StatPaymentCompleted, paymentCompletedCount, "bg-success-focus text-success-main", "ri-secure-payment-line")
     </div>
 
-    <div class="card mb-24" id="submissionManagementFilters">
+    <div class="submission-management-filters" id="submissionManagementFilters">
         <div class="card-header border-bottom bg-base py-20">
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 w-100">
                 <h5 class="mb-0">@L[SubmissionManagementResourceKeys.FiltersTitle]</h5>
@@ -87,8 +91,8 @@
                    name="archiveMode"
                    value="@Model.ArchiveMode.ToString().ToLowerInvariant()" />
 
-            <div class="row gy-3">
-                <div class="col-md-6 col-xl-2">
+            <div class="row g-2">
+                <div class="col-sm-6 col-lg-4 col-xxl-2">
                     <label class="form-label" for="submissionManagementCongressId">@L[SubmissionManagementResourceKeys.FilterCongressLabel]</label>
                     <select id="submissionManagementCongressId" name="congressId" class="form-select js-submission-management-filter">
                         <option value="">
@@ -102,7 +106,7 @@
                         }
                     </select>
                 </div>
-                <div class="col-md-6 col-xl-2">
+                <div class="col-sm-6 col-lg-4 col-xxl-2">
                     <label class="form-label" for="submissionManagementSubmissionTypeId">@L[SubmissionManagementResourceKeys.FilterSubmissionTypeLabel]</label>
                     <select id="submissionManagementSubmissionTypeId" name="submissionTypeId" class="form-select js-submission-management-filter">
                         <option value="">@L[SubmissionManagementResourceKeys.FilterAllSubmissionTypes]</option>
@@ -112,7 +116,7 @@
                         }
                     </select>
                 </div>
-                <div class="col-md-6 col-xl-2">
+                <div class="col-sm-6 col-lg-4 col-xxl-2">
                     <label class="form-label" for="submissionManagementTopicId">@L[SubmissionManagementResourceKeys.FilterTopicLabel]</label>
                     <select id="submissionManagementTopicId" name="topicId" class="form-select js-submission-management-filter">
                         <option value="">@L[SubmissionManagementResourceKeys.FilterAllTopics]</option>
@@ -122,7 +126,7 @@
                         }
                     </select>
                 </div>
-                <div class="col-md-6 col-xl-2">
+                <div class="col-sm-6 col-lg-4 col-xxl-2">
                     <label class="form-label" for="submissionManagementPaymentStatusId">@L[SubmissionManagementResourceKeys.FilterPaymentLabel]</label>
                     <select id="submissionManagementPaymentStatusId" name="paymentStatusId" class="form-select js-submission-management-filter">
                         <option value="">@L[SubmissionManagementResourceKeys.FilterAllPaymentStatuses]</option>
@@ -132,7 +136,7 @@
                         }
                     </select>
                 </div>
-                <div class="col-md-6 col-xl-2">
+                <div class="col-sm-6 col-lg-4 col-xxl-2">
                     <label class="form-label" for="submissionManagementTransactionStatusId">@L[SubmissionManagementResourceKeys.FilterStatusLabel]</label>
                     <select id="submissionManagementTransactionStatusId" name="transactionStatusId" class="form-select js-submission-management-filter">
                         <option value="">@L[SubmissionManagementResourceKeys.FilterAllStatuses]</option>
@@ -142,7 +146,7 @@
                         }
                     </select>
                 </div>
-                <div class="col-md-6 col-xl-2">
+                <div class="col-sm-6 col-lg-4 col-xxl-2">
                     <label class="form-label" for="submissionManagementOwnerMultiplicity">@L[SubmissionManagementResourceKeys.FilterOwnerMultiplicityLabel]</label>
                     <select id="submissionManagementOwnerMultiplicity" name="ownerMultiplicity" class="form-select js-submission-management-filter">
                         <option value="0" selected="@(Model.OwnerMultiplicity == SubmissionOwnerMultiplicityFilter.All)">
@@ -157,7 +161,7 @@
                     </select>
                 </div>
             </div>
-            <div class="d-flex align-items-center justify-content-end gap-2 mt-24">
+            <div class="d-flex align-items-center justify-content-end gap-2 mt-16">
                 <button id="submissionManagementResetFilters" class="btn btn-outline-neutral-500 radius-8" type="button">
                     <i class="ri-refresh-line me-1"></i>@L[SubmissionManagementResourceKeys.ResetFilters]
                 </button>
@@ -168,20 +172,20 @@
         </div>
     </div>
 
-    <div class="card basic-data-table">
+    <div class="submission-management-list basic-data-table">
         <div class="card-header border-bottom bg-base py-20">
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                 <div>
                     <h5 class="mb-0">@L[SubmissionManagementResourceKeys.ListTitle]</h5>
                 </div>
-                <span class="badge bg-primary-50 text-primary-600 rounded-pill">
+                <span class="badge bg-primary-50 text-primary-600 radius-4">
                     <i class="ri-file-list-3-line me-1"></i>
                     <span data-submission-list-count>@totalCount</span> @L.GetStringValue("Common.Records")
                 </span>
             </div>
         </div>
         <div class="card-body">
-            <div class="table-responsive">
+            <div class="submission-management-table-wrap">
                 <table class="table bordered-table table-sm mb-0 align-middle w-100 js-submissions-data-table"
                        id="managementSubmissionsTable"
                        data-mode="management"
@@ -216,7 +220,7 @@
                         <th>@L[SubmissionManagementResourceKeys.ColumnManage]</th>
                         <th>@L[SubmissionManagementResourceKeys.ColumnRowNumber]</th>
                         <th>@L[SubmissionManagementResourceKeys.ColumnSubmissionNumber]</th>
-                        <th>@L[SubmissionManagementResourceKeys.ColumnSubmissionTitle]</th>
+                        <th class="submission-title-head">@L[SubmissionManagementResourceKeys.ColumnSubmissionTitle]</th>
                         <th>@L[SubmissionManagementResourceKeys.ColumnCongress]</th>
                         <th>@L[SubmissionManagementResourceKeys.ColumnTypeTopic]</th>
                         <th>@L[SubmissionManagementResourceKeys.ColumnSubmissionOwner]</th>
@@ -230,6 +234,8 @@
             </div>
         </div>
     </div>
+    </div>
+    </section>
 </div>
 
 @functions {

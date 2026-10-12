@@ -28,3 +28,9 @@ public sealed class ParticipationCertificateRevokeRequest
     public Guid CertificateId { get; set; }
     public string? Reason { get; set; }
 }
+
+public sealed class ParticipationCertificateBulkRevokeRequest
+{
+    public List<Guid> CertificateIds { get; set; } = new();
+    public string? Reason { get; set; }
+}

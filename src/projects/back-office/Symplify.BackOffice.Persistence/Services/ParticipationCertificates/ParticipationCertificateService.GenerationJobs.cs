@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Core.Application.Storage;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Symplify.BackOffice.Application.Common.Storage;
 using Symplify.BackOffice.Application.Features.ParticipationCertificates.Services;
 using Symplify.BackOffice.Domain.Enums;
@@ -181,6 +182,13 @@ public sealed partial class ParticipationCertificateService
         }
         catch (Exception exception)
         {
+            _logger.LogError(
+                exception,
+                "Participation certificate generation job failed. JobId: {JobId}, CongressId: {CongressId}, Culture: {Culture}",
+                job.Id,
+                job.CongressId,
+                job.Culture);
+
             _context.ChangeTracker.Clear();
             ParticipationCertificateGenerationJob? failedJob = await _context.ParticipationCertificateGenerationJobs
                 .FirstOrDefaultAsync(item => item.Id == job.Id, CancellationToken.None);
@@ -335,6 +343,8 @@ public sealed partial class ParticipationCertificateService
         if (string.IsNullOrWhiteSpace(certificateBodyText))
             throw new InvalidOperationException("Sertifika metni boş olduğu için üretim işi çalıştırılamadı.");
 
+        CongressInfo congressInfo = await ResolveCongressAsync(job.CongressId, job.Culture, cancellationToken);
+
         byte[] templateBytes = await ReadRequiredObjectBytesAsync(
             template.BucketName,
             template.ObjectName,
@@ -426,7 +436,12 @@ public sealed partial class ParticipationCertificateService
                 .ToListAsync(cancellationToken);
             Dictionary<(Guid SubmissionId, Guid AuthorId), ParticipationCertificate> certificateMap = existingCertificates
                 .GroupBy(item => (item.SubmissionId, item.AuthorId))
-                .ToDictionary(group => group.Key, group => group.OrderByDescending(item => item.GeneratedAt).First());
+                .ToDictionary(
+                    group => group.Key,
+                    group => group
+                        .OrderBy(item => item.DeletedDate.HasValue || item.RevokedAt.HasValue)
+                        .ThenByDescending(item => item.GeneratedAt)
+                        .First());
 
             List<SubmissionFile> existingFiles = await _context.SubmissionFiles
                 .IgnoreQueryFilters()
@@ -445,12 +460,33 @@ public sealed partial class ParticipationCertificateService
                 try
                 {
                     DateTime generatedAt = DateTime.UtcNow;
+                    certificateMap.TryGetValue(
+                        (item.SubmissionId, item.AuthorId),
+                        out ParticipationCertificate? certificate);
+
+                    bool createNewCertificate = certificate is null || certificate.RevokedAt.HasValue || certificate.DeletedDate.HasValue;
+                    Guid verificationPublicId = createNewCertificate
+                        ? Guid.NewGuid()
+                        : certificate!.PublicId ?? Guid.NewGuid();
+                    string verificationCode = createNewCertificate || string.IsNullOrWhiteSpace(certificate?.VerificationCode)
+                        ? BuildParticipationCertificateVerificationCode(congressInfo.Code, item.SubmissionNumber)
+                        : certificate!.VerificationCode!;
+                    string verificationUrl = _publicUrlService.Build(
+                        $"/public/certificates/verify/{Uri.EscapeDataString(verificationCode)}");
+
                     byte[] pdfBytes = _pdfRenderer.Render(new ParticipationCertificatePdfRenderRequest
                     {
                         TemplatePdfBytes = templateBytes,
                         AuthorFullName = item.AuthorDisplayName,
                         SubmissionTypeName = item.SubmissionTypeName,
-                        CertificateText = BuildCertificateText(certificateBodyText, item.SubmissionTypeName),
+                        CertificateText = BuildCertificateText(
+                            certificateBodyText,
+                            item.AuthorDisplayName,
+                            item.AuthorInstitution,
+                            item.SubmissionNumber,
+                            item.SubmissionTitle,
+                            item.SubmissionTypeName,
+                            congressInfo),
                         NameBoxX = template.NameBoxX,
                         NameBoxY = template.NameBoxY,
                         NameBoxWidth = template.NameBoxWidth,
@@ -467,7 +503,9 @@ public sealed partial class ParticipationCertificateService
                         CommitteeSignatureBoxHeight = template.CommitteeSignatureBoxHeight,
                         CommitteeSignerFullName = signer?.FullName ?? string.Empty,
                         CommitteeSignerAcademicTitle = signer?.AcademicTitle,
-                        CommitteeSignerRole = signer?.RoleTitle
+                        CommitteeSignerRole = signer?.RoleTitle,
+                        VerificationUrl = verificationUrl,
+                        VerificationCode = verificationCode
                     });
 
                     string submissionPart = NormalizeFileNamePart(item.SubmissionNumber);
@@ -502,16 +540,12 @@ public sealed partial class ParticipationCertificateService
                         },
                         cancellationToken);
 
-                    certificateMap.TryGetValue(
-                        (item.SubmissionId, item.AuthorId),
-                        out ParticipationCertificate? certificate);
-
                     string? previousObjectName = certificate?.ObjectName;
 
-                    if (certificate is null || certificate.RevokedAt.HasValue || certificate.DeletedDate.HasValue)
+                    if (createNewCertificate)
                     {
                         // Kaldırılmış belgenin audit kaydını ve eski public linkinin 410 Gone
-                        // davranışını koru. Yeni üretim için yeni bir aktif kayıt oluştur.
+                        // davranışını koru. Yeni üretimde yeni PublicId ile yeni aktif kayıt oluştur.
                         certificate = new ParticipationCertificate
                         {
                             Id = Guid.NewGuid(),
@@ -545,7 +579,8 @@ public sealed partial class ParticipationCertificateService
                     certificate.EmailSentAt = null;
                     certificate.EmailStatus = "Generated";
                     certificate.EmailError = null;
-                    certificate.PublicId = null;
+                    certificate.PublicId = verificationPublicId;
+                    certificate.VerificationCode = verificationCode;
                     certificate.PublicAccessTokenHash = null;
                     certificate.PublishedAt = null;
                     certificate.RevokedAt = null;

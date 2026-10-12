@@ -22,6 +22,12 @@ public sealed class MailDeliveryListItemDto
     public DateTime CreatedAt { get; set; }
     public DateTime? SentAt { get; set; }
     public DateTime? DeliveredAt { get; set; }
+    public int SesOpenCount { get; set; }
+    public DateTime? SesFirstOpenedAt { get; set; }
+    public DateTime? SesLastOpenedAt { get; set; }
+    public int SesClickCount { get; set; }
+    public DateTime? SesFirstClickedAt { get; set; }
+    public DateTime? SesLastClickedAt { get; set; }
     public string? LastError { get; set; }
     public string? DeliveryDiagnosticCode { get; set; }
 }

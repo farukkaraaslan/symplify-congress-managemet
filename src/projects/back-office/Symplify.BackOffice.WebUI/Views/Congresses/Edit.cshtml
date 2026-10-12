@@ -234,6 +234,27 @@
                                 <span asp-validation-for="EndDate"
                                       class="text-danger text-sm"></span>
                             </div>
+
+                            <div class="col-12">
+                                <div class="border rounded-3 p-16 d-flex align-items-center justify-content-between gap-3">
+                                    <div>
+                                        <label class="form-label text-sm fw-semibold mb-1"
+                                               asp-for="IsAuthorVideoUploadEnabled">
+                                            @L["BackOffice.Congresses.Fields.AuthorVideoUpload"]
+                                        </label>
+                                        <p class="text-neutral-500 text-sm mb-0">
+                                            @L["BackOffice.Congresses.Help.AuthorVideoUpload"]
+                                        </p>
+                                    </div>
+
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input"
+                                               asp-for="IsAuthorVideoUploadEnabled"
+                                               type="checkbox"
+                                               role="switch" />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>

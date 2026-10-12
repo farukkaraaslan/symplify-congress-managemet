@@ -1,0 +1,124 @@
+/* Program Management – single workspace card, balanced filters, OBS-aligned section rhythm */
+#programManagementRoot { --program-border: var(--border-color, #e5eaf1); }
+#programManagementRoot .program-page-heading { padding-top: 4px; }
+#programManagementRoot .program-page-heading h2 { font-size: clamp(2rem, 2.4vw, 2.55rem); line-height: 1.15; letter-spacing: -.03em; color: var(--text-primary-light, inherit); }
+#programManagementRoot .program-page-heading p { font-size: .95rem; line-height: 1.6; max-width: 980px; }
+#programManagementRoot .program-congress-card,
+#programManagementRoot .program-setup-card,
+#programManagementRoot .program-workspace-body { border: 1px solid var(--program-border) !important; box-shadow: 0 8px 24px rgba(15, 23, 42, .04); overflow: hidden; }
+#programManagementRoot .program-workspace-top { border-bottom: 0 !important; border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; }
+#programManagementRoot .program-workspace-body { border-top-left-radius: 0 !important; border-top-right-radius: 0 !important; }
+#programManagementRoot .program-congress-card .card-body { padding: 22px 24px !important; }
+#programManagementRoot .program-congress-form { align-items: end; }
+#programManagementRoot .program-congress-meta-col { display: flex; align-items: end; justify-content: end; }
+#programManagementRoot .program-congress-meta { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+#programManagementRoot .program-summary-pill { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 8px 12px; background: var(--primary-50, rgba(72,127,255,.08)); color: var(--text-primary-light, inherit); border: 1px solid var(--program-border); border-radius: 8px; font-size: .85rem; }
+#programManagementRoot .program-setup-card > .card-header { padding: 20px 24px !important; }
+#programManagementRoot .program-setup-card > .collapse > .card-body { padding: 24px !important; }
+#programManagementRoot .program-setup-card .card-header h5 { font-size: 1.2rem; }
+#programManagementRoot .program-settings-section { border: 1px solid var(--program-border) !important; border-radius: 10px !important; box-shadow: none !important; overflow: hidden; }
+#programManagementRoot .program-settings-section > .card-header { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 12px; padding: 16px 20px !important; background: var(--white, var(--bs-body-bg, #fff)) !important; }
+#programManagementRoot .program-settings-section > .card-body { padding: 20px !important; }
+#programManagementRoot .program-filter-section { background: var(--white, var(--bs-body-bg, #fff)) !important; }
+#programManagementRoot .program-filter-toolbar { margin-bottom: 20px !important; }
+#programManagementRoot .program-filter-toolbar__summary { font-size: .875rem; font-weight: 500; }
+#programManagementRoot .program-filter-grid > [class*='col-'] { display: flex; flex-direction: column; }
+#programManagementRoot .program-filter-grid .form-label { min-height: 22px; font-size: .83rem; margin-bottom: 6px; }
+#programManagementRoot .program-filter-grid .form-select,
+#programManagementRoot .program-filter-grid .form-control,
+#programManagementRoot .program-settings-section .form-select,
+#programManagementRoot .program-settings-section .form-control { min-height: 42px; border-radius: 8px; }
+#programManagementRoot .program-filter-grid .input-group > .input-group-text { min-height: 42px; border-radius: 8px 0 0 8px; }
+#programManagementRoot .program-filter-grid .input-group > .form-control { border-radius: 0 8px 8px 0; }
+#programManagementRoot .program-settings-section h6,
+#programManagementRoot .program-settings-section h5 { line-height: 1.35; }
+#programManagementRoot .program-settings-section .text-sm { line-height: 1.55; }
+#programManagementRoot .program-room-option { border-radius: 8px !important; cursor: pointer; transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease; }
+#programManagementRoot .program-room-option:has(input:checked) { border-color: var(--primary-600, var(--bs-primary, #487fff)) !important; background-color: var(--primary-50, rgba(72,127,255,.08)) !important; box-shadow: 0 0 0 1px rgba(72,127,255,.08); }
+#programManagementRoot .program-option-tile { border-radius: 8px !important; border: 1px solid var(--program-border) !important; }
+#programManagementRoot .program-schedule-preview { border-radius: 8px !important; }
+#programManagementRoot .badge { border-radius: 6px !important; }
+@media (max-width: 991.98px) {
+  #programManagementRoot .program-congress-meta-col { justify-content: start; }
+  #programManagementRoot .program-congress-meta { justify-content: flex-start; }
+}
+@media (max-width: 767.98px) {
+  #programManagementRoot .program-page-heading h2 { font-size: 1.75rem; }
+  #programManagementRoot .program-congress-card .card-body,
+  #programManagementRoot .program-setup-card > .collapse > .card-body { padding: 16px !important; }
+  #programManagementRoot .program-setup-card > .card-header,
+  #programManagementRoot .program-settings-section > .card-header,
+  #programManagementRoot .program-settings-section > .card-body { padding-left: 16px !important; padding-right: 16px !important; }
+}
+
+/* One congress + submission filter surface */
+#programManagementRoot .program-congress-card.program-workspace-top { border-radius: 12px 12px 0 0 !important; border-bottom: 0 !important; }
+#programManagementRoot .program-filter-content { border: 1px solid var(--program-border); border-top: 0; border-radius: 0 0 12px 12px; background: var(--white, var(--bs-body-bg, #fff)); padding: 0 24px 24px; }
+#programManagementRoot .program-generate-area { border-top: 1px solid var(--program-border); padding-top: 22px; }
+#programManagementRoot .program-inline-filter { padding: 0; background: transparent; border: 0; }
+#programManagementRoot .program-inline-filter > .card-body { padding: 0 !important; }
+#programManagementRoot .program-filter-toolbar { margin-bottom: 18px !important; }
+#programManagementRoot .program-filter-grid > [class*="col-"] { min-width: 0; }
+#programManagementRoot .program-filter-grid .form-control, #programManagementRoot .program-filter-grid .form-select, #programManagementRoot .program-filter-grid .input-group { width: 100%; }
+#programManagementRoot .program-filter-grid .ts-wrapper { width: 100%; }
+#programManagementRoot .program-filter-grid .select2-container { width: 100% !important; }
+#programManagementRoot .program-filter-grid .program-multiselect { width: 100%; }
+#programManagementRoot .program-congress-meta { justify-content: flex-end; }
+#programManagementRoot .program-filter-content .row.g-4 { --bs-gutter-y: 20px; }
+#programManagementRoot .program-filter-content .program-settings-section { margin-top: 8px; }
+@media (max-width: 767.98px) { #programManagementRoot .program-filter-content { padding: 0 16px 16px; } }
+
+/* Integrated congress + submission filters: one visual surface */
+#programManagementRoot .program-congress-card.program-workspace-top { border: 1px solid var(--program-border) !important; border-radius: 10px !important; overflow: visible; }
+#programManagementRoot .program-congress-card > .card-body { padding-bottom: 0 !important; }
+#programManagementRoot .program-congress-form { padding-bottom: 18px; }
+#programManagementRoot .program-filter-content { border: 0 !important; border-top: 1px solid var(--program-border) !important; border-radius: 0 !important; padding: 18px 24px 24px; }
+#programManagementRoot .program-generate-area { border: 0 !important; padding-top: 0 !important; }
+#programManagementRoot .program-unified-heading h5 { font-size: 1.2rem; }
+#programManagementRoot .program-filter-actions { margin-top: -7px; }
+#programManagementRoot .program-filter-grid > [class*="col-"] { display: flex; flex-direction: column; min-width: 0; }
+#programManagementRoot .program-filter-grid .form-control,
+#programManagementRoot .program-filter-grid .form-select { box-sizing: border-box; width: 100%; min-width: 0; height: 44px; min-height: 44px; margin: 0; }
+#programManagementRoot .program-filter-grid input[type="search"] { display: block; width: 100%; min-width: 0; background-image: none; }
+#programManagementRoot .program-filter-grid .ts-wrapper,
+#programManagementRoot .program-filter-grid .select2-container { width: 100% !important; min-width: 0 !important; }
+#programManagementRoot .program-filter-grid .form-label { display: block; min-height: 20px; margin: 0 0 7px; }
+@media (max-width: 767.98px) { #programManagementRoot .program-filter-content { padding: 16px; } }
+
+/* Final: header statistics above the integrated col-4 filter grid */
+#programManagementRoot .program-workspace-top.program-congress-card { overflow: hidden !important; }
+#programManagementRoot .program-workspace-top-body { padding: 20px 24px 14px !important; }
+#programManagementRoot .program-unified-heading { margin: 0 !important; padding: 0 !important; }
+#programManagementRoot .program-top-stats { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+#programManagementRoot .program-top-stats .program-summary-pill { min-height: 32px; border-radius: 5px; padding: 5px 10px; }
+#programManagementRoot .program-clear-filters { min-width: 32px; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 5px; padding: 4px 8px; }
+#programManagementRoot .program-filter-content { border-top: 0 !important; padding: 0 24px 24px !important; }
+#programManagementRoot .program-filter-content .program-inline-filter > .card-body { padding: 0 !important; }
+#programManagementRoot .program-filter-content .program-filter-grid { --bs-gutter-x: 16px; --bs-gutter-y: 16px; }
+#programManagementRoot .program-filter-grid > [class*="col-"] { min-width: 0; }
+#programManagementRoot .program-filter-grid .form-label { min-height: 0 !important; margin-bottom: 7px !important; }
+#programManagementRoot .program-filter-grid .form-control,
+#programManagementRoot .program-filter-grid .form-select,
+#programManagementRoot .program-filter-grid .ts-control,
+#programManagementRoot .program-filter-grid .select2-selection { min-height: 42px !important; }
+@media (max-width: 767.98px) {
+  #programManagementRoot .program-workspace-top-body { padding: 16px 16px 12px !important; }
+  #programManagementRoot .program-filter-content { padding: 0 16px 16px !important; }
+  #programManagementRoot .program-top-stats { justify-content: flex-start; }
+}
+
+/* Three program settings blocks side-by-side on wide desktop; no clipped fields. */
+@media (min-width: 1200px) {
+  #programManagementRoot .program-setting-column { min-width: 0; }
+  #programManagementRoot .program-setting-column > .program-settings-section { width: 100%; height: 100%; }
+  #programManagementRoot .program-setting-column .card-header { align-items: start; }
+  #programManagementRoot .program-setting-column .card-header p { font-size: .75rem; line-height: 1.4; }
+  #programManagementRoot .program-section-room .card-body > .mb-18 .row > [class*="col-"] { flex: 0 0 50%; max-width: 50%; }
+  #programManagementRoot .program-section-room .card-body > .row > [class*="col-"] { flex: 0 0 50%; max-width: 50%; }
+  #programManagementRoot .program-section-session .card-body > .row > [class*="col-"] { flex: 0 0 100%; max-width: 100%; }
+  #programManagementRoot .program-section-fixed .card-body > .row > [class*="col-"] { flex: 0 0 100%; max-width: 100%; }
+  #programManagementRoot .program-section-fixed .card-body > .row > [class*="col-"] .row > [class*="col-"] { flex: 0 0 100%; max-width: 100%; }
+}
+#programManagementRoot .program-setting-column .card-body .row > [class*="col-"] { min-width: 0; }
+#programManagementRoot .program-setting-column .form-control,
+#programManagementRoot .program-setting-column .form-select { width: 100%; min-width: 0; }

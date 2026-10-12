@@ -1,0 +1,304 @@
+/* ============================== theme customization Css start ============================ */
+@use "../abstracts/function";
+
+/*
+ * Tema paneli ana arayüz yoğunluğuyla birlikte ölçeklenir.
+ * 24rem => standart (15px root) yaklaşık 360px.
+ * Kullanıcı Aa boyutunu değiştirince panel genişliği, boşlukları ve kontrolleri de değişir.
+ */
+.theme-customization-sidebar {
+    width: min(94vw, 24rem) !important;
+    max-width: min(94vw, 24rem);
+    z-index: 9999;
+    transform: translateX(100%);
+    transition: .3s linear;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden !important;
+
+    &.active {
+        transform: translateX(0);
+    }
+
+    > .d-flex:first-child {
+        flex: 0 0 auto;
+        padding: function.rem(12px) function.rem(18px) !important;
+    }
+
+    > .d-flex.flex-column {
+        min-height: 0;
+        flex: 1 1 auto;
+        gap: function.rem(18px) !important;
+        padding: function.rem(14px) function.rem(18px) function.rem(18px) !important;
+        overflow-y: auto !important;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
+    }
+
+    .theme-setting-item > h6 {
+        margin-bottom: function.rem(8px) !important;
+    }
+
+    .theme-setting-item > p {
+        margin-bottom: function.rem(8px) !important;
+        line-height: 1.35;
+    }
+
+    /* Eski ferah düzen korunuyor; yalnızca yükseklikler kurumsal yoğunlukta. */
+    .gap-48 { gap: function.rem(18px) !important; }
+    .p-24 { padding: function.rem(18px) !important; }
+    .h-64-px { height: function.rem(48px) !important; }
+    .h-56-px { height: function.rem(42px) !important; }
+
+    .theme-setting-item:nth-child(3) .color-picker-btn__box,
+    .theme-setting-item:nth-child(3) .h-40-px {
+        height: function.rem(30px) !important;
+    }
+
+    .theme-setting-item:nth-child(4) .font-btn {
+        min-height: function.rem(40px);
+        height: function.rem(40px) !important;
+        padding-inline: function.rem(8px);
+    }
+
+    .ui-size-btn {
+        min-height: function.rem(48px);
+        padding: function.rem(5px) function.rem(3px);
+    }
+}
+
+@media (max-width: 991px) {
+    .theme-customization-sidebar {
+        width: min(94vw, 22rem) !important;
+        max-width: min(94vw, 22rem);
+
+        > .d-flex:first-child {
+            padding: function.rem(10px) function.rem(15px) !important;
+        }
+
+        > .d-flex.flex-column {
+            gap: function.rem(15px) !important;
+            padding: function.rem(12px) function.rem(15px) function.rem(15px) !important;
+        }
+    }
+}
+
+.grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.theme-customization__button {
+    position: fixed;
+    inset-inline-end: 0;
+    inset-block-start: calc(35% - #{function.rem(24px)});
+    inset-block-end: auto;
+    top: calc(35% - #{function.rem(24px)}) !important;
+    right: 0 !important;
+    bottom: auto !important;
+    left: auto !important;
+    margin: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 0 !important;
+    width: function.rem(56px);
+    height: function.rem(48px);
+    border-radius: function.rem(50px) 0 0 function.rem(50px) !important;
+    z-index: 9999;
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 function.rem(10px) function.rem(22px) rgba(15, 23, 42, 0.18);
+
+    &:hover {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.theme-setting-item__btn {
+    border: 1px solid var(--control-border);
+    border-radius: var(--rounded-12);
+    background-color: var(--surface-base);
+    padding: function.rem(10px);
+    transition: .3s linear;
+
+    &:hover {
+        color: var(--primary-600) !important;
+        border-color: var(--primary-600) !important;
+        background-color: var(--surface-brand-subtle) !important;
+    }
+
+    &.active {
+        color: var(--primary-600) !important;
+        border-color: var(--primary-600) !important;
+        outline: 2px solid var(--primary-600) !important;
+    }
+}
+
+.dark-light-mode {
+    .theme-btn.theme-setting-item__btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .theme-btn[data-theme="light"] {
+        background-color: var(--surface-base) !important;
+        border-color: var(--control-border) !important;
+        color: var(--text-primary) !important;
+    }
+
+    .theme-btn[data-theme="dark"] {
+        background-color: var(--dark-2) !important;
+        border-color: rgba(255, 255, 255, 0.14) !important;
+        color: rgba(255, 255, 255, 0.9) !important;
+
+        &:hover {
+            background-color: color-mix(in srgb, var(--primary-600) 12%, var(--dark-2)) !important;
+        }
+
+        &.active {
+            background-color: color-mix(in srgb, var(--primary-600) 10%, var(--dark-2)) !important;
+        }
+    }
+}
+
+[data-theme="dark"] {
+    .dark-light-mode {
+        .theme-btn[data-theme="light"] {
+            background-color: color-mix(in srgb, #fff 14%, var(--dark-2)) !important;
+            border-color: rgba(255, 255, 255, 0.14) !important;
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+    }
+}
+
+.font-btn {
+    font-weight: 600;
+    font-size: function.rem(13px);
+}
+
+.font-option--manrope {
+    font-family: var(--font-manrope);
+}
+
+.font-option--inter {
+    font-family: var(--font-inter);
+}
+
+.font-option--plus-jakarta-sans {
+    font-family: var(--font-plus-jakarta-sans);
+}
+
+.font-option--dm-sans {
+    font-family: var(--font-dm-sans);
+}
+
+.font-option--segoe-ui { font-family: var(--font-segoe-ui); }
+.font-option--arial { font-family: var(--font-arial); }
+.font-option--tahoma { font-family: var(--font-tahoma); }
+.font-option--verdana { font-family: var(--font-verdana); }
+
+.ui-size-selector {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: function.rem(6px);
+}
+
+.ui-size-btn {
+    min-width: 0;
+    min-height: function.rem(48px);
+    padding: function.rem(6px) function.rem(3px);
+    border: 1px solid var(--control-border);
+    border-radius: var(--rounded-8);
+    background: var(--surface-base);
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: function.rem(3px);
+    transition: .18s ease;
+
+    &:hover {
+        border-color: var(--primary-600);
+        background: var(--surface-brand-subtle);
+        color: var(--primary-700);
+    }
+
+    &.active {
+        border-color: var(--primary-600);
+        background: var(--surface-brand-subtle);
+        color: var(--primary-700);
+        box-shadow: inset 0 0 0 1px var(--primary-600);
+    }
+}
+
+.ui-size-btn__sample {
+    color: inherit;
+    font-weight: 750;
+    line-height: 1;
+}
+.ui-size-btn__label {
+    color: inherit;
+    font-size: function.rem(9px);
+    font-weight: 650;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+.ui-size-btn[data-ui-size="compact"] .ui-size-btn__sample { font-size: 12px; }
+.ui-size-btn[data-ui-size="small"] .ui-size-btn__sample { font-size: 13px; }
+.ui-size-btn[data-ui-size="standard"] .ui-size-btn__sample { font-size: 14px; }
+.ui-size-btn[data-ui-size="large"] .ui-size-btn__sample { font-size: 16px; }
+.ui-size-btn[data-ui-size="xlarge"] .ui-size-btn__sample { font-size: 18px; }
+
+[data-theme="dark"] .theme-setting-item__btn {
+    border-color: #ffffff33 !important;
+}
+
+[dir="rtl"] {
+    .theme-customization-sidebar {
+        transform: translateX(-100%);
+
+        &.active {
+            transform: translateX(0);
+        }
+    }
+}
+
+.color-picker-btn__box {
+    position: relative;
+
+    &::before {
+        position: absolute;
+        content: "\EB7B";
+        font-family: "remixicon";
+        font-weight: 400;
+        inset-inline-start: 50%;
+        inset-block-start: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        font-size: 24px;
+        color: #fff;
+        transition: .2s ease-in-out;
+    }
+}
+
+.color-picker-btn {
+    &.active {
+        .color-picker-btn__box {
+            outline: 2px solid var(--primary-600);
+            outline-offset: 3px;
+
+            &::before {
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+    }
+}
+
+
+/* ============================== theme customization Css End ============================ */

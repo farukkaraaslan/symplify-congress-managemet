@@ -18,6 +18,8 @@
     string programDayLabel = L["BackOffice.ProgramManagement.Day"].ToString();
 }
 
+<link rel="stylesheet" href="~/css/features/program-management.css" asp-append-version="true" />
+
 <div class="dashboard-main-body"
      id="programManagementRoot"
      data-congress-id="@(Model.Page.SelectedCongressId?.ToString() ?? string.Empty)"
@@ -34,9 +36,9 @@
      data-session-officials-url="@Url.Action("UpdateSessionOfficials", "ProgramManagement", new { culture })"
      data-same-official-error="@L["BackOffice.ProgramManagement.SameOfficialError"]">
 
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24 program-page-heading">
         <div>
-            <h6 class="fw-semibold mb-1">@L["BackOffice.ProgramManagement.PageTitle"]</h6>
+            <h2 class="fw-semibold mb-2">@L["BackOffice.ProgramManagement.PageTitle"]</h2>
             <p class="text-neutral-500 mb-0">@L["BackOffice.ProgramManagement.PageDescription"]</p>
         </div>
         @if (plan is not null)
@@ -56,55 +58,31 @@
         <div class="alert alert-danger border-danger-100 text-danger-700 mb-24">@TempData["ErrorMessage"]</div>
     }
 
-    <div class="card border-0 radius-12 mb-24">
-        <div class="card-body p-24">
-            <form method="get" asp-action="Index" asp-controller="ProgramManagement" asp-route-culture="@culture" class="row g-3 align-items-end">
-                <div class="col-lg-8">
-                    <label class="form-label fw-semibold">@L["BackOffice.ProgramManagement.Congress"]</label>
-                    <select class="form-select" name="congressId" onchange="this.form.submit()">
-                        @foreach (ProgramCongressOptionDto congress in Model.Page.Congresses)
-                        {
-                            <option value="@congress.Id" selected="@(Model.Page.SelectedCongressId == congress.Id ? "selected" : null)">
-                                @congress.Name
-                                @if (congress.StartDate.HasValue)
-                                {
-                                    <text> (@congress.StartDate.Value.ToString("dd.MM.yyyy") - @(congress.EndDate?.ToString("dd.MM.yyyy") ?? "?"))</text>
-                                }
-                            </option>
-                        }
-                    </select>
-                </div>
-                <div class="col-lg-4 text-lg-end">
-                    @if (source is not null)
-                    {
-                        <span class="text-sm text-neutral-600">
-                            @L["BackOffice.ProgramManagement.TotalActiveSubmissions"]: <strong>@source.AllSubmissions.Count</strong>
-                            · @L["BackOffice.ProgramManagement.Rooms"]: <strong>@source.Rooms.Count</strong>
-                        </span>
-                    }
-                </div>
-            </form>
+    <div class="card border-0 radius-12 mb-0 program-congress-card program-workspace-top">
+        <div class="card-body p-24 program-workspace-top-body">
+            <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap program-unified-heading">
+                <h5 class="mb-0 d-flex align-items-center gap-2"><i class="ri-filter-3-line text-primary-600"></i>@L["BackOffice.ProgramManagement.SubmissionScope"]</h5>
+                @if (source is not null)
+                {
+                    <div class="program-top-stats">
+                        <span class="program-summary-pill">@L["BackOffice.ProgramManagement.FilteredSubmissionCount"] <strong id="programFilteredSubmissionCount">0</strong> / @source.AllSubmissions.Count</span>
+                        <span class="program-summary-pill">@L["BackOffice.ProgramManagement.TotalActiveSubmissions"]: <strong>@source.AllSubmissions.Count</strong></span>
+                        <span class="program-summary-pill">@L["BackOffice.ProgramManagement.Rooms"]: <strong>@source.Rooms.Count</strong></span>
+                        <button type="button" class="btn btn-outline-secondary btn-sm program-clear-filters" id="clearProgramSubmissionFilters" title="@L["BackOffice.ProgramManagement.ClearAdditionalFilters"]" aria-label="@L["BackOffice.ProgramManagement.ClearAdditionalFilters"]"><i class="ri-filter-off-line"></i></button>
+                    </div>
+                }
+            </div>
+            @* The congress selector belongs visually to the POST filter grid but submits via its own GET form. *@
+            <form id="programCongressSelectForm" method="get" asp-action="Index" asp-controller="ProgramManagement" asp-route-culture="@culture"></form>
         </div>
-    </div>
-
+        <div class="program-filter-content">
     @if (source is null)
     {
-        <div class="card border-0 radius-12"><div class="card-body p-40 text-center text-neutral-500">@L["BackOffice.ProgramManagement.NoCongress"]</div></div>
+        <div class="p-24 text-center text-neutral-500">@L["BackOffice.ProgramManagement.NoCongress"]</div>
     }
     else
     {
-        <div class="card border-0 radius-12 mb-24">
-            <div class="card-header bg-base border-bottom py-16 px-24 d-flex align-items-center justify-content-between gap-3">
-                <div>
-                    <h6 class="mb-1">@L["BackOffice.ProgramManagement.AutomaticSetup"]</h6>
-                    <p class="text-sm text-neutral-500 mb-0">@L["BackOffice.ProgramManagement.AutomaticSetupDescription"]</p>
-                </div>
-                <button class="btn btn-outline-primary-600 btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#programSetupCollapse">
-                    <i class="ri-settings-3-line me-1"></i>@L["BackOffice.ProgramManagement.Settings"]
-                </button>
-            </div>
-            <div class="collapse @(plan is null ? "show" : string.Empty)" id="programSetupCollapse">
-                <div class="card-body p-24">
+        <div class="program-generate-area">
                     <form asp-action="Generate" asp-controller="ProgramManagement" asp-route-culture="@culture" method="post" id="programGenerateForm">
                         @Html.AntiForgeryToken()
                         <input type="hidden" asp-for="Generate.CongressId" />
@@ -112,24 +90,25 @@
 
                         <div class="row g-4">
                             <div class="col-12">
-                                <div class="card border radius-12 bg-light-subtle">
+                                <div class="program-inline-filter">
                                     <div class="card-body p-20">
-                                        <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-18">
-                                            <div>
-                                                <h6 class="mb-1 d-flex align-items-center gap-2">
-                                                    <i class="ri-filter-3-line text-primary-600"></i>@L["BackOffice.ProgramManagement.SubmissionScope"]
-                                                </h6>
-                                                <p class="text-sm text-neutral-500 mb-0">@L["BackOffice.ProgramManagement.SubmissionScopeDescription"]</p>
+                                        <div class="row g-3 program-filter-grid">
+                                            <div class="col-md-6 col-xl-4">
+                                                <label for="programCongressFilter" class="form-label fw-semibold">@L["BackOffice.ProgramManagement.Congress"]</label>
+                                                <select id="programCongressFilter" class="form-select" name="congressId" form="programCongressSelectForm" onchange="this.form.submit()">
+                                                    @foreach (ProgramCongressOptionDto congress in Model.Page.Congresses)
+                                                    {
+                                                        <option value="@congress.Id" selected="@(Model.Page.SelectedCongressId == congress.Id ? "selected" : null)">
+                                                            @congress.Name
+                                                            @if (congress.StartDate.HasValue)
+                                                            {
+                                                                <text> (@congress.StartDate.Value.ToString("dd.MM.yyyy") - @(congress.EndDate?.ToString("dd.MM.yyyy") ?? "?"))</text>
+                                                            }
+                                                        </option>
+                                                    }
+                                                </select>
                                             </div>
-                                            <span class="badge bg-primary-focus text-primary-main border border-primary-100 px-12 py-8 radius-8">
-                                                @L["BackOffice.ProgramManagement.FilteredSubmissionCount"]
-                                                <strong id="programFilteredSubmissionCount" class="ms-1">0</strong>
-                                                <span class="text-neutral-500">/ @source.AllSubmissions.Count</span>
-                                            </span>
-                                        </div>
-
-                                        <div class="row g-3">
-                                            <div class="col-lg-4">
+                                            <div class="col-md-6 col-xl-4">
                                                 <label asp-for="Generate.SubmissionScopePreset" class="form-label fw-semibold">@L["BackOffice.ProgramManagement.ScopePreset"]</label>
                                                 <select asp-for="Generate.SubmissionScopePreset" class="form-select js-program-submission-filter">
                                                     <option value="@((int)ProgramSubmissionScopePreset.AllActive)">@L["BackOffice.ProgramManagement.ScopeAllActive"]</option>
@@ -138,17 +117,7 @@
                                                     <option value="@((int)ProgramSubmissionScopePreset.AcceptedAndPaid)">@L["BackOffice.ProgramManagement.ScopeAcceptedAndPaid"]</option>
                                                 </select>
                                             </div>
-                                            <div class="col-lg-8">
-                                                <label asp-for="Generate.SubmissionSearchText" class="form-label fw-semibold">@L["BackOffice.ProgramManagement.SearchSubmissions"]</label>
-                                                <div class="input-group">
-                                                    <span class="input-group-text bg-base"><i class="ri-search-line"></i></span>
-                                                    <input asp-for="Generate.SubmissionSearchText"
-                                                           class="form-control js-program-submission-filter"
-                                                           placeholder="@L["BackOffice.ProgramManagement.SearchSubmissionsPlaceholder"]" />
-                                                </div>
-                                            </div>
-
-                                            <div class="col-md-6 col-xl-3">
+                                            <div class="col-md-6 col-xl-4">
                                                 <label asp-for="Generate.WorkflowStatusCodes" class="form-label fw-semibold">@L["BackOffice.ProgramManagement.WorkflowStatuses"]</label>
                                                 <select asp-for="Generate.WorkflowStatusCodes" multiple class="form-select js-program-submission-filter js-program-filter-multi"
                                                         data-placeholder="@L["BackOffice.ProgramManagement.WorkflowStatuses"]"
@@ -162,7 +131,7 @@
                                                     }
                                                 </select>
                                             </div>
-                                            <div class="col-md-6 col-xl-3">
+                                            <div class="col-md-6 col-xl-4">
                                                 <label asp-for="Generate.PaymentStatusIds" class="form-label fw-semibold">@L["BackOffice.ProgramManagement.PaymentStatuses"]</label>
                                                 <select asp-for="Generate.PaymentStatusIds" multiple class="form-select js-program-submission-filter js-program-filter-multi"
                                                         data-placeholder="@L["BackOffice.ProgramManagement.PaymentStatuses"]"
@@ -176,7 +145,7 @@
                                                     }
                                                 </select>
                                             </div>
-                                            <div class="col-md-6 col-xl-3">
+                                            <div class="col-md-6 col-xl-4">
                                                 <label asp-for="Generate.SubmissionTypeIds" class="form-label fw-semibold">@L["BackOffice.ProgramManagement.SubmissionTypes"]</label>
                                                 <select asp-for="Generate.SubmissionTypeIds" multiple class="form-select js-program-submission-filter js-program-filter-multi"
                                                         data-placeholder="@L["BackOffice.ProgramManagement.SubmissionTypes"]"
@@ -190,7 +159,7 @@
                                                     }
                                                 </select>
                                             </div>
-                                            <div class="col-md-6 col-xl-3">
+                                            <div class="col-md-6 col-xl-4">
                                                 <label asp-for="Generate.TopicIds" class="form-label fw-semibold">@L["BackOffice.ProgramManagement.Topics"]</label>
                                                 <select asp-for="Generate.TopicIds" multiple class="form-select js-program-submission-filter js-program-filter-multi"
                                                         data-placeholder="@L["BackOffice.ProgramManagement.Topics"]"
@@ -204,14 +173,17 @@
                                                     }
                                                 </select>
                                             </div>
+                                            <div class="col-12 col-xl-6 offset-xl-3">
+                                                <label asp-for="Generate.SubmissionSearchText" class="form-label fw-semibold">@L["BackOffice.ProgramManagement.SearchSubmissions"]</label>
+                                                <input asp-for="Generate.SubmissionSearchText"
+                                                       type="search"
+                                                       class="form-control js-program-submission-filter"
+                                                       placeholder="@L["BackOffice.ProgramManagement.SearchSubmissionsPlaceholder"]" />
+                                            </div>
+
                                         </div>
 
-                                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-16 pt-12 border-top">
-                                            <small class="text-neutral-500">@L["BackOffice.ProgramManagement.MultiSelectHelp"]</small>
-                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="clearProgramSubmissionFilters">
-                                                <i class="ri-filter-off-line me-1"></i>@L["BackOffice.ProgramManagement.ClearAdditionalFilters"]
-                                            </button>
-                                        </div>
+
 
                                         <div id="programSubmissionCandidatesData" class="d-none" aria-hidden="true">
                                             @foreach (ProgramSubmissionSourceDto submission in source.AllSubmissions)
@@ -235,8 +207,8 @@
                                 </div>
                             </div>
 
-                            <div class="col-12">
-                                <div class="card border radius-12">
+                            <div class="col-12 col-xl-4 program-setting-column program-section-room">
+                                <div class="card border radius-12 program-settings-section h-100">
                                     <div class="card-header bg-base border-bottom py-14 px-20">
                                         <h6 class="mb-1 d-flex align-items-center gap-2">
                                             <i class="ri-layout-grid-line text-primary-600"></i>@L["BackOffice.ProgramManagement.RoomAndTimeSettings"]
@@ -285,8 +257,8 @@
                                 </div>
                             </div>
 
-                            <div class="col-12">
-                                <div class="card border radius-12">
+                            <div class="col-12 col-xl-4 program-setting-column program-section-session">
+                                <div class="card border radius-12 program-settings-section h-100">
                                     <div class="card-header bg-base border-bottom py-14 px-20">
                                         <h6 class="mb-1 d-flex align-items-center gap-2">
                                             <i class="ri-equalizer-line text-primary-600"></i>@L["BackOffice.ProgramManagement.SessionOptionSettings"]
@@ -297,11 +269,11 @@
                                         <div class="row g-3">
                                             <div class="col-lg-4">
                                                 <div class="border rounded-3 p-16 bg-light-subtle h-100">
-                                                    <div class="form-check form-switch mb-14">
+                                                    <div class="form-switch switch-primary d-flex align-items-center gap-3 mb-14">
                                                         <input asp-for="Generate.IncludeQuestionAnswer"
-                                                               class="form-check-input"
+                                                               class="form-check-input" role="switch"
                                                                data-question-answer-toggle />
-                                                        <label asp-for="Generate.IncludeQuestionAnswer" class="form-check-label fw-semibold">
+                                                        <label asp-for="Generate.IncludeQuestionAnswer" class="form-check-label line-height-1 fw-medium text-secondary-light">
                                                             @L["BackOffice.ProgramManagement.IncludeQuestionAnswer"]
                                                         </label>
                                                     </div>
@@ -320,11 +292,11 @@
 
                                             <div class="col-lg-4">
                                                 <div class="border rounded-3 p-16 bg-light-subtle h-100">
-                                                    <div class="form-check form-switch mb-14">
+                                                    <div class="form-switch switch-primary d-flex align-items-center gap-3 mb-14">
                                                         <input asp-for="Generate.IncludeSessionBreaks"
-                                                               class="form-check-input"
+                                                               class="form-check-input" role="switch"
                                                                data-session-break-toggle />
-                                                        <label asp-for="Generate.IncludeSessionBreaks" class="form-check-label fw-semibold">
+                                                        <label asp-for="Generate.IncludeSessionBreaks" class="form-check-label line-height-1 fw-medium text-secondary-light">
                                                             @L["BackOffice.ProgramManagement.IncludeSessionBreak"]
                                                         </label>
                                                     </div>
@@ -354,8 +326,8 @@
                                 </div>
                             </div>
 
-                            <div class="col-12">
-                                <div class="card border radius-12">
+                            <div class="col-12 col-xl-4 program-setting-column program-section-fixed">
+                                <div class="card border radius-12 program-settings-section h-100">
                                     <div class="card-header bg-base border-bottom py-14 px-20">
                                         <h6 class="mb-1 d-flex align-items-center gap-2">
                                             <i class="ri-calendar-event-line text-primary-600"></i>@L["BackOffice.ProgramManagement.FixedBlocksSettings"]
@@ -366,9 +338,9 @@
                                         <div class="row g-3">
                                             <div class="col-lg-6">
                                                 <div class="border rounded-3 p-16 bg-light-subtle h-100">
-                                                    <div class="form-check form-switch mb-14">
-                                                        <input asp-for="Generate.IncludeOpening" class="form-check-input" />
-                                                        <label asp-for="Generate.IncludeOpening" class="form-check-label fw-semibold">@L["BackOffice.ProgramManagement.IncludeOpening"]</label>
+                                                    <div class="form-switch switch-primary d-flex align-items-center gap-3 mb-14">
+                                                        <input asp-for="Generate.IncludeOpening" class="form-check-input" role="switch" />
+                                                        <label asp-for="Generate.IncludeOpening" class="form-check-label line-height-1 fw-medium text-secondary-light">@L["BackOffice.ProgramManagement.IncludeOpening"]</label>
                                                     </div>
                                                     <div class="row g-3">
                                                         <div class="col-md-6">
@@ -396,9 +368,9 @@
 
                                             <div class="col-lg-6">
                                                 <div class="border rounded-3 p-16 bg-light-subtle h-100">
-                                                    <div class="form-check form-switch mb-14">
-                                                        <input asp-for="Generate.IncludeLunch" class="form-check-input" />
-                                                        <label asp-for="Generate.IncludeLunch" class="form-check-label fw-semibold">@L["BackOffice.ProgramManagement.IncludeLunch"]</label>
+                                                    <div class="form-switch switch-primary d-flex align-items-center gap-3 mb-14">
+                                                        <input asp-for="Generate.IncludeLunch" class="form-check-input" role="switch" />
+                                                        <label asp-for="Generate.IncludeLunch" class="form-check-label line-height-1 fw-medium text-secondary-light">@L["BackOffice.ProgramManagement.IncludeLunch"]</label>
                                                     </div>
                                                     <div class="row g-3">
                                                         <div class="col-md-5">
@@ -456,8 +428,6 @@
                             </div>
                         </div>
                     </form>
-                </div>
-            </div>
         </div>
 
         @if (plan is not null)
@@ -524,7 +494,7 @@
                                 <div class="row g-2">
                                     <div class="col-md-6 col-xl-4">
                                         <div class="form-check form-switch">
-                                            <input asp-for="Export.IncludeTableOfContents" class="form-check-input" />
+                                            <input asp-for="Export.IncludeTableOfContents" class="form-check-input" role="switch" />
                                             <label asp-for="Export.IncludeTableOfContents" class="form-check-label">
                                                 @L["BackOffice.ProgramManagement.IncludeTableOfContents"]
                                             </label>
@@ -532,7 +502,7 @@
                                     </div>
                                     <div class="col-md-6 col-xl-4">
                                         <div class="form-check form-switch">
-                                            <input asp-for="Export.IncludeScheduleTimes" class="form-check-input" />
+                                            <input asp-for="Export.IncludeScheduleTimes" class="form-check-input" role="switch" />
                                             <label asp-for="Export.IncludeScheduleTimes" class="form-check-label">
                                                 @L["BackOffice.ProgramManagement.IncludeScheduleTimes"]
                                             </label>
@@ -540,7 +510,7 @@
                                     </div>
                                     <div class="col-md-6 col-xl-4">
                                         <div class="form-check form-switch">
-                                            <input asp-for="Export.IncludeBoards" class="form-check-input" />
+                                            <input asp-for="Export.IncludeBoards" class="form-check-input" role="switch" />
                                             <label asp-for="Export.IncludeBoards" class="form-check-label">
                                                 @L["BackOffice.ProgramManagement.IncludeBoards"]
                                             </label>
@@ -934,6 +904,9 @@
             </div>
         </div>
     }
+
+        </div>
+    </div>
 
     <form id="programAjaxTokenForm" class="d-none">@Html.AntiForgeryToken()</form>
 </div>

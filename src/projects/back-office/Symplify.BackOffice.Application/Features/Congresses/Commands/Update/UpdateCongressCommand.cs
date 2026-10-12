@@ -25,6 +25,7 @@ public class UpdateCongressCommand : IRequest<UpdatedCongressResponse>, ISecured
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
     public CongressStatus Status { get; set; }
+    public bool IsAuthorVideoUploadEnabled { get; set; } = true;
     public string? ContactName { get; set; }
     public string? ContactTitle { get; set; }
     public string? ContactPhone { get; set; }
@@ -128,6 +129,7 @@ public class UpdateCongressCommand : IRequest<UpdatedCongressResponse>, ISecured
                 entity.StartDate = ToUtc(request.StartDate);
                 entity.EndDate = ToUtc(request.EndDate);
                 entity.Status = request.Status;
+                entity.IsAuthorVideoUploadEnabled = request.IsAuthorVideoUploadEnabled;
                 entity.ContactName = Normalize(request.ContactName);
                 entity.ContactTitle = Normalize(request.ContactTitle);
                 entity.ContactEmail = contactEmails

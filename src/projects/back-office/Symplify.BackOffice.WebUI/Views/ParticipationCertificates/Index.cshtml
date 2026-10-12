@@ -21,7 +21,12 @@
      data-generate-url="@Url.Action("Generate", "ParticipationCertificates", new { culture = currentCulture })"
      data-email-url="@Url.Action("QueueEmails", "ParticipationCertificates", new { culture = currentCulture })"
      data-revoke-url="@Url.Action("Revoke", "ParticipationCertificates", new { culture = currentCulture })"
-     data-download-base-url="@($"/{currentCulture}/participation-certificates/download/")">
+     data-bulk-revoke-url="@Url.Action("BulkRevoke", "ParticipationCertificates", new { culture = currentCulture })"
+     data-download-selected-url="@Url.Action("DownloadSelected", "ParticipationCertificates", new { culture = currentCulture })"
+     data-download-all-url="@Url.Action("DownloadAll", "ParticipationCertificates", new { culture = currentCulture })"
+     data-download-base-url="@($"/{currentCulture}/participation-certificates/download/")"
+     data-has-tr-template="@(trTemplate is not null ? "true" : "false")"
+     data-has-en-template="@(enTemplate is not null ? "true" : "false")">
 
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
         <div>
@@ -46,6 +51,7 @@
     <form class="d-none" id="participationCertificateAntiForgeryForm">
         @Html.AntiForgeryToken()
     </form>
+    <iframe class="d-none" name="participationCertificateDownloadFrame" id="participationCertificateDownloadFrame"></iframe>
 
     <div class="card border shadow-none radius-12 mb-24">
         <div class="card-body">
@@ -84,7 +90,7 @@
                 <div class="card border shadow-none radius-12 h-100"><div class="card-body"><small class="text-neutral-500">Uygun Aday</small><h4 class="mb-0">@Model.EligibleCandidateCount</h4></div></div>
             </div>
             <div class="col-sm-6 col-xl-3">
-                <div class="card border shadow-none radius-12 h-100"><div class="card-body"><small class="text-neutral-500">Aktif Belge</small><h4 class="mb-0">@Model.GeneratedCount</h4></div></div>
+                <div class="card border shadow-none radius-12 h-100"><div class="card-body"><small class="text-neutral-500">Aktif Belge</small><h4 class="mb-0" id="activeCertificateCount">@Model.GeneratedCount</h4></div></div>
             </div>
             <div class="col-sm-6 col-xl-2">
                 <div class="card border shadow-none radius-12 h-100"><div class="card-body"><small class="text-neutral-500">Mail Kuyruğu</small><h4 class="mb-0">@Model.EmailQueuedCount</h4></div></div>
@@ -93,7 +99,7 @@
                 <div class="card border shadow-none radius-12 h-100"><div class="card-body"><small class="text-neutral-500">Mail Gönderildi</small><h4 class="mb-0">@Model.EmailSentCount</h4></div></div>
             </div>
             <div class="col-sm-6 col-xl-2">
-                <div class="card border shadow-none radius-12 h-100"><div class="card-body"><small class="text-neutral-500">Kaldırılan</small><h4 class="mb-0">@Model.RevokedCount</h4></div></div>
+                <div class="card border shadow-none radius-12 h-100"><div class="card-body"><small class="text-neutral-500">Kaldırılan</small><h4 class="mb-0" id="revokedCertificateCount">@Model.RevokedCount</h4></div></div>
             </div>
         </div>
 
@@ -221,9 +227,48 @@
                         </div>
                     </div>
                 </div>
+                <div class="border rounded-3 bg-neutral-50 p-12 mb-12 d-flex flex-wrap align-items-center justify-content-between gap-2"
+                     id="documentBulkActionBar">
+                    <div class="d-flex flex-wrap align-items-center gap-3">
+                        <label class="d-inline-flex align-items-center gap-2 mb-0 fw-semibold cursor-pointer">
+                            <input type="checkbox"
+                                   class="form-check-input mt-0"
+                                   id="documentPageSelectTop"
+                                   style="width:18px;height:18px;"
+                                   title="Bu sayfadaki aktif belgelerin tamamını seç" />
+                            Bu sayfadakilerin tümünü seç
+                        </label>
+                        <span class="badge bg-primary-50 text-primary-600" id="documentSelectionSummary">Seçili belge yok</span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="clearDocumentSelectionButton" disabled>
+                            <i class="ri-close-line me-1"></i> Seçimi Temizle
+                        </button>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-outline-danger-600" id="bulkRevokeCertificatesButton" disabled>
+                            <i class="ri-delete-bin-6-line me-1"></i> Seçilenleri Kaldır
+                        </button>
+                        <button type="button" class="btn btn-outline-primary-600" id="downloadSelectedCertificatesButton" disabled>
+                            <i class="ri-file-zip-line me-1"></i> Seçilenleri ZIP İndir
+                        </button>
+                        <button type="button" class="btn btn-primary-600" id="downloadAllCertificatesButton">
+                            <i class="ri-download-cloud-2-line me-1"></i> Tüm Aktif Belgeleri ZIP İndir
+                        </button>
+                    </div>
+                </div>
                 <div class="table-responsive">
                     <table class="table bordered-table mb-0 w-100" id="participationCertificateDocumentsTable">
                         <thead><tr>
+                            <th class="text-center text-nowrap" style="width:82px;">
+                                <label class="d-inline-flex align-items-center justify-content-center gap-1 mb-0 cursor-pointer">
+                                    <input type="checkbox"
+                                           class="form-check-input mt-0"
+                                           id="documentPageSelect"
+                                           style="width:18px;height:18px;"
+                                           title="Bu sayfadaki aktif belgelerin tamamını seç" />
+                                    <span class="text-xs">Tümü</span>
+                                </label>
+                            </th>
                             <th>Bildiri No</th><th>Yazar</th><th>Dil</th><th>Oluşturulma</th><th>Mail</th><th>Yayın</th><th class="text-end">İşlem</th>
                         </tr></thead>
                     </table>
@@ -264,11 +309,10 @@
                         </div>
                     </div>
                     <div class="modal-footer justify-content-between">
-                        <span class="text-sm text-neutral-500">Bir bildiri seçildiğinde o bildirinin tüm yazarları seçilmiş sayılır. TR ve EN üretimleri birbirinden bağımsızdır.</span>
+                        <span class="text-sm text-neutral-500">Tek işlemle mevcut template dilleri üretilir. Yalnız TR varsa TR, yalnız EN varsa EN, ikisi de varsa her iki dil kuyruğa alınır.</span>
                         <div class="d-flex gap-2">
                             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Vazgeç</button>
-                            <button type="button" class="btn btn-outline-primary-600 js-generate-certificate" data-culture="en-US">EN Belge Oluştur</button>
-                            <button type="button" class="btn btn-primary-600 js-generate-certificate" data-culture="tr-TR">TR Belge Oluştur</button>
+                            <button type="button" class="btn btn-primary-600 js-generate-certificate"><i class="ri-file-add-line me-1"></i> Belge Oluştur</button>
                         </div>
                     </div>
                 </div>

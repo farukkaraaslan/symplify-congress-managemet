@@ -1,0 +1,72 @@
+.modal {
+  &-header {
+    border-color: var(--input-form-light);
+    .btn-close {
+      margin-inline-start: auto;
+      margin-inline-end: 0;
+    }
+  }
+  &-content {
+    background-color: var(--white);
+  }
+  &-footer {
+    border-color: var(--input-form-light);
+  }
+
+  // .modal-content içinde <form> wrapper kullanıldığında Bootstrap'in
+  // .modal-dialog-scrollable flex/scroll davranışı bozulabiliyor.
+  // Header ve footer sabit kalır, sadece modal-body scroll olur.
+  &-dialog-scrollable {
+    .modal-content {
+      > form {
+        display: flex;
+        flex-direction: column;
+        max-height: 100%;
+        min-height: 0;
+      }
+    }
+
+    .modal-body {
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .modal-header,
+    .modal-footer {
+      flex-shrink: 0;
+    }
+  }
+}
+
+// Davetli kayıt modalı küçük yüksekliklerde ve mobil ekranlarda taşmasın.
+#davetliModal {
+  @media (max-width: 575.98px) {
+    .modal-dialog {
+      margin: .5rem;
+      max-width: calc(100% - 1rem);
+    }
+
+    .modal-content {
+      max-height: calc(100vh - 1rem);
+      max-height: calc(100dvh - 1rem);
+
+      > form {
+        max-height: calc(100vh - 1rem);
+        max-height: calc(100dvh - 1rem);
+      }
+    }
+
+    .modal-body {
+      padding: 16px;
+    }
+
+    .modal-footer {
+      flex-wrap: wrap;
+
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+}

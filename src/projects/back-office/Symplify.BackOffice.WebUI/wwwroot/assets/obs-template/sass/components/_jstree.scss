@@ -1,0 +1,1307 @@
+@use "../abstracts/function";
+
+// ==========================================================
+// jsTree - Modern Full Theme
+// - jsTree native `themes.icons = false` desteği korunur
+// - Theme iconlar sadece jsTree izin verirse görünür
+// - Checkbox / ocl / wholerow davranışları bozulmaz
+// - Checkbox ile metin aynı dikey hatta hizalanır
+// ==========================================================
+
+// ----------------------------------------------------------
+// Tokens
+// ----------------------------------------------------------
+$tree-radius-xl: function.rem(18px);
+$tree-radius-lg: function.rem(16px);
+$tree-radius-md: function.rem(14px);
+$tree-radius-sm: function.rem(10px);
+
+$tree-item-height: function.rem(40px);
+$tree-item-padding-right: function.rem(12px);
+$tree-indent: function.rem(22px);
+
+$tree-toggle-size: function.rem(20px);
+$tree-toggle-icon-size: function.rem(18px);
+
+$tree-theme-icon-size: function.rem(18px);
+
+$tree-checkbox-size: function.rem(18px);
+$tree-checkbox-icon-size: function.rem(12px);
+
+$tree-line-x: function.rem(11px);
+$tree-line-join: function.rem(12px);
+
+$tree-inline-gap: function.rem(8px);
+
+// ----------------------------------------------------------
+// SVG icons
+// ----------------------------------------------------------
+$svg-chevron-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='black' d='M6.1 3.85a1.15 1.15 0 0 1 1.62-.03l5.52 5.2a1.45 1.45 0 0 1 0 2.11l-5.52 5.2a1.15 1.15 0 1 1-1.58-1.67L10.94 10 6.14 5.52A1.15 1.15 0 0 1 6.1 3.85Z'/%3E%3C/svg%3E");
+
+$svg-folder-closed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M9.3 4.5a2 2 0 0 1 1.41.58l1.44 1.42H18A2.5 2.5 0 0 1 20.5 9v.9H3.5V7A2.5 2.5 0 0 1 6 4.5h3.3Zm11.2 6.9H3.5V17A2.5 2.5 0 0 0 6 19.5h12a2.5 2.5 0 0 0 2.5-2.5v-5.6Z'/%3E%3C/svg%3E");
+
+$svg-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M9.15 4.5a2 2 0 0 1 1.41.58L12 6.5h6A2.5 2.5 0 0 1 20.5 9v.85H9.15a3 3 0 0 0-2.68 1.64l-1.17 2.24a1 1 0 0 1-.89.57H3.5V7A2.5 2.5 0 0 1 6 4.5h3.15Zm11.86 7.06a1.5 1.5 0 0 0-1.28-.71H9.15a1.5 1.5 0 0 0-1.33.79l-1.42 2.73H4.4a2.5 2.5 0 0 0-2.24 1.39l-.18.35A2.5 2.5 0 0 0 4.2 19.5h14.48A2.5 2.5 0 0 0 21 17.92l1.63-4.05a1.5 1.5 0 0 0-.62-2.31Z'/%3E%3C/svg%3E");
+
+$svg-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M7.75 3.5h6.12a2 2 0 0 1 1.41.59l3.63 3.63a2 2 0 0 1 .59 1.41V19.5A1.5 1.5 0 0 1 18 21H8a2.5 2.5 0 0 1-2.5-2.5v-13A2 2 0 0 1 7.75 3.5Zm5.75 1.86V8.5a1 1 0 0 0 1 1h3.14l-4.14-4.14ZM10 13.75a.75.75 0 0 0 0 1.5h4.75a.75.75 0 0 0 0-1.5H10Zm0 3.1a.75.75 0 0 0 0 1.5h4.75a.75.75 0 0 0 0-1.5H10Z'/%3E%3C/svg%3E");
+
+$svg-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='black' d='M16.95 5.15a1.15 1.15 0 0 1 0 1.63L9.87 13.86a1.15 1.15 0 0 1-1.63 0L4.58 10.2a1.15 1.15 0 1 1 1.63-1.63l2.84 2.84 6.27-6.27a1.15 1.15 0 0 1 1.63 0Z'/%3E%3C/svg%3E");
+
+$svg-minus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='black' d='M4.6 10A1.2 1.2 0 0 1 5.8 8.8h8.4a1.2 1.2 0 1 1 0 2.4H5.8A1.2 1.2 0 0 1 4.6 10Z'/%3E%3C/svg%3E");
+
+$svg-dot: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='4.2' fill='black'/%3E%3C/svg%3E");
+
+// ----------------------------------------------------------
+// Mixins
+// ----------------------------------------------------------
+@mixin masked-icon($mask, $size) {
+  content: "";
+  display: inline-block;
+  width: $size;
+  height: $size;
+  background-color: currentColor;
+  -webkit-mask-image: $mask;
+  mask-image: $mask;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+@mixin surface-card {
+  background-color: var(--surface-base, #ffffff);
+  color: var(--text-primary, #111827);
+  border: 1px solid var(--card-border, rgba(15, 23, 42, 0.08));
+  box-shadow: var(--card-shadow, 0 10px 28px rgba(0, 0, 0, 0.08));
+}
+
+@mixin row-center {
+  display: inline-flex !important;
+  align-items: center;
+  vertical-align: middle;
+}
+
+@mixin focus-ring {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.18);
+}
+
+@mixin checkbox-active-state($icon) {
+  background-color: var(--primary-600, #4f8cff) !important;
+  border-color: var(--primary-600, #4f8cff) !important;
+  background-image: none !important;
+  color: #ffffff !important;
+
+  &::before {
+    @include masked-icon($icon, $tree-checkbox-icon-size);
+    opacity: 1 !important;
+    transform: scale(1) !important;
+  }
+}
+
+// ----------------------------------------------------------
+// Base
+// ----------------------------------------------------------
+.jstree,
+.jstree-default,
+.jstree-default-dark {
+  font-family: var(--default-font, inherit);
+  font-size: var(--font-sm, 0.875rem);
+  line-height: 1.35;
+  color: var(--text-primary, #111827);
+}
+
+.jstree {
+  width: 100%;
+
+  .jstree-node,
+  .jstree-icon,
+  .jstree-themeicon,
+  .jstree-ocl,
+  .jstree-checkbox {
+    background-image: none !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    box-shadow: none !important;
+  }
+
+  .jstree-container-ul,
+  .jstree-children {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .jstree-container-ul {
+    @include surface-card;
+    position: relative;
+    padding: function.rem(12px);
+    border-radius: $tree-radius-xl;
+  }
+
+  .jstree-node {
+    position: relative;
+    min-height: $tree-item-height;
+    margin: 0;
+    padding-left: $tree-indent;
+  }
+
+  .jstree-node + .jstree-node {
+    margin-top: function.rem(2px);
+  }
+
+  .jstree-children {
+    margin-top: function.rem(2px);
+    padding-left: function.rem(10px);
+  }
+
+  // --------------------------------------------------------
+  // Connector lines
+  // --------------------------------------------------------
+  &.jstree-default,
+  &.jstree-default-dark {
+    .jstree-node:not(.jstree-last)::before {
+      content: "";
+      position: absolute;
+      top: calc(#{$tree-item-height} / 2);
+      left: $tree-line-x;
+      bottom: function.rem(-4px);
+      width: 0;
+      border-left: 1px dashed var(--border-soft, rgba(15, 23, 42, 0.12));
+    }
+
+    .jstree-node::after {
+      content: "";
+      position: absolute;
+      top: calc(#{$tree-item-height} / 2);
+      left: $tree-line-x;
+      width: $tree-line-join;
+      height: 0;
+      border-top: 1px dashed var(--border-soft, rgba(15, 23, 42, 0.12));
+    }
+
+    .jstree-last::before {
+      display: none;
+    }
+
+    > .jstree-container-ul > .jstree-node {
+      padding-left: 0;
+
+      &::before,
+      &::after {
+        display: none;
+      }
+    }
+  }
+
+  // --------------------------------------------------------
+  // Toggle / arrow
+  // --------------------------------------------------------
+  .jstree-ocl {
+    @include row-center;
+    position: relative;
+    justify-content: center;
+    width: $tree-toggle-size !important;
+    height: $tree-toggle-size !important;
+    min-width: $tree-toggle-size;
+    min-height: $tree-toggle-size;
+    margin-right: function.rem(6px);
+    border-radius: 999px;
+    color: var(--text-muted, #7b8798);
+    cursor: pointer;
+    flex-shrink: 0;
+    line-height: 1;
+    align-self: center;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease,
+      transform 0.2s ease,
+      opacity 0.2s ease;
+  }
+
+  .jstree-ocl::before {
+    @include masked-icon($svg-chevron-right, $tree-toggle-icon-size);
+  }
+
+  .jstree-ocl:hover {
+    background-color: var(--surface-subtle, #f4f7fb);
+    color: var(--text-primary, #111827);
+  }
+
+  .jstree-open > .jstree-ocl {
+    color: var(--primary-600, #4f8cff);
+    transform: rotate(90deg);
+  }
+
+  .jstree-leaf > .jstree-ocl {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  // --------------------------------------------------------
+  // Anchor
+  // --------------------------------------------------------
+  .jstree-anchor {
+    @include row-center;
+    position: relative;
+    z-index: 2;
+    min-height: $tree-item-height;
+    height: $tree-item-height;
+    padding: 0 $tree-item-padding-right 0 0;
+    border: 0 !important;
+    border-radius: $tree-radius-md;
+    background-color: transparent !important;
+    color: var(--text-secondary, #475467);
+    text-decoration: none;
+    white-space: nowrap;
+    line-height: 1.35;
+    vertical-align: top;
+    column-gap: $tree-inline-gap;
+    box-shadow: none !important;
+    transition:
+      color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .jstree-anchor:hover,
+  .jstree-hovered {
+    background-color: transparent !important;
+    border-color: transparent !important;
+    color: var(--text-primary, #111827) !important;
+  }
+
+  .jstree-anchor:focus,
+  .jstree-anchor:active {
+    outline: none;
+    box-shadow: none;
+  }
+
+  .jstree-anchor:focus-visible {
+    @include focus-ring;
+  }
+
+  .jstree-clicked {
+    background-color: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    color: var(--primary-600, #4f8cff) !important;
+  }
+
+  // --------------------------------------------------------
+  // Whole row
+  // --------------------------------------------------------
+  .jstree-wholerow-ul {
+    position: relative;
+  }
+
+  .jstree-wholerow {
+    position: absolute;
+    top: function.rem(4px);
+    left: 0;
+    right: 0;
+    width: auto !important;
+    height: calc(#{$tree-item-height} - #{function.rem(8px)});
+    margin-top: 0;
+    border-radius: $tree-radius-md;
+    background: transparent !important;
+    transition:
+      background-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .jstree-wholerow-hovered {
+    background-color: rgba(var(--brand-rgb), 0.08) !important;
+  }
+
+  .jstree-wholerow-clicked {
+    background-color: rgba(var(--brand-rgb), 0.06) !important;
+    box-shadow: none !important;
+  }
+
+  // --------------------------------------------------------
+  // Theme icons
+  // --------------------------------------------------------
+  .jstree-themeicon {
+    @include row-center;
+    position: relative;
+    justify-content: center;
+    width: $tree-theme-icon-size !important;
+    height: $tree-theme-icon-size !important;
+    min-width: $tree-theme-icon-size;
+    margin-right: 0;
+    color: var(--text-muted, #667085);
+    flex-shrink: 0;
+    line-height: 1;
+    align-self: center;
+  }
+
+  .jstree-themeicon:not([class*="ri-"])::before {
+    @include masked-icon($svg-file, $tree-theme-icon-size);
+  }
+
+  .jstree-open > .jstree-anchor > .jstree-themeicon,
+  .jstree-closed > .jstree-anchor > .jstree-themeicon {
+    color: var(--warning-600, #f4b400);
+  }
+
+  .jstree-open > .jstree-anchor > .jstree-themeicon:not([class*="ri-"])::before {
+    @include masked-icon($svg-folder-open, $tree-theme-icon-size);
+  }
+
+  .jstree-closed > .jstree-anchor > .jstree-themeicon:not([class*="ri-"])::before {
+    @include masked-icon($svg-folder-closed, $tree-theme-icon-size);
+  }
+
+  .jstree-leaf > .jstree-anchor > .jstree-themeicon {
+    color: var(--primary-500, #5ea0ff);
+  }
+
+  .jstree-leaf > .jstree-anchor > .jstree-themeicon:not([class*="ri-"])::before {
+    @include masked-icon($svg-file, $tree-theme-icon-size);
+  }
+
+  .jstree-anchor:hover > .jstree-themeicon,
+  .jstree-clicked > .jstree-themeicon {
+    color: currentColor;
+  }
+// jsTree native icons:false desteği
+  &.jstree-no-icons,
+  .jstree-no-icons {
+}
+
+  // --------------------------------------------------------
+  // Checkbox
+  // --------------------------------------------------------
+  .jstree-checkbox {
+    @include row-center;
+    position: relative;
+    justify-content: center;
+    width: $tree-checkbox-size !important;
+    height: $tree-checkbox-size !important;
+    min-width: $tree-checkbox-size;
+    min-height: $tree-checkbox-size;
+    margin-right: 0;
+    border: 1px solid var(--control-border, rgba(15, 23, 42, 0.14));
+    border-radius: function.rem(7px);
+    background-color: var(--control-bg, #ffffff);
+    background-image: none !important;
+    color: transparent;
+    overflow: hidden;
+    flex-shrink: 0;
+    line-height: 1;
+    align-self: center;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease,
+      box-shadow 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  .jstree-checkbox::before {
+    content: "";
+    display: block;
+    width: $tree-checkbox-icon-size;
+    height: $tree-checkbox-icon-size;
+    opacity: 0;
+    transform: scale(0.85);
+    transition:
+      opacity 0.16s ease,
+      transform 0.16s ease;
+  }
+
+  .jstree-anchor:hover > .jstree-checkbox,
+  .jstree-anchor:hover .jstree-checkbox {
+    border-color: var(--control-border-hover, rgba(15, 23, 42, 0.22));
+    box-shadow: 0 0 0 var(--size-3) rgba(var(--brand-rgb), 0.12);
+  }
+
+  // jsTree 3.x checked class'ını ayara göre farklı yere basabilir:
+  // - tie_selection:false kullanıldığında çoğunlukla anchor/icon state'i ayrı yürür
+  // - tie_selection:true kullanıldığında .jstree-checkbox-selection + .jstree-clicked kullanılır
+  // Bu yüzden checked state'in tüm DOM varyasyonlarını yakalıyoruz.
+  .jstree-anchor.jstree-checked > .jstree-checkbox,
+  .jstree-checked > .jstree-checkbox,
+  .jstree-node.jstree-checked > .jstree-anchor > .jstree-checkbox,
+  .jstree-checkbox.jstree-checked,
+  &.jstree-checkbox-selection .jstree-clicked > .jstree-checkbox {
+    @include checkbox-active-state($svg-check);
+  }
+
+  .jstree-anchor > .jstree-checkbox.jstree-undetermined,
+  .jstree-anchor.jstree-undetermined > .jstree-checkbox,
+  .jstree-undetermined > .jstree-checkbox,
+  .jstree-node.jstree-undetermined > .jstree-anchor > .jstree-checkbox {
+    @include checkbox-active-state($svg-minus);
+  }
+
+  .jstree-checkbox.is-dot::before {
+    @include masked-icon($svg-dot, $tree-checkbox-icon-size);
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  // --------------------------------------------------------
+  // Search
+  // --------------------------------------------------------
+  .jstree-default .jstree-search {
+    font-style: normal !important;
+    background: none !important;
+    background-color: var(--success-100) !important;
+    color: var(--success-700) !important;
+    border-radius: var(--rounded-4);
+  }
+
+  html[data-theme="dark"] .jstree-default .jstree-search,
+  [data-theme="dark"] .jstree-default .jstree-search {
+    background: none !important;
+    background-color: color-mix(in srgb, var(--success-600) 34%, transparent) !important;
+    color: var(--success-200) !important;
+    font-style: normal !important;
+  }
+
+  .jstree-default .jstree-search,
+  .jstree-default .jstree-search * {
+    color: var(--success-700) !important;
+    font-style: normal !important;
+  }
+
+  html[data-theme="dark"] .jstree-default .jstree-search,
+  html[data-theme="dark"] .jstree-default .jstree-search *,
+  [data-theme="dark"] .jstree-default .jstree-search,
+  [data-theme="dark"] .jstree-default .jstree-search * {
+    color: var(--success-200) !important;
+    font-style: normal !important;
+  }
+
+  // --------------------------------------------------------
+  // Disabled
+  // --------------------------------------------------------
+  .jstree-disabled {
+    opacity: 0.56;
+  }
+
+  .jstree-disabled > .jstree-anchor {
+    color: var(--text-muted, #98a2b3) !important;
+    pointer-events: none;
+  }
+
+  .jstree-disabled > .jstree-anchor > .jstree-themeicon,
+  .jstree-disabled > .jstree-anchor > .jstree-checkbox,
+  .jstree-disabled > .jstree-ocl {
+    opacity: 0.72;
+  }
+
+  // --------------------------------------------------------
+  // Loading
+  // --------------------------------------------------------
+  .jstree-loading > .jstree-anchor > .jstree-themeicon {
+    opacity: 0.7;
+  }
+}
+
+// ----------------------------------------------------------
+// DnD preview
+// ----------------------------------------------------------
+.vakata-dnd {
+  display: inline-flex;
+  align-items: center;
+  gap: function.rem(8px);
+  padding: function.rem(8px) function.rem(12px);
+  border-radius: $tree-radius-md;
+  background-color: var(--surface-raised, #ffffff);
+  color: var(--text-primary, #111827);
+  border: 1px solid var(--card-border, rgba(15, 23, 42, 0.08));
+  box-shadow: var(--card-shadow, 0 10px 28px rgba(0, 0, 0, 0.08));
+  font-size: var(--font-sm, 0.875rem);
+}
+
+.vakata-dnd .jstree-icon {
+  color: var(--primary-600, #4f8cff);
+}
+
+#jstree-marker {
+  color: var(--primary-600, #4f8cff) !important;
+}
+
+// ----------------------------------------------------------
+// Context menu
+// ----------------------------------------------------------
+.vakata-context,
+.vakata-context ul {
+  min-width: function.rem(230px);
+  padding: function.rem(8px);
+  border-radius: var(--rounded-16);
+  background-color: var(--dropdown-bg);
+  border: 1px solid var(--dropdown-border);
+  box-shadow: var(--dropdown-shadow);
+  z-index: 1080;
+}
+
+.vakata-context li {
+  margin: 0;
+}
+
+.vakata-context li > a {
+  display: flex;
+  align-items: center;
+  gap: function.rem(10px);
+  min-height: function.rem(40px);
+  padding: function.rem(8px) function.rem(10px);
+  border-radius: $tree-radius-sm;
+  color: var(--text-secondary, #475467);
+  text-decoration: none;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.vakata-context li > a:hover,
+.vakata-context .vakata-context-hover > a {
+  background-color: var(--surface-subtle, #f6f8fb);
+  color: var(--text-primary, #111827);
+}
+
+.vakata-context-separator > a,
+.vakata-context-separator > a:hover {
+  height: 1px;
+  min-height: 1px;
+  margin: function.rem(6px) 0;
+  padding: 0;
+  background-color: var(--border-soft, rgba(15, 23, 42, 0.08));
+  border: 0;
+}
+
+// ----------------------------------------------------------
+// Light
+// ----------------------------------------------------------
+html[data-theme="light"],
+[data-theme="light"] {
+  .jstree {
+    .jstree-container-ul {
+      background-color: var(--surface-base, #ffffff);
+      color: var(--text-primary, #111827);
+    }
+
+    .jstree-node:not(.jstree-last)::before,
+    .jstree-node::after {
+      border-color: rgba(15, 23, 42, 0.12);
+    }
+
+    .jstree-anchor {
+      color: var(--text-secondary, #475467);
+    }
+
+    .jstree-anchor:hover,
+    .jstree-hovered {
+      color: var(--text-primary, #111827) !important;
+    }
+
+    .jstree-clicked {
+      color: var(--primary-600, #4f8cff) !important;
+    }
+
+    .jstree-wholerow-hovered {
+      background-color: rgba(var(--brand-rgb), 0.08) !important;
+    }
+
+    .jstree-wholerow-clicked {
+      background-color: rgba(var(--brand-rgb), 0.06) !important;
+      box-shadow: none !important;
+    }
+
+    .jstree-checkbox {
+      border-color: rgba(15, 23, 42, 0.14);
+      background-color: #ffffff;
+    }
+
+    .jstree-ocl {
+      color: #667085;
+    }
+
+    .jstree-ocl:hover {
+      background-color: #f4f7fb;
+      color: #111827;
+    }
+  }
+
+  .vakata-context,
+  .vakata-context ul {
+    background-color: var(--dropdown-bg);
+  }
+}
+
+// ----------------------------------------------------------
+// Dark
+// ----------------------------------------------------------
+html[data-theme="dark"],
+[data-theme="dark"] {
+  .jstree,
+  .jstree-default,
+  .jstree-default-dark {
+    color: #f5f7fa;
+  }
+
+  .jstree {
+    .jstree-container-ul {
+      background-color: #273142;
+      color: #f5f7fa;
+      border-color: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
+    }
+
+    .jstree-node:not(.jstree-last)::before,
+    .jstree-node::after {
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .jstree-anchor {
+      color: #d5deea;
+    }
+
+    .jstree-anchor:hover,
+    .jstree-hovered {
+      color: #ffffff !important;
+    }
+
+    .jstree-clicked {
+      color: var(--primary-600) !important;
+    }
+
+    .jstree-wholerow-hovered {
+      background-color: rgba(var(--brand-rgb), 0.14) !important;
+    }
+
+    .jstree-wholerow-clicked {
+      background-color: rgba(var(--brand-rgb), 0.08) !important;
+      box-shadow: none !important;
+    }
+
+    .jstree-ocl {
+      color: #a3b0c2;
+    }
+
+    .jstree-ocl:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: #ffffff;
+    }
+
+    .jstree-open > .jstree-ocl {
+      color: #79afff;
+    }
+
+    .jstree-themeicon {
+      color: #9fb0c6;
+    }
+
+    .jstree-open > .jstree-anchor > .jstree-themeicon,
+    .jstree-closed > .jstree-anchor > .jstree-themeicon {
+      color: #f4c542;
+    }
+
+    .jstree-leaf > .jstree-anchor > .jstree-themeicon {
+      color: #79afff;
+    }
+
+    .jstree-checkbox {
+      border-color: rgba(255, 255, 255, 0.14);
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .jstree-anchor:hover .jstree-checkbox {
+      border-color: rgba(255, 255, 255, 0.22);
+      box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.1);
+    }
+  }
+
+  .vakata-context,
+  .vakata-context ul {
+    background-color: var(--dropdown-bg);
+    border-color: var(--dropdown-border);
+    box-shadow: var(--dropdown-shadow);
+  }
+
+  .vakata-context li > a {
+    color: var(--text-secondary);
+  }
+
+  .vakata-context li > a:hover,
+  .vakata-context .vakata-context-hover > a {
+    background-color: var(--surface-subtle);
+    color: var(--text-primary);
+  }
+
+  .vakata-context-separator > a,
+  .vakata-context-separator > a:hover {
+    background-color: var(--divider-color);
+  }
+}
+
+// ----------------------------------------------------------
+// Responsive
+// ----------------------------------------------------------
+@media (max-width: 767.98px) {
+  .jstree {
+    .jstree-container-ul {
+      padding: function.rem(10px);
+    }
+
+    .jstree-node {
+      padding-left: function.rem(18px);
+    }
+
+    .jstree-anchor {
+      min-height: function.rem(36px);
+      height: function.rem(36px);
+      padding-right: function.rem(8px);
+      font-size: var(--font-xs, 0.75rem);
+      column-gap: function.rem(7px);
+    }
+
+    .jstree-wholerow {
+      top: function.rem(4px);
+      height: function.rem(28px);
+      border-radius: function.rem(12px);
+    }
+
+    .jstree-ocl {
+      width: function.rem(18px) !important;
+      height: function.rem(18px) !important;
+      margin-right: function.rem(5px);
+    }
+
+    .jstree-ocl::before {
+      width: function.rem(16px);
+      height: function.rem(16px);
+    }
+
+    &.jstree-no-icons,
+    .jstree-no-icons {
+      .jstree-themeicon {
+        margin-right: 0 !important;
+      }
+    }
+  }
+}
+
+html[data-theme="dark"] {
+  .jstree-default {
+    background-color: transparent;
+  }
+
+  .jstree,
+  .jstree-default {
+    color: var(--text-primary);
+
+    .jstree-container-ul {
+      background-color: transparent !important;
+      border-color: var(--border-soft) !important;
+      box-shadow: var(--dropdown-shadow) !important;
+    }
+
+    .jstree-anchor {
+      color: var(--text-secondary) !important;
+    }
+
+    .jstree-anchor:hover,
+    .jstree-hovered {
+      color: var(--text-primary) !important;
+    }
+
+    .jstree-clicked {
+      color: var(--primary-600) !important;
+    }
+
+    .jstree-wholerow-hovered {
+      background-color: rgba(var(--brand-rgb), 0.08) !important;
+    }
+
+    .jstree-wholerow-clicked {
+      background-color: rgba(var(--brand-rgb), 0.08) !important;
+      box-shadow: none !important;
+    }
+
+    .jstree-themeicon {
+      color: var(--text-muted) !important;
+    }
+
+    .jstree-open > .jstree-anchor > .jstree-themeicon,
+    .jstree-closed > .jstree-anchor > .jstree-themeicon {
+      color: var(--text-warning) !important;
+    }
+
+    .jstree-leaf > .jstree-anchor > .jstree-themeicon {
+      color: var(--primary-600) !important;
+    }
+
+    .jstree-checkbox {
+      border-color: var(--control-border) !important;
+      background-color: var(--control-bg) !important;
+    }
+
+    .jstree-anchor:hover .jstree-checkbox {
+      border-color: var(--control-border-hover) !important;
+      box-shadow: 0 0 0 var(--size-3) rgba(var(--brand-rgb), 0.1);
+    }
+
+    .jstree-anchor.jstree-checked > .jstree-checkbox,
+    .jstree-checked > .jstree-checkbox,
+    .jstree-node.jstree-checked > .jstree-anchor > .jstree-checkbox,
+    .jstree-checkbox.jstree-checked,
+    &.jstree-checkbox-selection .jstree-clicked > .jstree-checkbox {
+      @include checkbox-active-state($svg-check);
+    }
+
+    .jstree-anchor > .jstree-checkbox.jstree-undetermined,
+    .jstree-anchor.jstree-undetermined > .jstree-checkbox,
+    .jstree-undetermined > .jstree-checkbox,
+    .jstree-node.jstree-undetermined > .jstree-anchor > .jstree-checkbox {
+      @include checkbox-active-state($svg-minus);
+    }
+  }
+}
+
+
+// ----------------------------------------------------------
+// Checkbox tree clean mode
+// ----------------------------------------------------------
+// JS tarafında checkbox ekranları için jstree-checkbox-clean class'ı eklenir.
+// Amaç: checkbox checked olduğunda wholerow/selected mavi pill oluşmasın;
+// sadece checkbox'ın kendisi mavi checked görünsün.
+.jstree.jstree-checkbox-clean {
+  .jstree-anchor,
+  .jstree-clicked,
+  .jstree-hovered {
+    background-color: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .jstree-clicked {
+    color: var(--text-secondary, #475467) !important;
+  }
+
+  .jstree-anchor:hover,
+  .jstree-hovered {
+    color: var(--text-primary, #111827) !important;
+  }
+
+  .jstree-wholerow-clicked {
+    background-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .jstree-wholerow-hovered {
+    background-color: rgba(var(--brand-rgb), 0.05) !important;
+    box-shadow: none !important;
+  }
+
+  .jstree-anchor.jstree-checked,
+  .jstree-node.jstree-checked > .jstree-anchor {
+    color: var(--text-secondary, #475467) !important;
+  }
+}
+
+html[data-theme="dark"],
+[data-theme="dark"] {
+  .jstree.jstree-checkbox-clean {
+    .jstree-clicked,
+    .jstree-anchor.jstree-checked,
+    .jstree-node.jstree-checked > .jstree-anchor {
+      color: var(--text-secondary, #d5deea) !important;
+    }
+
+    .jstree-anchor:hover,
+    .jstree-hovered {
+      color: var(--text-primary, #ffffff) !important;
+    }
+
+    .jstree-wholerow-clicked {
+      background-color: transparent !important;
+      box-shadow: none !important;
+    }
+
+    .jstree-wholerow-hovered {
+      background-color: rgba(var(--brand-rgb), 0.08) !important;
+      box-shadow: none !important;
+    }
+  }
+}
+
+// ----------------------------------------------------------
+// Tree row alignment hard-fix
+// ----------------------------------------------------------
+// jsTree'de ok (.jstree-ocl) ile checkbox/metin (.jstree-anchor)
+// farklı elementlerde olduğu için bazı browser/template kombinasyonlarında
+// dikey ve yatay hizalar kayabiliyor. Bu override tüm satır parçalarını
+// aynı yüksekliğe ve aynı kolon mantığına sabitler.
+.tree-container {
+  .jstree,
+  .jstree-default,
+  .jstree-default-dark,
+  .jstree-default-large {
+    .jstree-container-ul {
+      padding-top: function.rem(8px);
+      padding-bottom: function.rem(8px);
+    }
+
+    .jstree-node {
+      min-height: function.rem(34px) !important;
+      line-height: function.rem(34px) !important;
+      margin-left: 0 !important;
+      padding-left: function.rem(26px) !important;
+    }
+
+    > .jstree-container-ul > .jstree-node {
+      padding-left: 0 !important;
+    }
+
+    .jstree-node + .jstree-node {
+      margin-top: function.rem(2px);
+    }
+
+    .jstree-children {
+      margin-top: function.rem(2px);
+      padding-left: function.rem(24px) !important;
+    }
+
+    .jstree-ocl {
+      width: function.rem(24px) !important;
+      min-width: function.rem(24px) !important;
+      height: function.rem(34px) !important;
+      min-height: function.rem(34px) !important;
+      line-height: function.rem(34px) !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      vertical-align: top !important;
+      margin: 0 function.rem(4px) 0 0 !important;
+      padding: 0 !important;
+      border-radius: 999px;
+      flex: 0 0 function.rem(24px);
+    }
+
+    .jstree-ocl::before {
+      width: function.rem(16px) !important;
+      height: function.rem(16px) !important;
+    }
+
+    .jstree-leaf > .jstree-ocl {
+      width: function.rem(24px) !important;
+      min-width: function.rem(24px) !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    .jstree-anchor {
+      min-height: function.rem(34px) !important;
+      height: function.rem(34px) !important;
+      line-height: function.rem(34px) !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      vertical-align: top !important;
+      padding: 0 function.rem(8px) 0 0 !important;
+      margin: 0 !important;
+      border-radius: function.rem(8px);
+      background-color: transparent !important;
+      box-shadow: none !important;
+      text-decoration: none !important;
+      white-space: nowrap;
+      column-gap: function.rem(8px);
+    }
+
+    .jstree-checkbox {
+      width: function.rem(18px) !important;
+      min-width: function.rem(18px) !important;
+      height: function.rem(18px) !important;
+      min-height: function.rem(18px) !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      vertical-align: middle !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      flex: 0 0 function.rem(18px);
+    }
+.jstree-clicked,
+    .jstree-hovered,
+    .jstree-anchor:hover {
+      background-color: transparent !important;
+      border-color: transparent !important;
+      box-shadow: none !important;
+    }
+
+    .jstree-wholerow,
+    .jstree-wholerow-clicked,
+    .jstree-wholerow-hovered {
+      display: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+
+    .jstree-anchor.jstree-checked > .jstree-checkbox,
+    .jstree-checked > .jstree-checkbox,
+    .jstree-node.jstree-checked > .jstree-anchor > .jstree-checkbox,
+    .jstree-checkbox.jstree-checked,
+    &.jstree-checkbox-selection .jstree-clicked > .jstree-checkbox {
+      @include checkbox-active-state($svg-check);
+    }
+
+    .jstree-anchor > .jstree-checkbox.jstree-undetermined,
+    .jstree-anchor.jstree-undetermined > .jstree-checkbox,
+    .jstree-undetermined > .jstree-checkbox,
+    .jstree-node.jstree-undetermined > .jstree-anchor > .jstree-checkbox {
+      @include checkbox-active-state($svg-minus);
+    }
+  }
+}
+
+/* ==========================================================================\n   jsTree 3.3.17 - menu / scroll hardening\n   ========================================================================== */
+.jstree-scroll-area {
+  max-height: min(62vh, 520px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--control-border) transparent;
+}
+.vakata-context,
+.vakata-context ul {
+  max-height: min(60vh, 460px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  z-index: 1080 !important;
+}
+
+
+
+/* ==========================================================================
+   TALIM / Enterprise UI override
+   - Daha az bosluk / daha az radius
+   - Belgelerde Remix Icon gorunur
+   - Secim ve hover DataTables / Tempus ile ayni sakinlikte
+   - Context menu masaustu uygulamasi yogunlugunda
+   ========================================================================== */
+
+.jstree,
+.jstree-default,
+.jstree-default-dark {
+  font-size: function.rem(13px) !important;
+
+  .jstree-container-ul {
+    padding: function.rem(8px) !important;
+    border: 1px solid var(--border-soft, var(--control-border)) !important;
+    border-radius: function.rem(10px) !important;
+    background: var(--surface-base) !important;
+    box-shadow: none !important;
+  }
+
+  .jstree-node {
+    min-height: function.rem(34px) !important;
+    padding-left: function.rem(22px);
+  }
+
+  .jstree-node + .jstree-node {
+    margin-top: 0 !important;
+  }
+
+  .jstree-children {
+    margin-top: 0 !important;
+    padding-left: function.rem(8px);
+  }
+
+  .jstree-anchor {
+    min-height: function.rem(34px) !important;
+    height: function.rem(34px) !important;
+    padding-right: function.rem(10px) !important;
+    border-radius: function.rem(6px) !important;
+    color: var(--text-secondary) !important;
+    font-size: function.rem(13px) !important;
+    font-weight: 500 !important;
+    column-gap: function.rem(6px) !important;
+  }
+
+  > .jstree-container-ul > .jstree-node > .jstree-anchor {
+    font-weight: 600 !important;
+    color: var(--text-primary) !important;
+  }
+
+  .jstree-ocl {
+    width: function.rem(20px) !important;
+    min-width: function.rem(20px) !important;
+    height: function.rem(34px) !important;
+    min-height: function.rem(34px) !important;
+    margin-right: function.rem(2px) !important;
+    border-radius: function.rem(5px) !important;
+  }
+
+  .jstree-ocl::before {
+    width: function.rem(14px) !important;
+    height: function.rem(14px) !important;
+  }
+
+  .jstree-themeicon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: function.rem(18px) !important;
+    min-width: function.rem(18px) !important;
+    height: function.rem(18px) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    font-size: function.rem(17px) !important;
+  }
+
+  .jstree-themeicon[class*="ri-"]::before {
+    display: inline-block !important;
+    font-size: inherit !important;
+    line-height: 1 !important;
+  }
+
+  &.jstree-no-icons,
+  .jstree-no-icons {
+    .jstree-themeicon {
+      display: none !important;
+      width: 0 !important;
+      min-width: 0 !important;
+      height: 0 !important;
+      overflow: hidden !important;
+    }
+  }
+
+  .jstree-checkbox {
+    width: function.rem(16px) !important;
+    min-width: function.rem(16px) !important;
+    height: function.rem(16px) !important;
+    min-height: function.rem(16px) !important;
+    border-radius: function.rem(4px) !important;
+  }
+
+  .jstree-wholerow {
+    top: function.rem(2px) !important;
+    height: function.rem(30px) !important;
+    border-radius: function.rem(6px) !important;
+  }
+
+  .jstree-wholerow-hovered {
+    background: var(--surface-subtle) !important;
+  }
+
+  .jstree-wholerow-clicked {
+    background: rgba(var(--brand-rgb), 0.08) !important;
+    box-shadow: inset function.rem(3px) 0 0 var(--primary-600) !important;
+  }
+
+  .jstree-clicked {
+    color: var(--primary-600) !important;
+    font-weight: 600 !important;
+  }
+
+  .jstree-node:not(.jstree-last)::before,
+  .jstree-node::after {
+    border-color: var(--border-soft, rgba(15, 23, 42, 0.10)) !important;
+  }
+
+  .jstree-anchor:focus-visible {
+    box-shadow: var(--focus-ring) !important;
+  }
+}
+
+/* Permission agacinda secili satiri degil checkbox'i vurgula */
+.jstree.jstree-checkbox-clean {
+  .jstree-wholerow-clicked {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .jstree-clicked {
+    color: var(--text-secondary) !important;
+    font-weight: 500 !important;
+  }
+}
+
+/* Context menu */
+.vakata-context,
+.vakata-context ul {
+  min-width: function.rem(200px) !important;
+  max-width: function.rem(260px);
+  padding: function.rem(5px) !important;
+  border: 1px solid var(--dropdown-border, var(--control-border)) !important;
+  border-radius: function.rem(9px) !important;
+  background: var(--dropdown-bg, var(--surface-base)) !important;
+  box-shadow: 0 function.rem(12px) function.rem(30px) rgba(15, 23, 42, 0.14) !important;
+}
+
+.vakata-context li > a {
+  min-height: function.rem(36px) !important;
+  padding: function.rem(7px) function.rem(9px) !important;
+  gap: function.rem(8px) !important;
+  border-radius: function.rem(6px) !important;
+  color: var(--text-secondary) !important;
+  font-size: function.rem(13px) !important;
+  font-weight: 500 !important;
+}
+
+.vakata-context li > a:hover,
+.vakata-context .vakata-context-hover > a {
+  background: var(--surface-subtle) !important;
+  color: var(--text-primary) !important;
+}
+
+.vakata-context li > a > i {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: function.rem(20px) !important;
+  min-width: function.rem(20px) !important;
+  margin: 0 !important;
+  color: var(--text-muted);
+  font-size: function.rem(16px) !important;
+}
+
+.vakata-context li:has(.ri-delete-bin-line) > a,
+.vakata-context li:has(.ri-delete-bin-line) > a > i {
+  color: var(--danger-600, #dc2626) !important;
+}
+
+.vakata-context-separator > a,
+.vakata-context-separator > a:hover {
+  margin: function.rem(4px) function.rem(6px) !important;
+  background: var(--border-soft, var(--control-border)) !important;
+}
+
+/* Drag preview */
+.vakata-dnd {
+  padding: function.rem(7px) function.rem(10px) !important;
+  border-radius: function.rem(7px) !important;
+  border: 1px solid var(--control-border) !important;
+  box-shadow: 0 function.rem(8px) function.rem(22px) rgba(15, 23, 42, 0.12) !important;
+  font-size: function.rem(13px) !important;
+}
+
+html[data-theme="dark"] {
+  .jstree,
+  .jstree-default,
+  .jstree-default-dark {
+    .jstree-container-ul {
+      background: var(--surface-base) !important;
+      border-color: var(--control-border) !important;
+      box-shadow: none !important;
+    }
+
+    .jstree-wholerow-hovered {
+      background: var(--surface-subtle) !important;
+    }
+
+    .jstree-wholerow-clicked {
+      background: rgba(var(--brand-rgb), 0.12) !important;
+    }
+  }
+
+  .vakata-context,
+  .vakata-context ul {
+    box-shadow: 0 function.rem(16px) function.rem(34px) rgba(0, 0, 0, 0.34) !important;
+  }
+}
